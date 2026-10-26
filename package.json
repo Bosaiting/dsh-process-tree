@@ -1,0 +1,71 @@
+{
+  "name": "dsh-process-tree",
+  "version": "0.7.3",
+  "description": "Classic flowing process tree by default, with quiet lines and botanical artwork as optional styles.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/COMPATIBILITY.md",
+    "docs/verification/0.7.2.json",
+    "docs/verification/0.7.3.json"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "process-tree",
+    "svg",
+    "web-ui"
+  ],
+  "engines": {
+    "node": ">=22.19.0",
+    "dsh": "0.2.1-rc.2"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:browser": "node test/browser-regressions.cjs",
+    "test:host": "node test/host-compatibility.cjs",
+    "check:package": "node scripts/check-package.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-chat",
+        "@deepseek-ai/dsh-client-ui-tool"
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bosaiting/dsh-process-tree.git"
+  },
+  "homepage": "https://github.com/Bosaiting/dsh-process-tree#readme",
+  "bugs": {
+    "url": "https://github.com/Bosaiting/dsh-process-tree/issues"
+  }
+}

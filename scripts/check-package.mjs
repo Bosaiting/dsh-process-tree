@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import path from 'node:path'
+import vm from 'node:vm'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const read = name => fs.readFileSync(path.join(root, name), 'utf8')
+const pkg = JSON.parse(read('package.json'))
+const lock = JSON.parse(read('package-lock.json'))
+assert.equal(lock.packages[''].version, pkg.version)
+assert.equal(lock.version, pkg.version)
+assert.equal(pkg.dsh.bundle.patch, './cordis.patch.yml')
+assert.equal(pkg.exports['./client'], './client.js')
+assert.ok(pkg.engines.dsh, 'declare verified host releases')
+for (const hook of ['prepare', 'preinstall', 'install', 'postinstall', 'prepack']) {
+  assert.ok(!pkg.scripts[hook], `installation must not require a lifecycle script: ${hook}`)
+}
+for (const [name, entry] of Object.entries(lock.packages)) {
+  assert.ok(!entry.link && !name.startsWith('../'), `local lock entry: ${name}`)
+  if (entry.resolved) assert.match(entry.resolved, /^https:\/\//, `nonportable dependency: ${name}`)
+}
+
+// Prefetch must register the factory without reading DOM, storage or media.
+const registrations = []
+vm.runInNewContext(read('client.js'), { window: { __ModuleLoader__: { load: row => registrations.push(row) } } })
+assert.equal(registrations.length, 1)
+assert.equal(registrations[0].id, pkg.name)
+assert.equal(typeof registrations[0].factory, 'function')
+
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+const [archive] = JSON.parse(execFileSync(npm, ['pack', '--dry-run', '--ignore-scripts', '--json'], { cwd: root, encoding: 'utf8' }))
+const expected = ['package.json', 'index.js', 'client.js', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/COMPATIBILITY.md', 'docs/verification/0.7.2.json', 'docs/verification/0.7.3.json']
+assert.deepEqual(archive.files.map(file => file.path).sort(), expected.sort(), 'unexpected publication files')
+for (const { path: name } of archive.files) {
+  const text = read(name)
+  assert.ok(!/\/Users\/|[A-Z]:\\Users\\|file:\/|link:\/|\.dsh\/profiles\/desktop/.test(text), `local path in ${name}`)
+  assert.ok(!/\bgh[pousr]_[A-Za-z0-9_]{30,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(text), `credential marker in ${name}`)
+}
+assert.ok(read('THIRD_PARTY_NOTICES.md').includes('Copyright (c) 2026 Asheep233'))
+console.log(`Package verified: ${archive.files.length} files, ${archive.size} compressed bytes; inert factory registration; portable lockfile.`)

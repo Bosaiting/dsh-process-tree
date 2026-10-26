@@ -1,0 +1,232 @@
+{
+  "date": "2026-10-26",
+  "pluginVersion": "0.7.3",
+  "change": "Default and invalid-style fallback use classic; explicit saved choices remain unchanged.",
+  "unitTests": {
+    "passed": 12,
+    "scope": "Fresh/missing/invalid style defaults, saved choices and values, per-style fallback, existing geometry helpers."
+  },
+  "browserTests": {
+    "passed": 10,
+    "runtime": "Cached Chromium headless shell build 1234",
+    "mode": "Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.",
+    "cases": [
+      {
+        "name": "same-size text, quiet decoration and incremental state",
+        "pass": true,
+        "samples": {
+          "text": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "quiet": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "state": {
+            "stats": {
+              "readUpdate": 1,
+              "commitUpdate": 1
+            },
+            "rectReads": 0
+          }
+        }
+      },
+      {
+        "name": "quiet fast path, bounded paint and style switches",
+        "pass": true,
+        "initial": {
+          "dots": 28,
+          "halos": 0,
+          "materials": 0,
+          "edges": 28,
+          "strokes": 28,
+          "outlineCalls": 0,
+          "pathChars": 1462
+        }
+      },
+      {
+        "name": "row-size changes with unchanged group size, font, leading and zoom",
+        "pass": true,
+        "before": {
+          "height": 388,
+          "y": 138
+        },
+        "after": {
+          "height": 388,
+          "y": 158
+        }
+      },
+      {
+        "name": "outer and capped inner scrolling preserve visible nodes",
+        "pass": true,
+        "records": [
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 20,
+            "dots": 28,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.25,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.6,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 1,
+            "visible": 19,
+            "dots": 27,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 20,
+            "dots": 28,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.25,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.6,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 1,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 9,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          }
+        ]
+      },
+      {
+        "name": "growth, reduced motion and fold restoration",
+        "pass": true,
+        "running": 1
+      },
+      {
+        "name": "far history sleeps without changing height and restores without growth",
+        "pass": true,
+        "before": 415,
+        "away": {
+          "awake": 6,
+          "sleeping": 18,
+          "firstSleeping": true,
+          "height": 415,
+          "retained": false
+        }
+      },
+      {
+        "name": "new turns do not rescan or remeasure folded historical groups",
+        "pass": true,
+        "work": {
+          "fullScans": 0,
+          "oldRects": 0
+        }
+      },
+      {
+        "name": "crown ignores unrelated mutations and settings coalesce per frame",
+        "pass": true,
+        "unrelated": {
+          "rectReads": 0
+        },
+        "settings": {
+          "applySettings": 1,
+          "paintCrown": 1,
+          "syncCrownLibraries": 1,
+          "positionCrowns": 1,
+          "readUpdate": 1,
+          "buildModel": 1,
+          "branchBody": 11,
+          "commitUpdate": 1
+        }
+      },
+      {
+        "name": "classic growth masks finish and offscreen calls stay static",
+        "pass": true
+      },
+      {
+        "name": "real React settings, shadow preview growth and shared-resource teardown",
+        "pass": true,
+        "remaining": {
+          "views": 1,
+          "rows": 16,
+          "clips": 1,
+          "crowns": 1,
+          "libraries": 1,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        },
+        "final": {
+          "views": 0,
+          "rows": 0,
+          "clips": 0,
+          "crowns": 0,
+          "libraries": 0,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        }
+      }
+    ]
+  },
+  "nativeDesktopAcceptance": "Not repeated for 0.7.3. Prior 0.7.2 acceptance and hash retained separately.",
+  "published": false,
+  "clientSha256": "2f526f0c76311bd40e9f6ec39a5008ff83014ff332250eaa8a032fe25b2d46a2",
+  "otherBrowserAttempt": {
+    "runtime": "System Google Chrome 155.0.8059.86",
+    "passed": 8,
+    "failed": [
+      "growth, reduced motion and fold restoration",
+      "classic growth masks finish and offscreen calls stay static"
+    ],
+    "note": "Two in-progress animation assertions failed; a focused repeat also failed. Both passed with the same source under cached Chromium headless shell. Cross-runtime animation timing remains a test limitation; failures are retained."
+  },
+  "packageChecks": "passed; 11 files; previous version evidence retained",
+  "desktopInstalledVersion": "0.7.2; unchanged by this source-only default update"
+}

@@ -1,0 +1,436 @@
+{
+  "date": "2026-10-26",
+  "pluginVersion": "0.7.2",
+  "hostVersion": "0.2.1-rc.2",
+  "platform": "macOS arm64",
+  "stockThemeVersion": "0.19.1",
+  "stockThemeClientSha256": "6146bdc06622058c6cc2ecdfac68f843c276cfa6fb85bc8d34d923a354f2d7c6",
+  "clientSha256": "f5c03b34fe98dbbc320364fc2d555331f4a85ea4c949585e123bc7c39c3b0f6c",
+  "unitTests": {
+    "passed": 12
+  },
+  "browser": {
+    "mode": "Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.",
+    "cases": [
+      {
+        "name": "same-size text, quiet decoration and incremental state",
+        "pass": true,
+        "samples": {
+          "text": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "quiet": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "state": {
+            "stats": {
+              "readUpdate": 1,
+              "commitUpdate": 1
+            },
+            "rectReads": 0
+          }
+        }
+      },
+      {
+        "name": "quiet fast path, bounded paint and style switches",
+        "pass": true,
+        "initial": {
+          "dots": 28,
+          "halos": 0,
+          "materials": 0,
+          "edges": 28,
+          "strokes": 28,
+          "outlineCalls": 0,
+          "pathChars": 1462
+        }
+      },
+      {
+        "name": "row-size changes with unchanged group size, font, leading and zoom",
+        "pass": true,
+        "before": {
+          "height": 388,
+          "y": 138
+        },
+        "after": {
+          "height": 388,
+          "y": 158
+        }
+      },
+      {
+        "name": "outer and capped inner scrolling preserve visible nodes",
+        "pass": true,
+        "records": [
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 20,
+            "dots": 28,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.25,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.6,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 1,
+            "visible": 19,
+            "dots": 27,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 20,
+            "dots": 28,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.25,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.6,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 1,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 9,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          }
+        ]
+      },
+      {
+        "name": "growth, reduced motion and fold restoration",
+        "pass": true,
+        "running": 1
+      },
+      {
+        "name": "far history sleeps without changing height and restores without growth",
+        "pass": true,
+        "before": 415,
+        "away": {
+          "awake": 6,
+          "sleeping": 18,
+          "firstSleeping": true,
+          "height": 415,
+          "retained": false
+        }
+      },
+      {
+        "name": "new turns do not rescan or remeasure folded historical groups",
+        "pass": true,
+        "work": {
+          "fullScans": 0,
+          "oldRects": 0
+        }
+      },
+      {
+        "name": "crown ignores unrelated mutations and settings coalesce per frame",
+        "pass": true,
+        "unrelated": {
+          "rectReads": 0
+        },
+        "settings": {
+          "applySettings": 1,
+          "paintCrown": 1,
+          "syncCrownLibraries": 1,
+          "positionCrowns": 1,
+          "readUpdate": 1,
+          "buildModel": 1,
+          "branchBody": 11,
+          "commitUpdate": 1
+        }
+      },
+      {
+        "name": "classic growth masks finish and offscreen calls stay static",
+        "pass": true
+      },
+      {
+        "name": "real React settings, shadow preview growth and shared-resource teardown",
+        "pass": true,
+        "remaining": {
+          "views": 1,
+          "rows": 16,
+          "clips": 1,
+          "crowns": 1,
+          "libraries": 1,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        },
+        "final": {
+          "views": 0,
+          "rows": 0,
+          "clips": 0,
+          "crowns": 0,
+          "libraries": 0,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        }
+      }
+    ]
+  },
+  "plain": {
+    "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+    "checks": [
+      {
+        "name": "native transcript and anchors",
+        "pass": true,
+        "boot": [
+          "dsh-process-tree"
+        ],
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "native scrolling viewport",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "native process fold and restore",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "settings style botanical",
+        "pass": true,
+        "crowns": 2
+      },
+      {
+        "name": "settings style classic",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "settings style quiet",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "reduced motion",
+        "pass": true
+      },
+      {
+        "name": "chat remains aligned after settings",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "dark theme",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "light theme",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "settled overlay writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "live host disable cleans DOM and root variables",
+        "pass": true
+      },
+      {
+        "name": "live host re-enable creates one instance",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      }
+    ],
+    "errors": []
+  },
+  "stockTheme": {
+    "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+    "checks": [
+      {
+        "name": "native transcript and anchors",
+        "pass": true,
+        "boot": [
+          "dsh-process-tree",
+          "dsh-claude-style"
+        ],
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "native scrolling viewport",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "native process fold and restore",
+        "pass": true,
+        "measured": 8,
+        "errors": [],
+        "dots": 9
+      },
+      {
+        "name": "settings style botanical",
+        "pass": true,
+        "crowns": 2
+      },
+      {
+        "name": "settings style classic",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "settings style quiet",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "reduced motion",
+        "pass": true
+      },
+      {
+        "name": "chat remains aligned after settings",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "dark theme",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "light theme",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      },
+      {
+        "name": "settled overlay writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "live host disable cleans DOM and root variables",
+        "pass": true
+      },
+      {
+        "name": "live host re-enable creates one instance",
+        "pass": true,
+        "measured": 12,
+        "errors": [],
+        "dots": 12
+      }
+    ],
+    "errors": []
+  },
+  "nativeDesktopAcceptance": {
+    "status": "functional-and-visual-passed-with-limits",
+    "date": "2026-10-26",
+    "platform": "macOS arm64",
+    "hostVersion": "0.2.1-rc.2",
+    "clientSha256": "f5c03b34fe98dbbc320364fc2d555331f4a85ea4c949585e123bc7c39c3b0f6c",
+    "method": "Actual Electron window through native accessibility and screenshots; no injected measurement JavaScript.",
+    "profile": "Existing user profile with locally customized Claude Style 0.19.1 and other UI plugins; separate from fresh stock-theme Web checks.",
+    "checks": [
+      "Exact packed candidate installed through the Desktop-bundled CLI and loaded after native restart",
+      "Existing completed nested tool calls and reasoning display tree connectors",
+      "Quiet, botanical and classic styles switch in native settings with live preview",
+      "Botanical crown and connectors render in light and dark appearance",
+      "Content font changes from 14 to 16 retain visually aligned row anchors",
+      "Inner process scrolling clips crown normally and restores full crown at the top",
+      "Process fold and restore, plus tool-output expansion and collapse, update visible geometry",
+      "Live profile disable removes visible crown, connectors and extra indentation; re-enable restores them",
+      "Switching to an existing longer conversation and scrolling history remains operable",
+      "Local search accepts text, shows the matching conversation and clears successfully",
+      "All 32 original process-tree preferences persist identically after restart",
+      "Original appearance, profile patch, conversation, sidebar and empty composer restored; DevTools closed"
+    ],
+    "limits": [
+      "No submitted messages or new model/tool runs; sustained live generation and running/error transitions not accepted by this run",
+      "No native FPS, input-latency, CPU/memory growth, observer-count or subpixel geometry measurements",
+      "Local search input tested; composer typing with prediction requests was not tested",
+      "Existing experimental-inspector connection retries and theme font failures prevent a zero-console-error claim",
+      "No Windows, Linux Desktop, clean native Desktop profile or other host-version acceptance"
+    ]
+  },
+  "remoteCI": "not run",
+  "gitSourceInstall": {
+    "transport": "local Git URL",
+    "freshProfile": true,
+    "passed": true,
+    "installationHooks": 0,
+    "buildAllowanceRequired": false
+  },
+  "cleanCheckout": {
+    "npmCi": "passed",
+    "unitTests": 12,
+    "browserTests": 10,
+    "packageChecks": "passed"
+  }
+}

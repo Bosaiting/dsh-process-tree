@@ -1,0 +1,13 @@
+node_modules/
+*.tgz
+.DS_Store
+.env
+.env.*
+.npmrc
+.planning/
+.release-checks/
+test/browser-results/
+test/host-results/
+playwright-report/
+test-results/
+*.log

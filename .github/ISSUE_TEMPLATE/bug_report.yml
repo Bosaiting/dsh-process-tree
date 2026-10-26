@@ -1,0 +1,22 @@
+name: Bug report / 问题反馈
+description: Report a reproducible rendering, installation or compatibility issue.
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: DSH and plugin versions / 版本
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS, browser or Desktop, theme and other UI plugins / 运行环境
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps and expected behavior / 复现步骤与预期
+      description: Use synthetic examples. Remove private chat text, paths, tokens and account information from any attachments.
+    validations:
+      required: true
