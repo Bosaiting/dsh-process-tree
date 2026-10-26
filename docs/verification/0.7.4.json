@@ -221,5 +221,13 @@
   "readmePreviews": "Actual renderer, same synthetic seven-node transcript, 28 px indent.",
   "clientSha256": "074ad4d5a2bea30294ad953b4f8c8395907fe77a45b4610d8f26748d27b3e262",
   "packageChecks": "passed; 15 files including all three README images",
-  "remoteCI": "pending at preparation time"
+  "remoteCI": {
+    "commit": "3e39ccc3e3c48bacca8de8d404634898778114f6",
+    "conclusion": "success",
+    "url": "https://github.com/Bosaiting/dsh-process-tree/actions/runs/40312375648",
+    "unitPassed": 12,
+    "browserPassed": 10,
+    "packageFiles": 15,
+    "environment": "Pinned official Playwright 1.63.0 Noble image; Node 24; Ubuntu 24.04 runner"
+  }
 }

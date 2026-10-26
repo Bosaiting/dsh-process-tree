@@ -1,6 +1,6 @@
 # Compatibility / 兼容性
 
-Release candidate: 0.7.4. Host version declarations are limited to verified releases.
+Current version: 0.7.4. Host version declarations are limited to verified releases.
 
 ## Test levels / 验证层次
 

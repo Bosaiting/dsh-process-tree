@@ -32,13 +32,13 @@
 
 当前明确支持 **DSH 0.2.1-rc.2**；其他版本尚未验证。
 
-从 GitHub 安装当前主分支：
+从 GitHub 安装固定版本：
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#main"
+dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.7.4"
 ```
 
-需要固定版本时，将 `main` 换为完整提交 SHA。首次公开上传包含源码；当前尚未发布 GitHub Release。拿到打包文件后，也可以本地安装：
+也可以从 [v0.7.4 Release](https://github.com/Bosaiting/dsh-process-tree/releases/tag/v0.7.4) 下载 `dsh-process-tree-0.7.4.tgz`，然后本地安装：
 
 ```sh
 dsh plugin --profile web add ./dsh-process-tree-0.7.4.tgz

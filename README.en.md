@@ -32,13 +32,13 @@ Original canopy artwork and thicker wood roots (5.6 px line-width preset) connec
 
 The currently verified host is **DSH 0.2.1-rc.2**. Other versions are unverified.
 
-Install the current main branch from GitHub:
+Install the pinned version from GitHub:
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#main"
+dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.7.4"
 ```
 
-For a pinned version, replace `main` with the full commit SHA. The initial public upload contains source; no GitHub Release has been published yet. A separately obtained package archive can also be installed locally:
+Alternatively, download `dsh-process-tree-0.7.4.tgz` from the [v0.7.4 Release](https://github.com/Bosaiting/dsh-process-tree/releases/tag/v0.7.4) and install it locally:
 
 ```sh
 dsh plugin --profile web add ./dsh-process-tree-0.7.4.tgz

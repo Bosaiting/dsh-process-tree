@@ -5,6 +5,7 @@
 - Increase the botanical root preset from 2.8 px to 5.6 px, retaining taper and texture.
 - Keep classic and quiet preset widths unchanged; preserve explicitly saved custom widths.
 - Refresh all three README previews using the actual renderer.
+- Run CI in a pinned Playwright image to avoid slow Ubuntu dependency installation.
 
 ## 0.7.3
 
