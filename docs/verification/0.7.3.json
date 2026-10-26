@@ -216,7 +216,6 @@
     ]
   },
   "nativeDesktopAcceptance": "Not repeated for 0.7.3. Prior 0.7.2 acceptance and hash retained separately.",
-  "published": false,
   "clientSha256": "2f526f0c76311bd40e9f6ec39a5008ff83014ff332250eaa8a032fe25b2d46a2",
   "otherBrowserAttempt": {
     "runtime": "System Google Chrome 155.0.8059.86",
@@ -228,5 +227,42 @@
     "note": "Two in-progress animation assertions failed; a focused repeat also failed. Both passed with the same source under cached Chromium headless shell. Cross-runtime animation timing remains a test limitation; failures are retained."
   },
   "packageChecks": "passed; 11 files; previous version evidence retained",
-  "desktopInstalledVersion": "0.7.2; unchanged by this source-only default update"
+  "desktopInstalledVersion": "0.7.2; unchanged by this source-only default update",
+  "sourcePublication": {
+    "repository": "https://github.com/Bosaiting/dsh-process-tree",
+    "initialCommit": "c82810b4c9e0ac80268a9a4825d10bf1e179bcca",
+    "public": true,
+    "files": 26,
+    "githubReleasePublished": false
+  },
+  "githubSourceInstall": {
+    "commit": "c82810b4c9e0ac80268a9a4825d10bf1e179bcca",
+    "freshHome": true,
+    "freshProfile": "web",
+    "installationScripts": "disabled",
+    "installedVersion": "0.7.3",
+    "runtimeAndManifestsMatchSource": true,
+    "peerDependencyWarnings": true,
+    "hostRuntimeStarted": false
+  },
+  "publicClone": {
+    "trackedFilesMatchSource": 26,
+    "npmCi": "passed",
+    "unitPassed": 12,
+    "packageChecks": "passed"
+  },
+  "remoteCI": {
+    "commit": "c82810b4c9e0ac80268a9a4825d10bf1e179bcca",
+    "platform": "ubuntu-latest",
+    "node": "24",
+    "result": "success",
+    "url": "https://github.com/Bosaiting/dsh-process-tree/actions/runs/40304015658",
+    "steps": [
+      "npm ci",
+      "npm test",
+      "playwright install --with-deps chromium",
+      "npm run test:browser",
+      "npm run check:package"
+    ]
+  }
 }

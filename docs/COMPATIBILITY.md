@@ -21,6 +21,16 @@ are retained in the version-specific record. Checks are recorded in
 below applies to the recorded **0.7.2 runtime hash**; it is not a claim that
 0.7.3 was reinstalled or accepted in a clean native profile.
 
+The first public commit `c82810b4c9e0ac80268a9a4825d10bf1e179bcca`
+was cloned from GitHub and installed from its GitHub URL into a separate empty
+DSH home and Web profile with scripts disabled. Installed runtime and manifests
+matched the published source. The installer reported peer-dependency warnings;
+this installation check did not start another host or run a model. The public
+clone passed `npm ci`, 12 unit checks and package checks. The
+[GitHub Actions run](https://github.com/Bosaiting/dsh-process-tree/actions/runs/40304015658)
+on Ubuntu with Node 24 passed dependency installation, unit, browser and
+package checks. This is Linux browser CI, separate from Linux Desktop acceptance.
+
 ## 0.7.2 acceptance / 上一版本验收
 
 Verified on 2026-10-26, macOS arm64, Chromium and DSH 0.2.1-rc.2:
@@ -60,7 +70,7 @@ These completed synthetic turns establish functional coexistence; they do not
 measure long-running model streams, native Desktop frame rates or all possible
 community-plugin combinations. The public host-version declaration currently
 admits only the verified DSH release. The GitHub workflow is configured for
-Linux browser checks; a remote CI result has not yet been obtained.
+Linux browser checks; the later 0.7.3 public-CI result is recorded above.
 
 ## Native macOS Desktop / 原生桌面验收
 
@@ -135,5 +145,5 @@ Other plugins changing the same row spacing, root CSS variables or process conne
 
 Chromium is the verified browser. Firefox and Safari are unverified. The local
 Git check exercises source installation without a hosted repository. The public
-repository is https://github.com/Bosaiting/dsh-process-tree; hosted-clone and
-remote-CI results must be verified separately after the initial upload.
+repository is https://github.com/Bosaiting/dsh-process-tree; the 0.7.3 hosted
+clone, GitHub source install and remote-CI results are recorded separately above.
