@@ -32,6 +32,22 @@ Original canopy artwork and thicker wood roots (5.6 px line-width preset) connec
 
 The currently verified host is **DSH 0.2.1-rc.2**. Other versions are unverified.
 
+### Install through Discover
+
+1. Open **Plugins → Experimental plugins** and enable **Custom plugin markets** (called **Custom plugin indexes** in some builds).
+2. Open **Discover → Add index source**, or use **Manage index sources…** in the market menu when a source already exists.
+3. Add the full URL below and select **Process Tree by Bosaiting**.
+
+```text
+https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
+```
+
+Search for `dsh-process-tree` or **Process Tree**. Check that the installation targets **`dsh-process-tree@0.7.4`** from **`https://registry.npmjs.org`**, confirm, and restart when prompted. An installed card opens the existing plugin. Sources belong to the current profile and must be added by each user.
+
+This is an independent community index maintained by the project owner. See the [Discover guide](docs/DISCOVER.md) for troubleshooting and maintenance.
+
+### Command-line or offline installation
+
 Install the pinned version from [npm](https://www.npmjs.com/package/dsh-process-tree):
 
 ```sh

@@ -1,0 +1,73 @@
+{
+  "format": 1,
+  "title": {
+    "en": "Process Tree by Bosaiting",
+    "zh": "Bosaiting 过程树"
+  },
+  "description": {
+    "en": "The community Discover index for dsh-process-tree.",
+    "zh": "dsh-process-tree 的独立社区索引。"
+  },
+  "metadata": {
+    "categories": {
+      "appearance": {
+        "title": {
+          "en": "Appearance",
+          "zh": "界面外观"
+        }
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-process-tree",
+      "title": {
+        "en": "Process Tree",
+        "zh": "过程树"
+      },
+      "description": {
+        "en": "Classic flowing process connections, quiet lines and botanical artwork for the DSH Web and Desktop interfaces.",
+        "zh": "为 DSH Web 和桌面版添加经典曲线、安静线条和植物树冠三种过程树风格。"
+      },
+      "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiNmNGVlZTQiLz48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM4MDZiNTIiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAgMTJ2NDBNMjAgMjBjMCAxMiAxMiAxMiAyNCAxMk0yMCAzNGMwIDEyIDEyIDEyIDI0IDEyIi8+PC9nPjxnIGZpbGw9IiM4MDZiNTIiPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTIiIHI9IjQiLz48Y2lyY2xlIGN4PSI0NSIgY3k9IjMyIiByPSI0Ii8+PGNpcmNsZSBjeD0iNDUiIGN5PSI0NiIgcj0iNCIvPjwvZz48L3N2Zz4K",
+      "author": "Bosaiting",
+      "homepage": "https://github.com/Bosaiting/dsh-process-tree#readme",
+      "repository": {
+        "url": "https://github.com/Bosaiting/dsh-process-tree"
+      },
+      "metadata": {
+        "category": "appearance",
+        "keywords": [
+          "dsh-plugin",
+          "deepseek-harness",
+          "process-tree",
+          "svg",
+          "web-ui",
+          "classic",
+          "quiet",
+          "botanical",
+          "过程树",
+          "经典曲线",
+          "安静线条",
+          "植物树冠"
+        ]
+      },
+      "dist-tags": {
+        "latest": "0.7.4"
+      },
+      "versions": [
+        {
+          "version": "0.7.4",
+          "publishTimestamp": 1793014739,
+          "source": {
+            "type": "npm",
+            "registry": "https://registry.npmjs.org"
+          },
+          "engines": {
+            "dsh": "0.2.1-rc.2"
+          }
+        }
+      ]
+    }
+  ]
+}

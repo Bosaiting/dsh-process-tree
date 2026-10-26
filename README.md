@@ -32,7 +32,23 @@
 
 当前明确支持 **DSH 0.2.1-rc.2**；其他版本尚未验证。
 
-推荐从 [npm](https://www.npmjs.com/package/dsh-process-tree) 安装固定版本：
+### 通过 Discover 安装
+
+1. 打开 **插件 → 实验性插件**，启用 **自定义插件市场 / Custom plugin markets**（部分版本显示为 Custom plugin indexes）。
+2. 进入 **发现 / Discover**，选择 **添加索引源 / Add index source**；已有索引时，从市场菜单进入 **管理索引源…**。
+3. 粘贴下面的完整地址，添加后选择 **Bosaiting 过程树**。
+
+```text
+https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
+```
+
+搜索 `dsh-process-tree` 或“过程树”，核对安装目标为 **`dsh-process-tree@0.7.4`**、来源为 **`https://registry.npmjs.org`**，确认安装并按提示重启。已安装时可直接打开现有插件。索引源按 profile 保存，其他用户需要各自添加。
+
+这是项目维护者提供的独立社区索引。详细操作、加载排查和版本维护见 [Discover 安装说明](docs/DISCOVER.md)。
+
+### 命令行或离线安装
+
+从 [npm](https://www.npmjs.com/package/dsh-process-tree) 安装固定版本：
 
 ```sh
 dsh plugin --profile web add dsh-process-tree@0.7.4
