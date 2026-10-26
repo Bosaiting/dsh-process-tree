@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.4
+
+- Increase the botanical root preset from 2.8 px to 5.6 px, retaining taper and texture.
+- Keep classic and quiet preset widths unchanged; preserve explicitly saved custom widths.
+- Refresh all three README previews using the actual renderer.
+
 ## 0.7.3
 
 - Make classic curves the default for fresh installations and settings without a valid style.

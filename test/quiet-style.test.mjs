@@ -71,9 +71,12 @@ test('fresh defaults are classic and explicit saved styles keep their values', (
   }
 })
 
-test('the botanical preset restores the original 0.5.x look', () => {
+test('botanical roots are thicker while classic and quiet keep their widths', () => {
   const preset = api.STYLE_PRESETS.botanical
-  assert.equal(preset.lineWidth, 2.8)
+  assert.equal(preset.lineWidth, 5.6)
+  assert.equal(api.STYLE_PRESETS.classic.lineWidth, 2.8)
+  assert.equal(api.STYLE_PRESETS.quiet.lineWidth, 1.5)
+  assert.equal(api.normalize({ treeStyle: 'botanical' }).lineWidth, 5.6)
   assert.equal(preset.thicknessDecay, 0.6)
   assert.equal(preset.rootFusion, 0.7)
   assert.equal(preset.vineAmplitude, 29 / 6)

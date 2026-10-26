@@ -66,7 +66,7 @@ window.__ModuleLoader__.load({
       dotSize: QUIET_DOT_SIZE,
       dotFollowWidth: false,
     }),
-    botanical: ORGANIC_PRESET,
+    botanical: Object.freeze({ ...ORGANIC_PRESET, lineWidth: 5.6 }),
     classic: ORGANIC_PRESET,
   })
   const DEFAULTS = Object.freeze({

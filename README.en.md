@@ -24,7 +24,7 @@ Uniform thin strokes, rounded corners and smaller dots.
 
 ### Botanical
 
-Original canopy artwork and wood roots connect the calls into a tree.
+Original canopy artwork and thicker wood roots (5.6 px line-width preset) connect the calls into a tree.
 
 ![Botanical style with a full canopy, wood trunk and nested calls](docs/images/botanical.png)
 
@@ -41,7 +41,7 @@ dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#main"
 For a pinned version, replace `main` with the full commit SHA. The initial public upload contains source; no GitHub Release has been published yet. A separately obtained package archive can also be installed locally:
 
 ```sh
-dsh plugin --profile web add ./dsh-process-tree-0.7.3.tgz
+dsh plugin --profile web add ./dsh-process-tree-0.7.4.tgz
 ```
 
 Restart the corresponding DSH instance. Use Desktop's plugin manager for its managed configuration. The Desktop-bundled CLI also handled its `desktop` profile in the verified macOS build; a separately installed CLI may differ. No install-time build is required. Claude Style is optional. Disable overlapping indentation or process-connector plugins, including `dsh-tool-indent`, to avoid competing spacing and CSS variables.

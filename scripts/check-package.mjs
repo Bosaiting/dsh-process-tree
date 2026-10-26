@@ -31,7 +31,7 @@ assert.equal(typeof registrations[0].factory, 'function')
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const [archive] = JSON.parse(execFileSync(npm, ['pack', '--dry-run', '--ignore-scripts', '--json'], { cwd: root, encoding: 'utf8' }))
-const expected = ['package.json', 'index.js', 'client.js', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/COMPATIBILITY.md', 'docs/verification/0.7.2.json', 'docs/verification/0.7.3.json', 'docs/images/classic.png', 'docs/images/quiet.png', 'docs/images/botanical.png']
+const expected = ['package.json', 'index.js', 'client.js', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/COMPATIBILITY.md', 'docs/verification/0.7.2.json', 'docs/verification/0.7.3.json', 'docs/verification/0.7.4.json', 'docs/images/classic.png', 'docs/images/quiet.png', 'docs/images/botanical.png']
 assert.deepEqual(archive.files.map(file => file.path).sort(), expected.sort(), 'unexpected publication files')
 for (const { path: name } of archive.files) {
   if (name.endsWith('.png')) {

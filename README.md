@@ -24,7 +24,7 @@
 
 ### 植物手稿
 
-原创树冠与木质根系，将调用层级连接成一棵树。
+原创树冠与更粗的木质根系（5.6 px 线宽预设），将调用层级连接成一棵树。
 
 ![植物手稿模式：完整树冠、木质主干及嵌套调用](docs/images/botanical.png)
 
@@ -41,7 +41,7 @@ dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#main"
 需要固定版本时，将 `main` 换为完整提交 SHA。首次公开上传包含源码；当前尚未发布 GitHub Release。拿到打包文件后，也可以本地安装：
 
 ```sh
-dsh plugin --profile web add ./dsh-process-tree-0.7.3.tgz
+dsh plugin --profile web add ./dsh-process-tree-0.7.4.tgz
 ```
 
 安装后重新启动对应的 DSH 实例。桌面版通过其插件管理入口安装到桌面配置；已验证的 macOS 版本也可由桌面程序自带的 CLI 管理 `desktop` profile，单独安装的 CLI 行为可能不同。不要直接修改桌面安装目录。该插件不需要安装时构建或构建脚本许可。

@@ -1,6 +1,6 @@
 # Compatibility / 兼容性
 
-Release candidate: 0.7.3. Host version declarations are limited to verified releases.
+Release candidate: 0.7.4. Host version declarations are limited to verified releases.
 
 ## Test levels / 验证层次
 
@@ -8,6 +8,15 @@ Release candidate: 0.7.3. Host version declarations are limited to verified rele
 - Browser: real Chromium, ResizeObserver, IntersectionObserver, SVG and React on synthetic host-shaped markup. This verifies renderer behavior and cleanup, without model requests or private data.
 - Host: exact packed plugin loaded by a separate real DSH Web host with a new DSH_HOME, with and without an unchanged upstream theme. Real-host settings and activation checks are recorded separately from synthetic transcript checks.
 - Native Desktop: separate acceptance; a Web result does not establish Desktop scrolling performance.
+
+## 0.7.4 botanical roots / 植物根系加粗
+
+The botanical preset now uses a 5.6 px line width, up from 2.8 px. Classic
+remains the default with its existing width, and quiet is unchanged. Explicit
+saved widths are preserved; selecting botanical reapplies its thicker preset.
+README previews were regenerated from the actual renderer. Version-specific
+checks and remaining limits are in [0.7.4 verification](verification/0.7.4.json).
+Native Desktop acceptance was not repeated for this preset-only update.
 
 ## 0.7.3 default-style update / 默认风格更新
 
@@ -110,7 +119,7 @@ npm pack
 mkdir -p .release-checks/host
 export DSH_HOME="$PWD/.release-checks/host/home"
 dsh --profile web --dump-config > .release-checks/host/config.txt
-dsh plugin --profile web add "$PWD/dsh-process-tree-0.7.3.tgz"
+dsh plugin --profile web add "$PWD/dsh-process-tree-0.7.4.tgz"
 # For the second environment, use a different empty home and add the stock theme:
 # dsh plugin --profile web add dsh-claude-style@0.19.1
 dsh --profile web --patch ./test/fixtures/cordis.patch.yml \

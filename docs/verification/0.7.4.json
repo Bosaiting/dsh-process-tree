@@ -1,0 +1,225 @@
+{
+  "date": "2026-10-26",
+  "pluginVersion": "0.7.4",
+  "change": "Botanical preset line width 2.8 to 5.6 px; classic and quiet unchanged; saved widths preserved.",
+  "unitTests": {
+    "passed": 12
+  },
+  "browserTests": {
+    "runtime": "Chromium headless shell build 1234",
+    "passed": 10,
+    "mode": "Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.",
+    "cases": [
+      {
+        "name": "same-size text, quiet decoration and incremental state",
+        "pass": true,
+        "samples": {
+          "text": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "quiet": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "state": {
+            "stats": {
+              "readUpdate": 1,
+              "commitUpdate": 1
+            },
+            "rectReads": 0
+          }
+        }
+      },
+      {
+        "name": "quiet fast path, bounded paint and style switches",
+        "pass": true,
+        "initial": {
+          "dots": 28,
+          "halos": 0,
+          "materials": 0,
+          "edges": 28,
+          "strokes": 28,
+          "outlineCalls": 0,
+          "pathChars": 1462
+        }
+      },
+      {
+        "name": "row-size changes with unchanged group size, font, leading and zoom",
+        "pass": true,
+        "before": {
+          "height": 388,
+          "y": 138
+        },
+        "after": {
+          "height": 388,
+          "y": 158
+        }
+      },
+      {
+        "name": "outer and capped inner scrolling preserve visible nodes",
+        "pass": true,
+        "records": [
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 20,
+            "dots": 28,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.25,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.6,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 1,
+            "visible": 19,
+            "dots": 27,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 20,
+            "dots": 28,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.25,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.6,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 1,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 9,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          }
+        ]
+      },
+      {
+        "name": "growth, reduced motion and fold restoration",
+        "pass": true,
+        "running": 1
+      },
+      {
+        "name": "far history sleeps without changing height and restores without growth",
+        "pass": true,
+        "before": 415,
+        "away": {
+          "awake": 6,
+          "sleeping": 18,
+          "firstSleeping": true,
+          "height": 415,
+          "retained": false
+        }
+      },
+      {
+        "name": "new turns do not rescan or remeasure folded historical groups",
+        "pass": true,
+        "work": {
+          "fullScans": 0,
+          "oldRects": 0
+        }
+      },
+      {
+        "name": "crown ignores unrelated mutations and settings coalesce per frame",
+        "pass": true,
+        "unrelated": {
+          "rectReads": 0
+        },
+        "settings": {
+          "applySettings": 1,
+          "paintCrown": 1,
+          "syncCrownLibraries": 1,
+          "positionCrowns": 2,
+          "readUpdate": 1,
+          "collect": 1,
+          "buildModel": 1,
+          "geometryOf": 11,
+          "branchBody": 11,
+          "commitUpdate": 1
+        }
+      },
+      {
+        "name": "classic growth masks finish and offscreen calls stay static",
+        "pass": true
+      },
+      {
+        "name": "real React settings, shadow preview growth and shared-resource teardown",
+        "pass": true,
+        "remaining": {
+          "views": 1,
+          "rows": 16,
+          "clips": 1,
+          "crowns": 1,
+          "libraries": 1,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        },
+        "final": {
+          "views": 0,
+          "rows": 0,
+          "clips": 0,
+          "crowns": 0,
+          "libraries": 0,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        }
+      }
+    ]
+  },
+  "nativeDesktopAcceptance": "Not repeated; earlier native 0.7.2 acceptance remains separate.",
+  "desktopInstalledVersion": "0.7.2; unchanged",
+  "readmePreviews": "Actual renderer, same synthetic seven-node transcript, 28 px indent.",
+  "clientSha256": "074ad4d5a2bea30294ad953b4f8c8395907fe77a45b4610d8f26748d27b3e262",
+  "packageChecks": "passed; 15 files including all three README images",
+  "remoteCI": "pending at preparation time"
+}
