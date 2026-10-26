@@ -32,7 +32,13 @@
 
 当前明确支持 **DSH 0.2.1-rc.2**；其他版本尚未验证。
 
-从 GitHub 安装固定版本：
+推荐从 [npm](https://www.npmjs.com/package/dsh-process-tree) 安装固定版本：
+
+```sh
+dsh plugin --profile web add dsh-process-tree@0.7.4
+```
+
+也可以从 GitHub 安装固定版本：
 
 ```sh
 dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.7.4"

@@ -229,5 +229,20 @@
     "browserPassed": 10,
     "packageFiles": 15,
     "environment": "Pinned official Playwright 1.63.0 Noble image; Node 24; Ubuntu 24.04 runner"
+  },
+  "npmPublication": {
+    "version": "0.7.4",
+    "account": "bosaiting",
+    "public": true,
+    "latest": "0.7.4",
+    "url": "https://www.npmjs.com/package/dsh-process-tree/v/0.7.4",
+    "registryTarballMatchesGitHubRelease": true,
+    "archiveSha256": "0f96fce06fdf044b51a13dc89327f7024ee3bf43bbdfb9f4c1eb7e9cec10cadf",
+    "freshDshInstall": {
+      "profile": "web",
+      "hostVersion": "0.2.1-rc.2",
+      "passed": true,
+      "matchedArchiveFiles": 15
+    }
   }
 }

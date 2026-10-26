@@ -32,7 +32,13 @@ Original canopy artwork and thicker wood roots (5.6 px line-width preset) connec
 
 The currently verified host is **DSH 0.2.1-rc.2**. Other versions are unverified.
 
-Install the pinned version from GitHub:
+Install the pinned version from [npm](https://www.npmjs.com/package/dsh-process-tree):
+
+```sh
+dsh plugin --profile web add dsh-process-tree@0.7.4
+```
+
+Alternatively, install the pinned version from GitHub:
 
 ```sh
 dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.7.4"
