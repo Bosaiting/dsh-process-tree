@@ -6,6 +6,28 @@ A process tree for DeepSeek Harness: classic flowing branches by default, with o
 
 This community UI plugin targets DSH Web and the Desktop web interface. It does not render in TUI. See [compatibility and verification](docs/COMPATIBILITY.md) for tested environments and limits.
 
+## Style previews
+
+These images use the actual plugin renderer, the same synthetic transcript and a 28 px indent for comparison. They contain no private conversation data.
+
+### Classic curves (default)
+
+Flowing branches and tapered strokes give the tree a natural shape.
+
+![Classic curves with a trunk, two nested branch levels and state dots](docs/images/classic.png)
+
+### Quiet lines
+
+Uniform thin strokes, rounded corners and smaller dots.
+
+![Quiet lines with uniform strokes and rounded nested branches](docs/images/quiet.png)
+
+### Botanical
+
+Original canopy artwork and wood roots connect the calls into a tree.
+
+![Botanical style with a full canopy, wood trunk and nested calls](docs/images/botanical.png)
+
 ## Install
 
 The currently verified host is **DSH 0.2.1-rc.2**. Other versions are unverified.
@@ -56,6 +78,8 @@ npm pack
 ```
 
 Set `DSH_CHROMIUM_EXECUTABLE` to use an existing Chromium. Settings-preview tests use the pinned React dependencies by default. Optional coexistence checks accept `DSH_COMPOSER_SOURCE` and `DSH_CLAUDE_ROW_SKIP_CSS`; ordinary tests need no other plugin checkout.
+
+Regenerate the README images with `node scripts/capture-previews.mjs` after installing Chromium. The command also accepts `DSH_CHROMIUM_EXECUTABLE`.
 
 `canopy.svg` preserves the original artwork. Runtime uses the parameterized artwork embedded in `client.js`; editing the original does not automatically update that embedded form. The original is not duplicated in the install archive.
 

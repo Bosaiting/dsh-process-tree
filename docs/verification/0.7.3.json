@@ -226,7 +226,7 @@
     ],
     "note": "Two in-progress animation assertions failed; a focused repeat also failed. Both passed with the same source under cached Chromium headless shell. Cross-runtime animation timing remains a test limitation; failures are retained."
   },
-  "packageChecks": "passed; 11 files; previous version evidence retained",
+  "packageChecks": "passed; 14 files; includes three README PNG assets and prior version evidence",
   "desktopInstalledVersion": "0.7.2; unchanged by this source-only default update",
   "sourcePublication": {
     "repository": "https://github.com/Bosaiting/dsh-process-tree",
@@ -264,5 +264,17 @@
       "npm run test:browser",
       "npm run check:package"
     ]
+  },
+  "readmePreviews": {
+    "styles": [
+      "classic",
+      "quiet",
+      "botanical"
+    ],
+    "renderer": "Actual client.js renderer in an isolated synthetic transcript",
+    "indentPx": 28,
+    "nodesPerImage": 7,
+    "privateConversationData": false,
+    "runtimeChanged": false
   }
 }

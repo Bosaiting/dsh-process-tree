@@ -6,6 +6,28 @@
 
 这是社区界面插件，适用于 DSH Web 和使用同一界面的桌面版。TUI 不显示此插件。已验证环境和限制见 [兼容性记录](docs/COMPATIBILITY.md)。
 
+## 三种风格预览
+
+以下图片由插件实际渲染器生成，使用相同示例内容和 28 px 缩进，方便比较；不包含私人聊天数据。
+
+### 经典曲线（默认）
+
+流动曲线与粗细衰减，保留树枝的自然形态。
+
+![经典曲线模式：主干、两层嵌套分支和状态圆点](docs/images/classic.png)
+
+### 安静线条
+
+等宽细线、圆角分支与更小的圆点。
+
+![安静线条模式：等宽细线与圆角嵌套分支](docs/images/quiet.png)
+
+### 植物手稿
+
+原创树冠与木质根系，将调用层级连接成一棵树。
+
+![植物手稿模式：完整树冠、木质主干及嵌套调用](docs/images/botanical.png)
+
 ## 安装
 
 当前明确支持 **DSH 0.2.1-rc.2**；其他版本尚未验证。
@@ -66,6 +88,8 @@ npm pack
 ```
 
 已有 Chromium 可通过 `DSH_CHROMIUM_EXECUTABLE` 指定；浏览器测试默认使用锁定的 React 依赖，完整执行设置预览检查。与其他插件共存的额外检查可通过 `DSH_COMPOSER_SOURCE` 和 `DSH_CLAUDE_ROW_SKIP_CSS` 指定独立取得的源码，不是基础测试的前提。
+
+README 图片可在安装浏览器后运行 `node scripts/capture-previews.mjs` 重新生成，同样支持 `DSH_CHROMIUM_EXECUTABLE`。
 
 `canopy.svg` 保留原始树冠图稿；运行时使用 `client.js` 中经过参数化的内嵌图稿，修改原图不会自动更新运行文件。原图不重复放入安装包。
 

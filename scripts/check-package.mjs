@@ -31,9 +31,14 @@ assert.equal(typeof registrations[0].factory, 'function')
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const [archive] = JSON.parse(execFileSync(npm, ['pack', '--dry-run', '--ignore-scripts', '--json'], { cwd: root, encoding: 'utf8' }))
-const expected = ['package.json', 'index.js', 'client.js', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/COMPATIBILITY.md', 'docs/verification/0.7.2.json', 'docs/verification/0.7.3.json']
+const expected = ['package.json', 'index.js', 'client.js', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/COMPATIBILITY.md', 'docs/verification/0.7.2.json', 'docs/verification/0.7.3.json', 'docs/images/classic.png', 'docs/images/quiet.png', 'docs/images/botanical.png']
 assert.deepEqual(archive.files.map(file => file.path).sort(), expected.sort(), 'unexpected publication files')
 for (const { path: name } of archive.files) {
+  if (name.endsWith('.png')) {
+    const bytes = fs.readFileSync(path.join(root, name))
+    assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `invalid PNG: ${name}`)
+    continue
+  }
   const text = read(name)
   assert.ok(!/\/Users\/|[A-Z]:\\Users\\|file:\/|link:\/|\.dsh\/profiles\/desktop/.test(text), `local path in ${name}`)
   assert.ok(!/\bgh[pousr]_[A-Za-z0-9_]{30,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(text), `credential marker in ${name}`)
