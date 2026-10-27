@@ -1,6 +1,6 @@
 # Compatibility / 兼容性
 
-Current version: 0.8.0. Host version declarations are limited to verified releases.
+Current version: 0.8.1. Host version declarations are limited to verified releases.
 
 ## Test levels / 验证层次
 
@@ -8,6 +8,15 @@ Current version: 0.8.0. Host version declarations are limited to verified releas
 - Browser: real Chromium, ResizeObserver, IntersectionObserver, SVG and React on synthetic host-shaped markup. This verifies renderer behavior and cleanup, without model requests or private data.
 - Host: exact packed plugin loaded by a separate real DSH Web host with a new DSH_HOME, with and without an unchanged upstream theme. Real-host settings and activation checks are recorded separately from synthetic transcript checks.
 - Native Desktop: separate acceptance; a Web result does not establish Desktop scrolling performance.
+
+## 0.8.1 documentation update / 文档更新
+
+The 0.8.1 GitHub release refreshes README images and host-test instructions;
+the plugin runtime is unchanged from 0.8.0. The npm and Discover versions remain
+0.8.0. The 0.8.1 candidate passed 29 unit checks, 19 Chromium browser checks and
+13 real DSH Web fixture checks in an isolated profile without an additional theme.
+These checks do not establish native Desktop performance; the 0.8.0 limitations
+below still apply.
 
 ## 0.8.0 validation / 0.8.0 验证
 

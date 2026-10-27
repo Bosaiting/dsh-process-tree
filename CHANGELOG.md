@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+
+- Refresh the README screenshots with richer nested branches and remove the animated preview.
+- Update the real-host compatibility test for the current style controls and correct its package path.
+- Keep the plugin runtime unchanged from 0.8.0.
+
 ## 0.8.0
 
 - Let users choose separate running and error colors for light and dark themes.

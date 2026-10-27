@@ -65,7 +65,13 @@ dsh plugin --profile web add dsh-process-tree@0.8.0
 Alternatively, install the pinned version from GitHub:
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.0"
+dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.1"
+```
+
+You can also download `dsh-process-tree-0.8.1.tgz` from the [GitHub Release](https://github.com/Bosaiting/dsh-process-tree/releases/tag/v0.8.1) and install it locally:
+
+```sh
+dsh plugin --profile web add ./dsh-process-tree-0.8.1.tgz
 ```
 
 Alternatively, download the npm package and install it locally:
