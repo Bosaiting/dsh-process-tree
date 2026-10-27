@@ -59,7 +59,7 @@ window.__ModuleLoader__.load({
   const LEGACY_ROOT_FUSION = 0.7
   // Visual values a style switch applies; sliders stay editable afterwards.
   const ORGANIC_PRESET = Object.freeze({
-    topTransition: 14,
+    topTransition: 20,
     subTransition: 21,
     vineAmplitude: 0,
     lineWidth: 2.8,
@@ -130,7 +130,7 @@ window.__ModuleLoader__.load({
     leafTint: 'muted',
     stateMotion: true,
     motionStrength: 0.4,
-    indent: 0,
+    indent: 30,
     toolDim: 1,
     thinkDim: 1,
     leading: 0,
