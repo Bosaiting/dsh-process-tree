@@ -10,13 +10,13 @@ https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.j
 
 在 **插件 → 实验性插件** 中启用 **自定义插件市场 / Custom plugin markets**（部分版本为 Custom plugin indexes），打开 **发现 / Discover**，添加上述索引源。已有其他来源时，通过市场菜单打开 **管理索引源…** 添加，保留原有来源。
 
-选择 **Bosaiting 过程树**，搜索“过程树”或 `dsh-process-tree`。安装前核对完整包名 **dsh-process-tree**、版本 **0.7.4** 和注册表 **https://registry.npmjs.org**，确认并按提示重启。当前索引仅声明支持 **DSH 0.2.1-rc.2**，与已发布包一致。已安装卡片会打开现有插件，无须重复安装。
+选择 **Bosaiting 过程树**，搜索“过程树”或 `dsh-process-tree`。安装前核对完整包名 **dsh-process-tree**、版本 **0.8.0** 和注册表 **https://registry.npmjs.org**，确认并按提示重启。当前索引仅声明支持 **DSH 0.2.1-rc.2**，与已发布包一致。已安装卡片会打开现有插件，无须重复安装。
 
 这是维护者自托管的社区索引，添加后才会出现在当前 profile 的 Discover 中；发布索引不会自动加入其他用户的配置或其他社区目录。插件设置、数据说明和重复缩进插件的注意事项见 [README](../README.md)。
 
 ## English
 
-Enable **Custom plugin markets / Custom plugin indexes** under **Plugins → Experimental plugins**, then open **Discover** and add the index URL above. If sources already exist, use **Manage index sources…** in the market menu. Select **Process Tree by Bosaiting**, search for **Process Tree**, and verify **dsh-process-tree@0.7.4** from **https://registry.npmjs.org** before confirming. Restart when prompted. Already installed cards open the existing plugin.
+Enable **Custom plugin markets / Custom plugin indexes** under **Plugins → Experimental plugins**, then open **Discover** and add the index URL above. If sources already exist, use **Manage index sources…** in the market menu. Select **Process Tree by Bosaiting**, search for **Process Tree**, and verify **dsh-process-tree@0.8.0** from **https://registry.npmjs.org** before confirming. Restart when prompted. Already installed cards open the existing plugin.
 
 The index belongs to the current profile. Other users and profiles must add it separately. This is a publisher-maintained community index. Its declared compatibility is **DSH 0.2.1-rc.2**, matching the published package.
 

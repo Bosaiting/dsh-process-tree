@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
+
+- Let users choose separate running and error colors for light and dark themes.
+- Adjust the classic and botanical intensity preset widths while preserving saved custom widths.
+- Smooth the terminal trunk-to-branch junction and refine the botanical crown and soil.
+- Replace README previews with a high-resolution real-conversation GIF and comparisons of all three styles, themes and states.
 
 - Draw a straight trunk in classic and botanical; the old wavy default (4.83 px) migrates to 0, custom values are kept.
 - Top-level tool branches leave the trunk between rows instead of from the previous dot, so siblings no longer read as children.

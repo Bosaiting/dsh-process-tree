@@ -38,7 +38,7 @@
 
 ![同一任务中已完成、失败和运行中的节点](docs/images/process-tree-states.png)
 
-动图和状态图录自专门创建的桌面演示会话；风格与对比图使用该会话的脱敏记录，在隔离的 DSH Web 实例中回放。图片展示采集时的开发版；状态颜色可以自定义，外观也可能与已发布版本有所不同。
+动图和状态图录自专门创建的桌面演示会话；风格与对比图使用该会话的脱敏记录，在隔离的 DSH Web 实例中回放。图片按采集时的外观设置展示；状态颜色可以自定义。
 
 ## 安装
 
@@ -54,7 +54,7 @@
 https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
 ```
 
-搜索 `dsh-process-tree` 或“过程树”，核对安装目标为 **`dsh-process-tree@0.7.4`**、来源为 **`https://registry.npmjs.org`**，确认安装并按提示重启。已安装时可直接打开现有插件。索引源按 profile 保存，其他用户需要各自添加。
+搜索 `dsh-process-tree` 或“过程树”，核对安装目标为 **`dsh-process-tree@0.8.0`**、来源为 **`https://registry.npmjs.org`**，确认安装并按提示重启。已安装时可直接打开现有插件。索引源按 profile 保存，其他用户需要各自添加。
 
 这是项目维护者提供的独立社区索引。详细操作、加载排查和版本维护见 [Discover 安装说明](docs/DISCOVER.md)。
 
@@ -63,19 +63,20 @@ https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.j
 从 [npm](https://www.npmjs.com/package/dsh-process-tree) 安装固定版本：
 
 ```sh
-dsh plugin --profile web add dsh-process-tree@0.7.4
+dsh plugin --profile web add dsh-process-tree@0.8.0
 ```
 
 也可以从 GitHub 安装固定版本：
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.7.4"
+dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.0"
 ```
 
-也可以从 [v0.7.4 Release](https://github.com/Bosaiting/dsh-process-tree/releases/tag/v0.7.4) 下载 `dsh-process-tree-0.7.4.tgz`，然后本地安装：
+也可以先下载 npm 包，再从本地安装：
 
 ```sh
-dsh plugin --profile web add ./dsh-process-tree-0.7.4.tgz
+npm pack dsh-process-tree@0.8.0
+dsh plugin --profile web add ./dsh-process-tree-0.8.0.tgz
 ```
 
 安装后重新启动对应的 DSH 实例。桌面版通过其插件管理入口安装到桌面配置；已验证的 macOS 版本也可由桌面程序自带的 CLI 管理 `desktop` profile，单独安装的 CLI 行为可能不同。不要直接修改桌面安装目录。该插件不需要安装时构建或构建脚本许可。

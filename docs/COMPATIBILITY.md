@@ -1,6 +1,6 @@
 # Compatibility / 兼容性
 
-Current version: 0.7.4. Host version declarations are limited to verified releases.
+Current version: 0.8.0. Host version declarations are limited to verified releases.
 
 ## Test levels / 验证层次
 
@@ -8,6 +8,15 @@ Current version: 0.7.4. Host version declarations are limited to verified releas
 - Browser: real Chromium, ResizeObserver, IntersectionObserver, SVG and React on synthetic host-shaped markup. This verifies renderer behavior and cleanup, without model requests or private data.
 - Host: exact packed plugin loaded by a separate real DSH Web host with a new DSH_HOME, with and without an unchanged upstream theme. Real-host settings and activation checks are recorded separately from synthetic transcript checks.
 - Native Desktop: separate acceptance; a Web result does not establish Desktop scrolling performance.
+
+## 0.8.0 validation / 0.8.0 验证
+
+The release candidate passed 29 unit checks and 19 Chromium browser checks on macOS.
+The candidate runtime matches the installed Desktop runtime by SHA-256; the README
+captures include a real running conversation in an existing customized Desktop
+profile and a sanitized replay in isolated DSH Web. These observations are not
+clean-profile Desktop acceptance or a sustained performance measurement.
+Windows/Linux Desktop and other DSH versions remain unverified.
 
 ## 0.7.4 botanical roots / 植物根系加粗
 

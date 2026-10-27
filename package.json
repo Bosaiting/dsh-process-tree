@@ -1,6 +1,6 @@
 {
   "name": "dsh-process-tree",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "description": "Classic flowing process tree by default, with quiet lines and botanical artwork as optional styles.",
   "type": "module",
   "main": "./index.js",

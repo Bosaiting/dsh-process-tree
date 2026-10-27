@@ -38,7 +38,7 @@ Hollow dots mark completed tool steps, red marks the intentional failure, and bl
 
 ![Completed, failed and running nodes in the same task](docs/images/process-tree-states.png)
 
-The GIF and state image were captured from a dedicated Desktop demo. The style and comparison images replay sanitized records from that conversation in an isolated DSH Web instance. Images show the development build at capture time; state colors are customizable and appearance may differ from the published release.
+The GIF and state image were captured from a dedicated Desktop demo. The style and comparison images replay sanitized records from that conversation in an isolated DSH Web instance. Images use the appearance settings selected at capture time; state colors are customizable.
 
 ## Install
 
@@ -54,7 +54,7 @@ The currently verified host is **DSH 0.2.1-rc.2**. Other versions are unverified
 https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
 ```
 
-Search for `dsh-process-tree` or **Process Tree**. Check that the installation targets **`dsh-process-tree@0.7.4`** from **`https://registry.npmjs.org`**, confirm, and restart when prompted. An installed card opens the existing plugin. Sources belong to the current profile and must be added by each user.
+Search for `dsh-process-tree` or **Process Tree**. Check that the installation targets **`dsh-process-tree@0.8.0`** from **`https://registry.npmjs.org`**, confirm, and restart when prompted. An installed card opens the existing plugin. Sources belong to the current profile and must be added by each user.
 
 This is an independent community index maintained by the project owner. See the [Discover guide](docs/DISCOVER.md) for troubleshooting and maintenance.
 
@@ -63,19 +63,20 @@ This is an independent community index maintained by the project owner. See the 
 Install the pinned version from [npm](https://www.npmjs.com/package/dsh-process-tree):
 
 ```sh
-dsh plugin --profile web add dsh-process-tree@0.7.4
+dsh plugin --profile web add dsh-process-tree@0.8.0
 ```
 
 Alternatively, install the pinned version from GitHub:
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.7.4"
+dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.0"
 ```
 
-Alternatively, download `dsh-process-tree-0.7.4.tgz` from the [v0.7.4 Release](https://github.com/Bosaiting/dsh-process-tree/releases/tag/v0.7.4) and install it locally:
+Alternatively, download the npm package and install it locally:
 
 ```sh
-dsh plugin --profile web add ./dsh-process-tree-0.7.4.tgz
+npm pack dsh-process-tree@0.8.0
+dsh plugin --profile web add ./dsh-process-tree-0.8.0.tgz
 ```
 
 Restart the corresponding DSH instance. Use Desktop's plugin manager for its managed configuration. The Desktop-bundled CLI also handled its `desktop` profile in the verified macOS build; a separately installed CLI may differ. No install-time build is required. Claude Style is optional. Disable overlapping indentation or process-connector plugins, including `dsh-tool-indent`, to avoid competing spacing and CSS variables.
