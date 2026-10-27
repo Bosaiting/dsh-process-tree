@@ -18,6 +18,10 @@ profile and a sanitized replay in isolated DSH Web. These observations are not
 clean-profile Desktop acceptance or a sustained performance measurement.
 Windows/Linux Desktop and other DSH versions remain unverified.
 
+After publication, the exact 0.8.0 package also passed 13 fixture checks in an
+isolated DSH Web profile without an additional theme, including live disable and
+re-enable. This real-host check does not measure native Desktop performance.
+
 ## 0.7.4 botanical roots / 植物根系加粗
 
 The botanical preset now uses a 5.6 px line width, up from 2.8 px. Classic
@@ -125,10 +129,11 @@ from the repository root:
 ```sh
 npm ci
 npm pack
+plugin_version=$(node -p "require('./package.json').version")
 mkdir -p .release-checks/host
 export DSH_HOME="$PWD/.release-checks/host/home"
 dsh --profile web --dump-config > .release-checks/host/config.txt
-dsh plugin --profile web add "$PWD/dsh-process-tree-0.7.4.tgz"
+dsh plugin --profile web add "$PWD/dsh-process-tree-${plugin_version}.tgz"
 # For the second environment, use a different empty home and add the stock theme:
 # dsh plugin --profile web add dsh-claude-style@0.19.1
 dsh --profile web --patch ./test/fixtures/cordis.patch.yml \

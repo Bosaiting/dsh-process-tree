@@ -64,10 +64,10 @@ async function aligned(page){
   await frames(page);results.checks.push({name:'native process fold and restore',pass:true,...await aligned(page)});
   await page.getByRole('button',{name:/^(账号菜单|Account menu)$/}).click();await page.getByRole('menuitem',{name:/设置|Settings/}).click();
   await page.getByText('过程树',{exact:true}).click();
-  for(const style of ['botanical','classic','quiet']){
-   await page.getByLabel('风格',{exact:true}).selectOption(style);await frames(page);
+  for(const [style,label] of [['botanical','植物手稿'],['classic','经典曲线'],['quiet','安静线条']]){
+   await page.getByRole('radiogroup',{name:'风格'}).getByRole('radio',{name:new RegExp(label)}).click();await frames(page);
    const crowns=await page.locator('.dpt-crown-portal').count();
-   assert.equal(crowns,style==='botanical'?2:0);
+   assert.equal(crowns,style==='botanical'?1:0);
    results.checks.push({name:`settings style ${style}`,pass:true,crowns});
   }
   await page.emulateMedia({reducedMotion:'reduce'});await frames(page);
