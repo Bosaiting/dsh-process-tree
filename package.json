@@ -23,6 +23,10 @@
     "docs/images/classic.png",
     "docs/images/quiet.png",
     "docs/images/botanical.png",
+    "docs/images/process-tree-live.gif",
+    "docs/images/process-tree-themes.png",
+    "docs/images/process-tree-before-after.png",
+    "docs/images/process-tree-states.png",
     "docs/verification/0.7.4.json"
   ],
   "license": "MIT",

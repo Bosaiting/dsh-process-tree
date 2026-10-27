@@ -9,6 +9,7 @@ const out = process.env.DSH_TEST_OUTPUT || path.join(__dirname, 'browser-results
 fs.mkdirSync(out, { recursive: true });
 let tested = source.replace('DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX,', `DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX, CSS, TreeView, createManager,
   change: (patch) => {SETTINGS=normalize({...SETTINGS,...patch});queueLineVars();for(const view of watchedViews.values())view.syncSettings()},
+  getSettings: () => SETTINGS,
   resources:()=>({views:watchedViews.size,rows:rowOwners.size,clips:clipOwners.size,crowns:floatingCrowns.size,libraries:crownLibraries.size,settingsFrame,frameHandle,crownPositionFrame}),`);
 for (const fn of ['geometryOf', 'strokeGeometry', 'branchBody', 'positionCrowns', 'syncCrownLibraries']) {
   tested = tested.replace(new RegExp('(function ' + fn + '\\([^)]*\\) \\{)'), '$1 window.count("' + fn + '");');
@@ -88,6 +89,234 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
 (async()=>{
   const browser=await chromium.launch({headless:true,...(process.env.DSH_CHROMIUM_EXECUTABLE?{executablePath:process.env.DSH_CHROMIUM_EXECUTABLE}:{})});
   try{
+    await test('classic intensity controls apply the wider presets and preserve saved custom widths',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:2,nested:false});
+      try{
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();api.change({treeStyle:'classic',intensity:'standard',lineWidth:2.8,dotSize:5.6});window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='intensity-settings';mount.style.cssText='position:fixed;left:500px;top:0;width:590px;height:750px;overflow:auto';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(12));
+        await page.locator('.dpt-advanced > summary').click();const width=page.getByLabel('线宽',{exact:true});
+        assert.equal(Number(await width.inputValue()),2.8,'a saved old preset is not silently overwritten');
+        assert.ok(await page.getByText('沿用旧版强度线宽；重新选择强度可应用新预设').isVisible());
+        for(const [name,expected,dot] of [['轻',3.1,4.76],['标准',3.8,5.6],['鲜明',4.64,6.72]]){
+          const button=page.getByRole('radio',{name,exact:true});await button.click();await page.evaluate(()=>frames(8));
+          assert.equal(Number(await width.inputValue()),expected);assert.equal(await button.getAttribute('aria-checked'),'true');
+          assert.equal(await page.evaluate(()=>api.getSettings().dotSize),dot);
+        }
+        await page.waitForFunction(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').lineWidth===4.64);
+        await width.fill('12');await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),12);assert.equal(await page.evaluate(()=>api.getSettings().lineWidth),12);
+        await page.getByRole('radio',{name:'标准',exact:true}).click();await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),3.8);
+        await page.getByRole('radio',{name:/植物手稿/}).click();await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),4.6,'botanical uses its own updated preset');
+        await page.getByRole('radio',{name:/安静线条/}).click();await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),1.5,'quiet intensity remains unchanged');
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('botanical intensity controls apply the narrower presets and preserve saved widths',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'botanical',calls:2,nested:false});
+      try{
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();api.change({treeStyle:'botanical',intensity:'standard',lineWidth:5.6,dotSize:5.6});window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='intensity-settings';mount.style.cssText='position:fixed;left:500px;top:0;width:590px;height:750px;overflow:auto';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(12));
+        await page.locator('.dpt-advanced > summary').click();const width=page.getByLabel('线宽',{exact:true});
+        assert.equal(Number(await width.inputValue()),5.6,'a saved old preset is not silently overwritten');
+        assert.ok(await page.getByText('沿用旧版强度线宽；重新选择强度可应用新预设').isVisible());
+        for(const [name,expected,dot] of [['轻',3.2,4.76],['标准',4.6,5.6],['鲜明',6.28,6.72]]){
+          const button=page.getByRole('radio',{name,exact:true});await button.click();await page.evaluate(()=>frames(8));
+          assert.equal(Number(await width.inputValue()),expected);assert.equal(await button.getAttribute('aria-checked'),'true');
+          assert.equal(await page.evaluate(()=>api.getSettings().dotSize),dot);
+        }
+        await page.waitForFunction(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').lineWidth===6.28);
+        await width.fill('12');await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),12);assert.equal(await page.evaluate(()=>api.getSettings().lineWidth),12);
+        await page.getByRole('radio',{name:'标准',exact:true}).click();await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),4.6);
+        await page.getByRole('radio',{name:/经典曲线/}).click();await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),3.8,'classic intensity remains unchanged');
+        await page.getByRole('radio',{name:/安静线条/}).click();await page.evaluate(()=>frames(8));
+        assert.equal(Number(await width.inputValue()),1.5,'quiet intensity remains unchanged');
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('state colors remain independent across themes, styles, preview and reload',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:3,nested:true});
+      try{
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();
+          document.querySelector('[data-chat-call-id="g0-1"] > [data-state]').dataset.state='running';
+          document.querySelector('[data-chat-call-id="g0-2"] > [data-state]').dataset.state='error';
+          window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='colors-settings';mount.style.cssText='position:fixed;left:500px;top:0;width:590px;height:750px;overflow:auto';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(14));
+        const fill=(selector)=>page.locator(selector).first().evaluate(el=>getComputedStyle(el).fill);
+        const chatRun='#flow .dpt-dot.dpt-running', chatError='#flow .dpt-dot.dpt-error';
+        const previewRun='.dpt-preview-stage .dpt-dot.dpt-running', previewError='.dpt-preview-stage .dpt-dot.dpt-error';
+        assert.equal(await fill(chatRun),'rgb(113, 144, 177)');
+        assert.equal(await fill(chatError),'rgb(199, 118, 110)');
+        assert.equal(await page.getByLabel('浅色运行颜色值').inputValue(),'#7190B1');
+        assert.equal(await page.getByLabel('深色错误颜色值').inputValue(),'#D59188');
+        await page.getByLabel('浅色运行颜色值').fill('#3478A2');
+        await page.getByLabel('浅色错误颜色选择').fill('#c85140');
+        await page.getByLabel('深色运行颜色值').fill('#2A5BB1');
+        await page.getByLabel('深色错误颜色值').fill('#B24F75');
+        await page.getByLabel('预览状态').selectOption('running');
+        await page.getByLabel('预览主题').selectOption('light');await page.evaluate(()=>frames(10));
+        assert.equal(await fill(chatRun),'rgb(52, 120, 162)');
+        assert.equal(await fill(chatError),'rgb(200, 81, 64)');
+        assert.equal(await fill('#flow .dpt-edge.dpt-live'),'rgb(52, 120, 162)');
+        assert.equal(await fill('#flow .dpt-edge.dpt-error'),'rgb(200, 81, 64)');
+        assert.equal(await fill(previewRun),'rgb(52, 120, 162)');
+        await page.getByLabel('预览主题').selectOption('dark');await page.evaluate(()=>frames(8));
+        assert.equal(await fill(previewRun),'rgb(42, 91, 177)');
+        assert.equal(await fill(chatRun),'rgb(52, 120, 162)','preview theme does not change chat');
+        await page.getByLabel('预览状态').selectOption('error');await page.evaluate(()=>frames(8));
+        assert.equal(await fill(previewError),'rgb(178, 79, 117)');
+        await page.locator('.dpt-preview-stage').screenshot({path:path.join(out,'state-colors-preview-dark.png')});
+        await page.evaluate(()=>document.body.setAttribute('data-ds-dark-theme',''));await page.evaluate(()=>frames(8));
+        assert.equal(await fill(chatRun),'rgb(42, 91, 177)');
+        assert.equal(await fill(chatError),'rgb(178, 79, 117)');
+        await page.getByLabel('预览主题').selectOption('current');await page.evaluate(()=>frames(8));
+        assert.equal(await fill(previewError),'rgb(178, 79, 117)');
+        await page.evaluate(()=>{document.body.removeAttribute('data-ds-dark-theme');document.documentElement.setAttribute('data-ds-dark-theme','')});
+        await page.evaluate(()=>frames(8));assert.equal(await fill(chatRun),'rgb(42, 91, 177)');
+        await page.getByRole('radio',{name:/安静线条/}).click();await page.evaluate(()=>frames(10));
+        assert.equal(await fill(chatRun),'rgb(42, 91, 177)');assert.equal(await fill(chatError),'rgb(178, 79, 117)');
+        const quietStroke=await page.locator('#flow .dpt-edge.dpt-live').first().evaluate(el=>getComputedStyle(el).stroke);
+        assert.notEqual(quietStroke,'rgb(42, 91, 177)','quiet branches remain neutral');
+        await page.getByRole('radio',{name:/植物手稿/}).click();await page.evaluate(()=>frames(12));
+        assert.equal(await fill(chatRun),'rgb(42, 91, 177)');assert.equal(await fill(chatError),'rgb(178, 79, 117)');
+        assert.notEqual(await fill('#flow .dpt-edge.dpt-live'),'rgb(42, 91, 177)','botanical branches retain their wood');
+        await page.locator('.dpt-advanced > summary').click();await page.getByLabel('缩进',{exact:true}).fill('33');
+        await page.waitForFunction(()=>{const x=JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}');return x.runningColorLight==='#3478a2'&&x.errorColorLight==='#c85140'&&x.runningColorDark==='#2a5bb1'&&x.errorColorDark==='#b24f75'&&x.treeStyle==='botanical'&&x.indent===33});
+        await page.evaluate(()=>document.getElementById('colors-settings').style.width='320px');await page.evaluate(()=>frames(8));
+        const overflow=await page.locator('.dpt-colors').evaluate(el=>el.scrollWidth>el.clientWidth||[...el.children].some(child=>child.scrollWidth>child.clientWidth));
+        assert.equal(overflow,false,'color controls fit a narrow settings panel');
+        await page.locator('.dpt-colors').scrollIntoViewIfNeeded();
+        const unobscured=await page.locator('.dpt-colors').evaluate(el=>[...el.children].every(child=>{
+          const r=child.getBoundingClientRect(),hit=document.elementFromPoint(r.left+8,r.top+8);return hit===child||child.contains(hit);
+        }));
+        assert.equal(unobscured,true,'the preview does not cover color controls');
+        await page.locator('.dpt-colors').screenshot({path:path.join(out,'state-colors-controls.png')});
+        await page.reload();
+        assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').runningColorLight),'#3478a2','saved color survives document reload');
+        await page.evaluate(setup);
+        await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.addScriptTag({content:tested});
+        await page.evaluate(()=>{
+          window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)});window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='colors-settings';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(10));
+        assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').runningColorLight),'#3478a2','initializing the module preserves saved color');
+        assert.equal(await page.evaluate(()=>api.normalize(JSON.parse(localStorage.getItem('dsh.process-tree.v1'))).runningColorLight),'#3478a2','saved settings normalize correctly');
+        assert.equal(await page.evaluate(()=>window[Symbol.for('dsh.process-tree.pending-settings')]?.runningColorLight??null),null,'no pending edit overrides saved settings');
+        assert.equal(await page.evaluate(()=>api.getSettings().runningColorLight),'#3478a2','the initialized module reads the saved color');
+        assert.equal(await page.getByLabel('浅色运行颜色值').inputValue(),'#3478A2');
+        assert.equal(await page.getByLabel('浅色错误颜色值').inputValue(),'#C85140');
+        assert.equal(await page.getByLabel('深色运行颜色值').inputValue(),'#2A5BB1');
+        assert.equal(await page.getByLabel('深色错误颜色值').inputValue(),'#B24F75');
+        await page.locator('.dpt-advanced > summary').click();assert.equal(await page.getByLabel('缩进',{exact:true}).inputValue(),'33');
+        const input=page.getByLabel('浅色运行颜色值');await input.fill('#NOPE');await input.blur();
+        assert.equal(await input.inputValue(),'#3478A2','invalid color restores the previous value');
+        await page.getByRole('button',{name:'恢复状态颜色'}).click();await page.evaluate(()=>frames(8));
+        assert.equal(await input.inputValue(),'#7190B1');
+        assert.equal(await page.getByLabel('深色错误颜色值').inputValue(),'#D59188');
+        assert.equal(await page.getByRole('radio',{name:/植物手稿/}).getAttribute('aria-checked'),'true','color reset preserves style');
+        assert.equal(await page.getByLabel('缩进',{exact:true}).inputValue(),'33','color reset preserves other settings');
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});
+        assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--dpt-running-light')),'');
+        assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('last top-level fork joins the trunk smoothly without changing other rows',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:4,nested:false});
+      try{
+        await page.evaluate(()=>{
+          const content=document.querySelector('[data-step-process-content]');
+          const think=document.createElement('div');
+          think.dataset.chatFlowKind='reasoning';think.dataset.chatAnchorKey='last-think';
+          think.innerHTML='<div data-variant="think"><div data-disclosure-row>思考</div></div>';
+          content.insertBefore(think,content.lastElementChild);
+        });await page.evaluate(()=>frames(10));
+        const sample=()=>page.evaluate(()=>{
+          const view=[...instances].find(v=>!v.stopped&&v.model);
+          const trunk=view.model.edges.find(e=>e.key==='trunk:to:g0-3');
+          const branch=view.model.edges.find(e=>e.key==='topbranch:g0-3');
+          const earlier=view.model.edges.find(e=>e.key==='trunk:to:g0-1');
+          const earlierBranch=view.model.edges.find(e=>e.key==='topbranch:g0-1');
+          const read=e=>view.edgeRecords.get(e.key).path.dataset;
+          return {trunkStart:+read(trunk).startWidth,trunkEnd:+read(trunk).endWidth,
+            branchStart:+read(branch).startWidth,earlierEnd:+read(earlier).endWidth,
+            earlierSource:earlierBranch.sourceWidth,dotRadius:+view.dotEls.get('dot:last-think').getAttribute('r')};
+        });
+        const samples=[];let dotRadius;
+        for(const fusion of [.3,0,.15,.7,1]){
+          await page.evaluate(fusion=>api.change({rootFusion:fusion,lineWidth:12,thicknessDecay:.6,indent:30,dotFollowWidth:true}),fusion);
+          await page.evaluate(()=>frames(8));
+          const result=await sample();samples.push({fusion,...result});
+          if(fusion===.3)await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'last-top-level-fork.png')});
+          assert.ok(Math.abs(result.trunkEnd-result.branchStart)<.002,JSON.stringify({fusion,...result}));
+          assert.ok(result.trunkEnd<=result.trunkStart+.002,JSON.stringify({fusion,...result}));
+          assert.ok(Math.abs(result.earlierEnd-result.earlierSource)<.002,JSON.stringify({fusion,...result}));
+          if(dotRadius===undefined)dotRadius=result.dotRadius;else assert.equal(result.dotRadius,dotRadius);
+        }
+        await page.evaluate(()=>api.change({rootFusion:.3}));await page.evaluate(()=>frames(8));
+        const terminal=await sample();
+        await page.evaluate(()=>{
+          const think=document.createElement('div');think.dataset.chatFlowKind='reasoning';think.dataset.chatAnchorKey='trailing-think';
+          think.innerHTML='<div data-variant="think"><div data-disclosure-row>之后的思考</div></div>';
+          document.querySelector('[data-step-process-content]').append(think);
+        });await page.evaluate(()=>frames(10));
+        const continuing=await sample();
+        assert.ok(continuing.trunkEnd>terminal.trunkEnd+.1,'a later row restores the full trunk width at this fork');
+        assert.equal(continuing.dotRadius,terminal.dotRadius,'the earlier thinking dot is unchanged');
+        await page.evaluate(()=>document.querySelector('[data-chat-anchor-key="trailing-think"]').hidden=true);await page.evaluate(()=>frames(10));
+        const hidden=await sample();
+        assert.ok(Math.abs(hidden.trunkEnd-hidden.branchStart)<.002,'a hidden trailing row does not prevent the terminal join');
+        await page.evaluate(()=>{const row=document.querySelector('[data-chat-anchor-key="trailing-think"]');row.hidden=false;row.style.display='none'});await page.evaluate(()=>frames(10));
+        const cssHidden=await sample();
+        assert.ok(Math.abs(cssHidden.trunkEnd-cssHidden.branchStart)<.002,'a CSS-hidden trailing row does not prevent the terminal join');
+        assert.deepEqual(errors,[]);return {samples,terminal,continuing,hidden,cssHidden};
+      }finally{await context.close()}
+    });
+    await test('viewport windows do not make intermediate top-level forks terminal',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:120,nested:false,cap:260});
+      try{
+        await page.evaluate(()=>api.change({rootFusion:.3,lineWidth:12,thicknessDecay:.6,indent:30}));await page.evaluate(()=>frames(10));
+        const read=()=>page.evaluate(()=>{
+          const view=[...instances].find(v=>!v.stopped&&v.model), rows=view.model.nodes.filter(n=>n.depth===1);
+          const last=rows.at(-1), trunk=view.model.edges.find(e=>e.key==='trunk:to:'+last.key), branch=view.model.edges.find(e=>e.key==='topbranch:'+last.key);
+          if(!trunk||!branch)return {last:last.key,total:view.roots.length,hasPaths:false};
+          const end=+view.edgeRecords.get(trunk.key).path.dataset.endWidth;
+          return {last:last.key,total:view.roots.length,hasPaths:true,end,source:branch.sourceWidth};
+        });
+        const early=await read();assert.equal(early.total,120);assert.ok(early.hasPaths);assert.notEqual(early.last,'g0-119');
+        assert.ok(Math.abs(early.end-early.source)<.002,JSON.stringify(early));
+        await page.evaluate(()=>{const body=document.querySelector('[data-step-process-body]');body.scrollTop=body.scrollHeight});await page.evaluate(()=>frames(15));
+        const late=await page.evaluate(()=>{
+          const view=[...instances].find(v=>!v.stopped&&v.model),trunk=view.model.edges.find(e=>e.key==='trunk:to:g0-119'),branch=view.model.edges.find(e=>e.key==='topbranch:g0-119');
+          return {present:!!trunk&&!!branch,end:trunk?+view.edgeRecords.get(trunk.key).path.dataset.endWidth:null,start:branch?+view.edgeRecords.get(branch.key).path.dataset.startWidth:null};
+        });
+        assert.ok(late.present,JSON.stringify(late));assert.ok(Math.abs(late.end-late.start)<.002,JSON.stringify(late));
+        assert.deepEqual(errors,[]);return {early,late};
+      }finally{await context.close()}
+    });
     await test('nested stem tapers smoothly into its last fork at every fusion level',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'classic',calls:4});
       try{

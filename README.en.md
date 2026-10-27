@@ -6,27 +6,33 @@ A process tree for DeepSeek Harness: classic flowing branches by default, with o
 
 This community UI plugin targets DSH Web and the Desktop web interface. It does not render in TUI. See [compatibility and verification](docs/COMPATIBILITY.md) for tested environments and limits.
 
-## Style previews
+## See it in action
 
-These images use the actual plugin renderer, the same synthetic transcript and a 28 px indent for comparison. They contain no private conversation data.
+### A tree that grows with the task
 
-### Classic curves (default)
+A real DSH Desktop conversation runs three read-only commands in sequence. Branches appear with each call; the second command fails deliberately.
 
-Flowing branches with a clear taper, drawn in the interface's own text colour. A leaf sprouts when a tool step finishes; running and failed steps stay bare.
+![A process tree growing as tools run in a real DSH conversation](docs/images/process-tree-live.gif)
 
-![Classic curves with a trunk, two nested branch levels and state dots](docs/images/classic.png)
+### Light and dark
 
-### Botanical
+The same conversation in both interface themes:
 
-A small original canopy emblem tops shaded wood roots (5.6 px line-width preset) that connect the calls into a tree. The crown is about 70 px tall and stays inside the content area.
+![The same process tree side by side in light and dark mode](docs/images/process-tree-themes.png)
 
-![Botanical style with a small canopy, wood trunk and nested calls](docs/images/botanical.png)
+### Before and after
 
-### Quiet lines (understated)
+The same records without the plugin on the left, and with Process Tree installed on the right.
 
-For when you want no decoration: uniform thin strokes, rounded corners and one dot size, close to an editor's indent guides.
+![The same task before and after installing Process Tree](docs/images/process-tree-before-after.png)
 
-![Quiet lines with uniform strokes and rounded nested branches](docs/images/quiet.png)
+### States at a glance
+
+Grey nodes have finished, red marks the intentional failure, and blue shows a running call.
+
+![Completed, failed and running nodes in the same task](docs/images/process-tree-states.png)
+
+The GIF and state image were captured from a dedicated Desktop demo. The comparisons replay sanitized records from that conversation in an isolated DSH Web instance. Images show the development build at capture time; state colors are customizable and appearance may differ from the published release.
 
 ## Install
 
@@ -70,9 +76,11 @@ Restart the corresponding DSH instance. Use Desktop's plugin manager for its man
 
 ## Settings
 
-Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds a small original canopy, shaded wood roots and halos. The main settings are just three: style cards with thumbnails, intensity (subtle / standard / vivid, which sets line tone, width and dots together), and an animation switch.
+Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds a small original canopy, shaded wood roots and halos. The main settings cover style, intensity, animation, and state colors. Choose or enter separate six-digit HEX colors for running and errors in light and dark themes; changes apply immediately and are saved automatically. State colors can be reset without changing other preferences.
 
-Everything else (transitions, line width, texture, leaves, dots, indentation, summary dimming, leading, growth speed) lives under a collapsed **Advanced** section. Changing line width or dots there marks intensity as custom; picking a level restores it. Botanical controls appear in that style. The settings preview shares the chat renderer. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
+Classic's subtle, standard, and vivid presets use line widths of 3.10, 3.80, and 4.64 px respectively; botanical uses 3.20, 4.60, and 6.28 px. Saved line widths remain unchanged; choose an intensity again to apply its new preset.
+
+Everything else (transitions, line width, texture, leaves, dots, indentation, summary dimming, leading, growth speed) lives under a collapsed **Advanced** section. Changing line width or dots there marks intensity as custom; picking a level restores it. Botanical controls appear in that style. The settings preview shares the chat renderer and can switch both state and light/dark appearance. Quiet uses state colors on dots; botanical retains its wood-colored running branches while the node and glow use the running color. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
 
 ## Data and permissions
 
@@ -101,7 +109,7 @@ npm pack
 
 Set `DSH_CHROMIUM_EXECUTABLE` to use an existing Chromium. Settings-preview tests use the pinned React dependencies by default. Optional coexistence checks accept `DSH_COMPOSER_SOURCE` and `DSH_CLAUDE_ROW_SKIP_CSS`; ordinary tests need no other plugin checkout.
 
-Regenerate the README images with `node scripts/capture-previews.mjs` after installing Chromium. The command also accepts `DSH_CHROMIUM_EXECUTABLE`.
+The older static style illustrations can be regenerated with `node scripts/capture-previews.mjs` after installing Chromium. The command also accepts `DSH_CHROMIUM_EXECUTABLE`. The live recording and replay screenshots above must be captured through DSH.
 
 `canopy.svg` preserves the original artwork. Runtime uses the parameterized artwork embedded in `client.js`; editing the original does not automatically update that embedded form. The original is not duplicated in the install archive.
 

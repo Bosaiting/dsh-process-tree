@@ -31,12 +31,22 @@ assert.equal(typeof registrations[0].factory, 'function')
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const [archive] = JSON.parse(execFileSync(npm, ['pack', '--dry-run', '--ignore-scripts', '--json'], { cwd: root, encoding: 'utf8' }))
-const expected = ['package.json', 'index.js', 'client.js', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/COMPATIBILITY.md', 'docs/verification/0.7.2.json', 'docs/verification/0.7.3.json', 'docs/verification/0.7.4.json', 'docs/images/classic.png', 'docs/images/quiet.png', 'docs/images/botanical.png']
+const expected = ['package.json', 'index.js', 'client.js', 'cordis.patch.yml', 'README.md', 'README.en.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'docs/COMPATIBILITY.md', 'docs/verification/0.7.2.json', 'docs/verification/0.7.3.json', 'docs/verification/0.7.4.json', 'docs/images/classic.png', 'docs/images/quiet.png', 'docs/images/botanical.png', 'docs/images/process-tree-live.gif', 'docs/images/process-tree-themes.png', 'docs/images/process-tree-before-after.png', 'docs/images/process-tree-states.png']
 assert.deepEqual(archive.files.map(file => file.path).sort(), expected.sort(), 'unexpected publication files')
+for (const readme of ['README.md', 'README.en.md']) {
+  for (const match of read(readme).matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
+    assert.ok(archive.files.some(file => file.path === match[1]), `${readme} image missing from package: ${match[1]}`)
+  }
+}
 for (const { path: name } of archive.files) {
   if (name.endsWith('.png')) {
     const bytes = fs.readFileSync(path.join(root, name))
     assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `invalid PNG: ${name}`)
+    continue
+  }
+  if (name.endsWith('.gif')) {
+    const header = fs.readFileSync(path.join(root, name)).subarray(0, 6).toString('ascii')
+    assert.ok(header === 'GIF87a' || header === 'GIF89a', `invalid GIF: ${name}`)
     continue
   }
   const text = read(name)

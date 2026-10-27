@@ -20,7 +20,7 @@ test('legacy settings without treeStyle migrate to the classic preset', () => {
   // Assert
   assert.equal(settings.treeStyle, 'classic')
   assert.equal(settings.botanicalStyle, false)
-  assert.equal(settings.lineWidth, 2.8)
+  assert.equal(settings.lineWidth, 3.8)
   assert.equal(settings.thicknessDecay, 0.6)
   // Old organic defaults migrate to the classic preset: straight, light forks, no texture.
   assert.equal(settings.rootFusion, 0.3)
@@ -79,7 +79,7 @@ test('fresh defaults are classic and explicit saved styles keep their values', (
   for (const raw of [undefined, null, {}, api.DEFAULTS]) {
     const settings = api.normalize(raw)
     assert.equal(settings.treeStyle, 'classic')
-    assert.equal(settings.lineWidth, 2.8)
+    assert.equal(settings.lineWidth, 3.8)
     assert.equal(settings.thicknessDecay, 0.6)
   }
   for (const treeStyle of ['quiet', 'botanical', 'classic']) {
@@ -90,12 +90,31 @@ test('fresh defaults are classic and explicit saved styles keep their values', (
   }
 })
 
-test('botanical roots are thicker while classic and quiet keep their widths', () => {
+test('state colors migrate safely and preserve valid custom values', () => {
+  const existing = api.normalize({ treeStyle: 'quiet', indent: 24 })
+  assert.equal(existing.runningColorLight, '#7190b1')
+  assert.equal(existing.errorColorLight, '#c7766e')
+  assert.equal(existing.runningColorDark, '#8ca9cb')
+  assert.equal(existing.errorColorDark, '#d59188')
+  assert.equal(existing.treeStyle, 'quiet')
+  assert.equal(existing.indent, 24)
+
+  const custom = api.normalize({
+    runningColorLight: '#123ABC', errorColorLight: '#654321',
+    runningColorDark: 'red', errorColorDark: '#12345g',
+  })
+  assert.equal(custom.runningColorLight, '#123abc')
+  assert.equal(custom.errorColorLight, '#654321')
+  assert.equal(custom.runningColorDark, '#8ca9cb')
+  assert.equal(custom.errorColorDark, '#d59188')
+})
+
+test('each style keeps its own standard preset width', () => {
   const preset = api.STYLE_PRESETS.botanical
-  assert.equal(preset.lineWidth, 5.6)
-  assert.equal(api.STYLE_PRESETS.classic.lineWidth, 2.8)
+  assert.equal(preset.lineWidth, 4.6)
+  assert.equal(api.STYLE_PRESETS.classic.lineWidth, 3.8)
   assert.equal(api.STYLE_PRESETS.quiet.lineWidth, 1.5)
-  assert.equal(api.normalize({ treeStyle: 'botanical' }).lineWidth, 5.6)
+  assert.equal(api.normalize({ treeStyle: 'botanical' }).lineWidth, 4.6)
   assert.equal(preset.thicknessDecay, 0.6)
   assert.equal(preset.rootFusion, 0.7)
   assert.equal(preset.vineAmplitude, 0)
@@ -215,14 +234,48 @@ test('custom classic texture and botanical wood keep their values', () => {
   assert.equal(botanical.textureStyle, 'ink')
 })
 
-test('intensity scales the style preset line width and dots', () => {
+test('classic intensity widths, dot sizes and quiet widths remain unchanged', () => {
   const subtle = api.intensityPatch('classic', 'subtle')
   const vivid = api.intensityPatch('classic', 'vivid')
   const standard = api.intensityPatch('classic', 'standard')
 
+  assert.deepEqual([subtle.lineWidth, standard.lineWidth, vivid.lineWidth], [3.1, 3.8, 4.64])
+  assert.deepEqual([subtle.dotSize, standard.dotSize, vivid.dotSize], [4.76, 5.6, 6.72])
+  assert.deepEqual(['subtle', 'standard', 'vivid'].map(level => api.intensityPatch('quiet', level).lineWidth), [1.13, 1.5, 1.95])
   assert.equal(standard.lineWidth, api.STYLE_PRESETS.classic.lineWidth)
-  assert.ok(subtle.lineWidth < standard.lineWidth && standard.lineWidth < vivid.lineWidth)
-  assert.ok(subtle.dotSize < standard.dotSize && standard.dotSize < vivid.dotSize)
+})
+
+test('each botanical intensity reduces its previous line width by one pixel', () => {
+  const levels = ['subtle', 'standard', 'vivid']
+  assert.deepEqual(levels.map(level => api.intensityPatch('botanical', level).lineWidth), [3.2, 4.6, 6.28])
+  assert.deepEqual(levels.map(level => api.intensityPatch('botanical', level).dotSize), [4.76, 5.6, 6.72])
+  assert.equal(api.intensityPatch('botanical', 'standard').lineWidth, api.STYLE_PRESETS.botanical.lineWidth)
+})
+
+test('saved classic widths remain unchanged until a new intensity is selected', () => {
+  for (const [intensity, width, dotSize] of [['subtle', 2.1, 4.76], ['standard', 2.8, 5.6], ['vivid', 3.64, 6.72]]) {
+    const saved = api.normalize({ treeStyle: 'classic', intensity, lineWidth: width, dotSize })
+    assert.equal(saved.lineWidth, width)
+    assert.equal(api.matchesIntensity(saved), false)
+    assert.equal(api.matchesLegacyIntensity(saved), true)
+    assert.equal(api.matchesIntensity(api.normalize({ ...saved, ...api.intensityPatch('classic', intensity) })), true)
+  }
+  const custom = api.normalize({ treeStyle: 'classic', intensity: 'standard', lineWidth: 12, dotSize: 5.6 })
+  assert.equal(custom.lineWidth, 12)
+  assert.equal(api.matchesLegacyIntensity(custom), false)
+})
+
+test('saved botanical widths remain unchanged until a new intensity is selected', () => {
+  for (const [intensity, width, dotSize] of [['subtle', 4.2, 4.76], ['standard', 5.6, 5.6], ['vivid', 7.28, 6.72]]) {
+    const saved = api.normalize({ treeStyle: 'botanical', intensity, lineWidth: width, dotSize })
+    assert.equal(saved.lineWidth, width)
+    assert.equal(api.matchesIntensity(saved), false)
+    assert.equal(api.matchesLegacyIntensity(saved), true)
+    assert.equal(api.matchesIntensity(api.normalize({ ...saved, ...api.intensityPatch('botanical', intensity) })), true)
+  }
+  const custom = api.normalize({ treeStyle: 'botanical', intensity: 'standard', lineWidth: 12, dotSize: 5.6 })
+  assert.equal(custom.lineWidth, 12)
+  assert.equal(api.matchesLegacyIntensity(custom), false)
 })
 
 test('an advanced line width edit reads as custom intensity', () => {
