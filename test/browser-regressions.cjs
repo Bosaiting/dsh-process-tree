@@ -88,6 +88,27 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
 (async()=>{
   const browser=await chromium.launch({headless:true,...(process.env.DSH_CHROMIUM_EXECUTABLE?{executablePath:process.env.DSH_CHROMIUM_EXECUTABLE}:{})});
   try{
+    await test('nested stem tapers smoothly into its last fork at every fusion level',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:4});
+      try{
+        const samples=[];
+        for(const fusion of [0,.15,.3,.7,1]){
+          await page.evaluate(fusion=>api.change({rootFusion:fusion,lineWidth:8,thicknessDecay:.6,indent:30}),fusion);
+          await page.evaluate(()=>frames(8));
+          const result=await page.evaluate(()=>{
+            const view=[...instances].find(v=>v.model?.edges.some(e=>e.type==='trunk-child'));
+            const stem=view.model.edges.find(e=>e.type==='trunk-child');
+            const fork=view.model.edges.find(e=>e.type==='branch' && Math.abs(e.curve[0][0].y-stem.stemEnd)<.01 && Math.abs(e.curve[0][0].x-stem.curve[0][0].x)<.01);
+            const stemPath=view.edgeRecords.get(stem.key).path, forkPath=view.edgeRecords.get(fork.key).path;
+            return {start:+stemPath.dataset.startWidth,end:+stemPath.dataset.endWidth,forkStart:+forkPath.dataset.startWidth,span:stem.stemEnd-stem.taperStart};
+          });
+          assert.ok(result.span>0);assert.ok(Math.abs(result.end-result.forkStart)<.002,JSON.stringify({fusion,...result}));
+          assert.ok(result.end<=result.start+.002,JSON.stringify({fusion,...result}));samples.push({fusion,...result});
+          if(fusion===0)await page.screenshot({path:path.join(out,'low-fusion-fork.png')});
+        }
+        assert.deepEqual(errors,[]);return {samples};
+      }finally{await context.close()}
+    });
     await test('same-size text, quiet decoration and incremental state',async()=>{
       const {page,context,errors}=await fixture(browser);
       try{
@@ -228,6 +249,73 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.deepEqual(errors,[]);return {};
       }finally{await context.close()}
     });
+    await test('style cards render miniature conversations and remain selectable',async()=>{
+      const {page,context,errors}=await fixture(browser,{calls:1});
+      try{
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();document.querySelector('#flow').remove();window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='settings-cards';mount.style.cssText='position:absolute;left:0;top:0;width:900px';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(12));
+        for(const name of ['经典曲线','植物手稿','安静线条']){
+          const card=page.getByRole('radio',{name:new RegExp(name)});await card.click();
+          assert.equal(await card.getAttribute('aria-checked'),'true');
+          assert.equal(await card.locator('svg text').count(),3);
+          assert.ok(await card.locator('svg .dpt-edge').count()>0);
+        }
+        await page.getByRole('radio',{name:/植物手稿/}).click();await page.evaluate(()=>frames(8));
+        await page.locator('.dpt-cards').screenshot({path:path.join(out,'style-cards-light.png')});
+        await page.evaluate(()=>{document.documentElement.dataset.dsDarkTheme='';document.body.style.background='#17191b';document.body.style.color='#e4e4e4';document.documentElement.style.setProperty('--dsw-alias-bg-base','#17191b');document.documentElement.style.setProperty('--dsw-alias-label-primary','#e4e4e4');document.documentElement.style.setProperty('--dsw-alias-label-secondary','#c5c5c5');document.documentElement.style.setProperty('--dsw-alias-label-tertiary','#aaa');document.documentElement.style.setProperty('--dsw-alias-bg-layer-1','#242629')});
+        await page.locator('.dpt-cards').screenshot({path:path.join(out,'style-cards-dark.png')});
+        await page.evaluate(()=>{document.querySelector('#settings-cards').style.width='390px'});await page.evaluate(()=>frames(6));
+        const overflow=await page.evaluate(()=>{const cards=document.querySelector('.dpt-cards');return cards.scrollWidth>cards.clientWidth});assert.equal(overflow,false);
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('botanical settings preview crown follows sticky panel and inner scrolling',async()=>{
+      const {page,context,errors}=await fixture(browser,{calls:1});
+      try{
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='settings-scroll';mount.style.cssText='position:fixed;left:0;top:0;width:1000px;height:360px;overflow:auto';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });
+        await page.evaluate(()=>frames(12));
+        await page.getByRole('radio',{name:/植物手稿/}).click();
+        await page.locator('.dpt-advanced > summary').click();
+        await page.evaluate(()=>frames(10));
+        const samples=[];
+        for(const scrollTop of [0,60,150,250,100,0]){
+          await page.evaluate(y=>document.querySelector('#settings-scroll').scrollTop=y,scrollTop);
+          await page.evaluate(()=>frames(5));
+          const sample=await page.evaluate(()=>{
+            const view=[...instances].find(v=>v.crownIsPreview&&v.crownSvg);
+            const header=view.crownHeader.getBoundingClientRect(),crown=view.crownSvg.getBoundingClientRect();
+            return {scroll:document.querySelector('#settings-scroll').scrollTop,delta:crown.top-header.top,headerTop:header.top};
+          });
+          samples.push(sample);assert.ok(Math.abs(sample.delta)<1.5,JSON.stringify(samples));
+        }
+        await page.evaluate(()=>{const stage=document.querySelector('.dpt-preview-stage');stage.style.maxHeight='110px'});
+        await page.evaluate(()=>frames(5));
+        for(const scrollTop of [0,40,80,0]){
+          await page.evaluate(y=>document.querySelector('.dpt-preview-stage').scrollTop=y,scrollTop);
+          await page.evaluate(()=>frames(5));
+          const sample=await page.evaluate(()=>{
+            const view=[...instances].find(v=>v.crownIsPreview&&v.crownSvg);
+            return {scroll:document.querySelector('.dpt-preview-stage').scrollTop,delta:view.crownSvg.getBoundingClientRect().top-view.crownHeader.getBoundingClientRect().top,
+              hasArtwork:!!view.crownRoot.querySelector('.dpt-crown-library [data-density]')};
+          });
+          if(scrollTop)assert.ok(sample.scroll>0);assert.ok(sample.hasArtwork);assert.ok(Math.abs(sample.delta)<1.5,JSON.stringify(sample));
+        }
+        await page.screenshot({path:path.join(out,'preview-crown.png')});
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});
+        assert.deepEqual(errors,[]);return {samples};
+      }finally{await context.close()}
+    });
     await test('real React settings, shadow preview growth and shared-resource teardown',async()=>{
       const {page,context,errors}=await fixture(browser,{calls:8,cap:260});
       try{
@@ -241,7 +329,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         });await page.evaluate(()=>frames(12));
         assert.equal(await page.evaluate(()=>api.resources().views),2);
         await page.getByRole('radio',{name:/植物手稿/}).click();await page.evaluate(()=>frames(10));
-        assert.equal(await page.locator('.dpt-crown-portal').count(),2);assert.equal(await page.locator('.dpt-crown-library').count(),1);
+        assert.equal(await page.locator('.dpt-crown-portal').count(),1);assert.equal(await page.evaluate(()=>api.resources().libraries),2);
         await page.getByRole('switch',{name:'动画',exact:true}).check();await page.evaluate(()=>frames());await page.getByRole('button',{name:'播放生长',exact:true}).click();await page.evaluate(()=>frames(2));
         const preview=await page.evaluate(()=>[...instances].filter(v=>v.content.getRootNode()!==document).map(v=>({stopped:v.stopped,suspended:v.suspended,inViewport:v.inViewport,nodes:v.model?.nodes.length,replay:v.replayRequested,rect:v.content.getBoundingClientRect().toJSON(),motions:v.motions.size})));
         await page.screenshot({path:path.join(out,'settings.png')});
