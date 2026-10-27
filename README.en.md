@@ -12,21 +12,21 @@ These images use the actual plugin renderer, the same synthetic transcript and a
 
 ### Classic curves (default)
 
-Flowing branches and tapered strokes give the tree a natural shape.
+Flowing branches with a clear taper, drawn in the interface's own text colour. A leaf sprouts when a tool step finishes; running and failed steps stay bare.
 
 ![Classic curves with a trunk, two nested branch levels and state dots](docs/images/classic.png)
-
-### Quiet lines
-
-Uniform thin strokes, rounded corners and smaller dots.
-
-![Quiet lines with uniform strokes and rounded nested branches](docs/images/quiet.png)
 
 ### Botanical
 
 Original canopy artwork and thicker wood roots (5.6 px line-width preset) connect the calls into a tree.
 
 ![Botanical style with a full canopy, wood trunk and nested calls](docs/images/botanical.png)
+
+### Quiet lines (understated)
+
+For when you want no decoration: uniform thin strokes, rounded corners and one dot size, close to an editor's indent guides.
+
+![Quiet lines with uniform strokes and rounded nested branches](docs/images/quiet.png)
 
 ## Install
 
@@ -70,7 +70,7 @@ Restart the corresponding DSH instance. Use Desktop's plugin manager for its man
 
 ## Settings
 
-Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves, texture and leaves. Quiet uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds original canopy artwork, wood roots and halos. Selecting a style applies its preset; sliders remain editable.
+Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves, texture, and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds original canopy artwork, wood roots and halos. Selecting a style applies its preset; sliders remain editable.
 
 Controls cover transitions, line width, indentation, summary dimming, leading, dots, growth and decoration. Botanical controls appear in that style. The settings preview shares the chat renderer. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
 

@@ -15,9 +15,9 @@ assert.ok(source.includes(seam))
 // Expose existing internals in this isolated page only; runtime stays unchanged.
 const previewSource = source.replace(seam, seam + ' CSS, createManager, applyLineVars,')
 const modes = [
-  { id: 'classic', title: 'Classic curves', subtitle: 'Flowing branches, tapered strokes & leaves', label: 'DEFAULT' },
-  { id: 'quiet', title: 'Quiet lines', subtitle: 'Uniform strokes, rounded corners & subtle dots', label: 'MINIMAL' },
+  { id: 'classic', title: 'Classic curves', subtitle: 'Flowing, tapered branches; a leaf for every finished step', label: 'DEFAULT' },
   { id: 'botanical', title: 'Botanical', subtitle: 'Original canopy, wood roots & organic details', label: 'ILLUSTRATED' },
+  { id: 'quiet', title: 'Quiet lines', subtitle: 'Uniform strokes, rounded corners & subtle dots', label: 'UNDERSTATED' },
 ]
 const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>
 *{box-sizing:border-box}html,body{margin:0;background:#f6f5f1;color:#343b39;font:16px/1.5 Arial,sans-serif}

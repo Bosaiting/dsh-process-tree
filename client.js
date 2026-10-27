@@ -89,7 +89,7 @@ window.__ModuleLoader__.load({
     growthEnabled: true,
     textureStrength: 0.24,
     leafDensity: 0.55,
-    leafSize: 7,
+    leafSize: 9,
     leafTint: 'muted',
     stateMotion: true,
     motionStrength: 0.4,
@@ -140,8 +140,12 @@ window.__ModuleLoader__.load({
       growthEnabled: typeof source.growthEnabled === 'boolean' ? source.growthEnabled : defaults.growthEnabled,
       textureStyle: ['none', 'ink', 'bark'].includes(source.textureStyle) ? source.textureStyle : defaults.textureStyle,
       textureStrength: clampNumber(source.textureStrength ?? defaults.textureStrength, 0, 1, defaults.textureStrength),
-      leafStyle: ['none', 'slim', 'round'].includes(source.leafStyle) ? source.leafStyle : defaults.leafStyle,
-      leafDensity: clampNumber(source.leafDensity ?? defaults.leafDensity, 0, 1, defaults.leafDensity),
+      // Leaves now mark finished steps; a density of 0 was the old way to hide them.
+      leafStyle: source.leafDensity === 0 ? 'none'
+        : ['none', 'slim', 'round'].includes(source.leafStyle) ? source.leafStyle : defaults.leafStyle,
+      // Consumed by the leafStyle migration above, so the select can turn leaves back on.
+      leafDensity: source.leafDensity === 0 ? defaults.leafDensity
+        : clampNumber(source.leafDensity ?? defaults.leafDensity, 0, 1, defaults.leafDensity),
       leafSize: clampNumber(source.leafSize ?? defaults.leafSize, 3, 12, defaults.leafSize),
       leafTint: ['muted', 'green', 'mono'].includes(source.leafTint) ? source.leafTint : defaults.leafTint,
       stateMotion: typeof source.stateMotion === 'boolean' ? source.stateMotion : defaults.stateMotion,
@@ -316,7 +320,8 @@ window.__ModuleLoader__.load({
 }
 
 .dpt-layer {
-  --dpt-ink: color-mix(in srgb, var(--dsw-alias-border-l2, #d8d4ca) 45%, var(--dsw-alias-label-tertiary, #8a857c));
+  /* The host's own text colour, mixed opaque with the page so joins never darken. */
+  --dpt-ink: color-mix(in srgb, currentColor 66%, var(--dsw-alias-bg-base, #fff));
   position: absolute;
   top: 0;
   left: 0;
@@ -326,8 +331,6 @@ window.__ModuleLoader__.load({
   pointer-events: none;
   z-index: 0;
 }
-/* Opacity belongs to the shared group: overlapping roots stay one tone. */
-.dpt-edges { opacity: .88; }
 .dpt-edge {
   fill: var(--dpt-ink);
   stroke: none;
@@ -342,7 +345,7 @@ window.__ModuleLoader__.load({
 .dpt-leaf.dpt-live { color: var(--dsw-alias-label-deep-diving, #5b8def); }
 .dpt-leaf.dpt-error { color: var(--dsw-alias-state-error-primary, #d9534f); }
 .dpt-leaf.dpt-stopped { color: var(--dsw-alias-state-warn-primary, #d9a441); }
-.dpt-leaf-fill { fill: currentColor; opacity: .72; }
+.dpt-leaf-fill { fill: currentColor; opacity: .9; }
 .dpt-leaf-vein { fill: none; stroke: var(--dsw-alias-bg-base, #fff); stroke-width: .45; opacity: .5; }
 .dpt-leaf-petiole { stroke: currentColor; stroke-width: .65; fill: none; }
 .dpt-leaf-blade { transform-origin: 0 0; }
@@ -842,11 +845,17 @@ window.__ModuleLoader__.load({
 
   let layerId = 0
   const isLive = (state) => state === 'running' || state === 'preparing'
+  const FINISHED_STATES = ['completed', 'success', 'succeeded', 'done']
+  const isFinished = (state) => FINISHED_STATES.includes(state)
   const smoothStep = (t) => t * t * (3 - 2 * t)
+  // Share of the width lost along the trunk, a stem, and across each fork.
+  const TRUNK_TAPER = 0.5
+  const STEM_TAPER = 0.2
+  const FORK_TAPER = 0.65
   const trunkWidth = (y) => Math.max(0.45, SETTINGS.lineWidth *
-    (1 - SETTINGS.thicknessDecay * 0.35 * (1 - Math.exp(-Math.max(0, y) / 480))))
+    (1 - SETTINGS.thicknessDecay * TRUNK_TAPER * (1 - Math.exp(-Math.max(0, y) / 480))))
   const stemWidth = (node, y) => Math.max(0.45, node.width *
-    (1 - SETTINGS.thicknessDecay * 0.12 * (1 - Math.exp(-Math.max(0, y - node.y) / 240))))
+    (1 - SETTINGS.thicknessDecay * STEM_TAPER * (1 - Math.exp(-Math.max(0, y - node.y) / 240))))
 
   function smoothOutline(points, move) {
     let d = (move ? 'M' : 'L') + coord(points[0].x) + ',' + coord(points[0].y)
@@ -2092,7 +2101,7 @@ window.__ModuleLoader__.load({
           : rootY
         const startY = branched ? topBranchStartY(previousRow, naturalStartY, node) : naturalStartY
         const endY = branched ? startY : node.y
-        node.width = branched ? Math.max(0.45, trunkWidth(startY) * (1 - SETTINGS.thicknessDecay * 0.55)) : trunkWidth(node.y)
+        node.width = branched ? Math.max(0.45, trunkWidth(startY) * (1 - SETTINGS.thicknessDecay * FORK_TAPER)) : trunkWidth(node.y)
         if (endY > railY) {
           edges.push({
             key: 'trunk:to:' + node.key,
@@ -2122,7 +2131,7 @@ window.__ModuleLoader__.load({
       })
 
       for (const node of nodes) {
-        if (node.parent) node.width = Math.max(0.45, stemWidth(node.parent, branchStartY(node.parent, node)) * (1 - SETTINGS.thicknessDecay * 0.55))
+        if (node.parent) node.width = Math.max(0.45, stemWidth(node.parent, branchStartY(node.parent, node)) * (1 - SETTINGS.thicknessDecay * FORK_TAPER))
         if (!node.children.length) continue
         const tx = node.dotX
         let lastStart = node.y
@@ -2149,7 +2158,7 @@ window.__ModuleLoader__.load({
               : branchD(tx, startY, child.dotX, child.y, child.hasVisibleChildren),
             type: 'branch',
             sourceWidth: stemWidth(node, startY),
-            endWidth: Math.max(0.45, stemWidth(node, startY) * (1 - SETTINGS.thicknessDecay * 0.55)),
+            endWidth: Math.max(0.45, stemWidth(node, startY) * (1 - SETTINGS.thicknessDecay * FORK_TAPER)),
             state: child.state,
             depth: child.depth,
             toKey: child.key,
@@ -2286,15 +2295,12 @@ window.__ModuleLoader__.load({
     renderLeaves(model, seenEdges, nodeMap) {
       const seen = new Set()
       const fragment = document.createDocumentFragment()
-      if (!SETTINGS.botanicalStyle && SETTINGS.leafStyle !== 'none' && SETTINGS.leafDensity > 0) {
-        for (const edge of model.edges) {
-          if (edge.type !== 'branch' || !seenEdges.has(edge.key)) continue
-          const node = nodeMap.get(edge.toKey)
-          if (!this.nodeInWindow(node)) continue
-          if (node.children.length || node.hasChildrenInDOM ||
-              hash('sprout:' + this.vineKey + ':' + node.key) / 4294967296 > SETTINGS.leafDensity) continue
-          const record = this.edgeRecords.get(edge.key)
-          if (!record?.length) continue
+      if (!SETTINGS.botanicalStyle && SETTINGS.leafStyle !== 'none') {
+        // A leaf means "this tool step finished": none while running or failed.
+        for (const node of model.nodes) {
+          if (node.kind !== 'tool' || !isFinished(node.state) || !this.nodeInWindow(node)) continue
+          const edgeKey = (node.parent ? 'branch:' : 'topbranch:') + node.key
+          const record = seenEdges.has(edgeKey) ? this.edgeRecords.get(edgeKey) : null
           seen.add(node.key)
           let leaf = this.leafEls.get(node.key)
           if (!leaf) {
@@ -2306,12 +2312,14 @@ window.__ModuleLoader__.load({
             this.leafEls.set(node.key, leaf)
           }
           leaf.style.display = ''
-          const p = record.geometry.sample(Math.max(0, record.length - Math.min(12, record.length * 0.2)))
-          // Grow into the empty gutter, always left of the label and node dot.
-          const angle = -125 + noise(this.vineKey + node.key) * 26
+          // On a branch the leaf sits near its tip; on the trunk, just above the dot.
+          const p = record?.length ? record.geometry.sample(Math.max(0, record.length - Math.min(12, record.length * 0.2)))
+            : { x: node.dotX, y: node.y - dotRadius(node) - 1 }
+          // Stand clear of the line: upward off a branch tip, up-left off the trunk.
+          const angle = (record?.length ? -100 : -140) + noise(this.vineKey + node.key) * 20
           attr(leaf, 'transform', 'translate(' + coord(Math.min(p.x, node.dotX - 3)) + ',' + coord(p.y) + ') rotate(' + coord(angle) + ')')
           const size = SETTINGS.leafSize * (0.9 + (hash(node.key) % 21) / 100)
-          const width = size * (SETTINGS.leafStyle === 'round' ? 0.62 : 0.34)
+          const width = size * (SETTINGS.leafStyle === 'round' ? 0.62 : 0.42)
           attr(leaf.querySelector('.dpt-leaf-fill'), 'd', 'M0,0 Q' + size * 0.35 + ',' + -width + ' ' + size + ',0 Q' + size * 0.35 + ',' + width + ' 0,0 Z')
           attr(leaf.querySelector('.dpt-leaf-vein'), 'd', 'M0,0 L' + size * 0.85 + ',0 M' + size * 0.33 + ',0 l' + size * 0.15 + ',' + -width * 0.35)
         }
@@ -2381,7 +2389,8 @@ window.__ModuleLoader__.load({
       update.geometry = update.layout || !!(update.dirty & DIRTY_SHAPE)
       update.model = update.geometry ? this.buildModel(update.nodes || this.model.nodes) : this.model
       update.nodeMap = update.geometry ? new Map(update.model.nodes.map((node) => [node.key, node])) : this.modelNodeMap
-      update.leaves = update.geometry || ['treeStyle', 'botanicalStyle', 'leafStyle', 'leafDensity', 'leafSize'].some((key) => update.keys.has(key))
+      update.leaves = update.geometry || ['treeStyle', 'botanicalStyle', 'leafStyle', 'leafDensity', 'leafSize'].some((key) => update.keys.has(key)) ||
+        [...update.changed.keys()].some((node) => isFinished(node.state) !== isFinished(this.nodeStates.get(node.key)))
       update.dots = update.geometry || ['treeStyle', 'botanicalStyle', 'dotSize', 'dotFollowWidth', 'dotStyle'].some((key) => update.keys.has(key))
       if (!update.geometry && !(update.dirty & DIRTY_APPEARANCE)) return
       update.plans = []
@@ -2462,7 +2471,7 @@ window.__ModuleLoader__.load({
         attr(halo, 'class', 'dpt-halo' + (SETTINGS.botanicalStyle && live ? ' dpt-halo-live' : ''))
         if (SETTINGS.botanicalStyle && SETTINGS.stateMotion && SETTINGS.motionStrength > 0 && !this.motionReduced() &&
             this.lastVisibleNodes.has(node.key) && isLive(this.nodeStates.get(node.key)) &&
-            ['completed', 'success', 'succeeded', 'done'].includes(node.state)) {
+            isFinished(node.state)) {
           const key = 'halo:' + node.key
           this.finishMotion(key)
           const motion = halo.animate([{ opacity: .45 }, { opacity: 0 }], { duration: 500 / SETTINGS.growthSpeed, easing: 'ease-out' })
@@ -2475,7 +2484,7 @@ window.__ModuleLoader__.load({
         attr(leaf, 'class', 'dpt-leaf' + (live ? ' dpt-live' : node.state === 'error' ? ' dpt-error' : node.state === 'stopped' ? ' dpt-stopped' : ''))
         if (leaf.style.display !== 'none' && SETTINGS.stateMotion && SETTINGS.motionStrength > 0 &&
             !this.motionReduced() && this.lastVisibleNodes.has(node.key) && isLive(this.nodeStates.get(node.key)) &&
-            ['completed', 'success', 'succeeded', 'done'].includes(node.state)) {
+            isFinished(node.state)) {
           const key = 'bloom:' + node.key
           this.finishMotion(key)
           const motion = leaf.querySelector('.dpt-leaf-blade').animate([
@@ -2958,7 +2967,7 @@ window.__ModuleLoader__.load({
           h(SelectRow, {
             label: '风格', desc: '切换时套用该风格的线宽、曲线、纹理与圆点预设，之后仍可单独微调',
             value: settings.treeStyle,
-            options: [{ value: 'quiet', label: '安静线条' }, { value: 'botanical', label: '植物手稿' }, { value: 'classic', label: '经典曲线' }],
+            options: [{ value: 'classic', label: '经典曲线' }, { value: 'botanical', label: '植物手稿' }, { value: 'quiet', label: '安静线条（低调）' }],
             onChange: (treeStyle) => commit({ ...STYLE_PRESETS[treeStyle], treeStyle }),
           }),
           ...(settings.treeStyle !== 'botanical' ? [] : [
@@ -3036,7 +3045,7 @@ window.__ModuleLoader__.load({
           h('h3', { className: 'dpt-subhead' }, '纹理与叶片'),
           h('div', { className: 'dpt-presets', 'aria-label': '装饰预设' },
             h('button', { className: 'dpt-btn', type: 'button', onClick: () => commit({ textureStyle: 'none', leafStyle: 'none' }) }, '素净'),
-            h('button', { className: 'dpt-btn', type: 'button', onClick: () => commit({ textureStyle: 'ink', textureStrength: 0.24, leafStyle: 'slim', leafTint: 'mono', leafDensity: 0.55, leafSize: 7 }) }, '墨线'),
+            h('button', { className: 'dpt-btn', type: 'button', onClick: () => commit({ textureStyle: 'ink', textureStrength: 0.24, leafStyle: 'slim', leafTint: 'mono', leafDensity: 0.55, leafSize: 9 }) }, '墨线'),
             h('button', { className: 'dpt-btn', type: 'button', onClick: () => commit({ textureStyle: 'bark', textureStrength: 0.35, leafStyle: 'round', leafTint: 'green', leafDensity: 0.7, leafSize: 9 }) }, '藤蔓')
           ),
           h(SelectRow, {
@@ -3049,13 +3058,9 @@ window.__ModuleLoader__.load({
             value: settings.textureStrength, format: (value) => Math.round(value * 100) + '%', onChange: (textureStrength) => commit({ textureStrength }),
           }),
           h(SelectRow, {
-            label: '经典叶片样式', desc: '仅经典样式生效；植物手稿的叶片位于顶部树冠', value: settings.leafStyle,
+            label: '经典叶片样式', desc: '工具步骤完成时长出一片叶子；运行中或异常时不显示。仅经典样式生效', value: settings.leafStyle,
             options: [{ value: 'none', label: '隐藏叶片' }, { value: 'slim', label: '细长叶片' }, { value: 'round', label: '圆润叶片' }],
             onChange: (leafStyle) => commit({ leafStyle }),
-          }),
-          h(SliderRow, {
-            label: '叶片密度', desc: '按节点稳定分布，不随重绘随机跳动；0 隐藏，100% 每个末梢都有叶片', min: 0, max: 1, step: 0.01,
-            value: settings.leafDensity, format: (value) => Math.round(value * 100) + '%', onChange: (leafDensity) => commit({ leafDensity }),
           }),
           h(SliderRow, {
             label: '叶片大小', desc: '叶片向标签左侧的空白处生长', min: 3, max: 12, step: 0.5,

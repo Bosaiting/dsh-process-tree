@@ -164,3 +164,11 @@ test('the quiet rail sits left of the botanical rail', () => {
   assert.equal(botanical, 11)
   assert.ok(quiet < botanical)
 })
+
+test('a saved leaf density of 0 migrates to hidden leaves that the select can re-enable', () => {
+  const migrated = api.normalize({ treeStyle: 'classic', leafStyle: 'slim', leafDensity: 0 })
+
+  assert.equal(migrated.leafStyle, 'none')
+  assert.ok(migrated.leafDensity > 0)
+  assert.equal(api.normalize({ ...migrated, leafStyle: 'slim' }).leafStyle, 'slim')
+})
