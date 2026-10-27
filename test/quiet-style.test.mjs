@@ -69,6 +69,12 @@ test('normalize does not mutate its input', () => {
   assert.deepEqual(input, LEGACY_BOTANICAL)
 })
 
+test('soil defaults on and preserves an explicit saved preference', () => {
+  assert.equal(api.normalize({}).soilEnabled, true)
+  assert.equal(api.normalize({ treeStyle: 'botanical', soilEnabled: false }).soilEnabled, false)
+  assert.equal(api.normalize({ treeStyle: 'botanical', soilEnabled: true }).soilEnabled, true)
+})
+
 test('fresh defaults are classic and explicit saved styles keep their values', () => {
   for (const raw of [undefined, null, {}, api.DEFAULTS]) {
     const settings = api.normalize(raw)

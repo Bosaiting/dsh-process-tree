@@ -14,7 +14,7 @@ for(const [mode,v] of Object.entries(out)){
   const labels=v.labels.map(i=>'<text x="'+Number((i.x+3).toFixed(2))+'" y="'+Number((i.y+16).toFixed(2))+'">'+i.text+'</text>').join('');
   if(mode==='botanical'){
     tree=inner(v.crown)+'<g transform="translate(0 '+v.crownSpace+')" style="--dpt-root-wood:url(#dpt-card-root-wood-1)">'+tree+'</g>'+labels;
-    snapshots[mode]='<g transform="translate(9 7) scale(.65)">'+tree+'</g>';
+    snapshots[mode]='<g transform="translate(9 7) scale(.60)">'+tree+'</g>';
   }else snapshots[mode]='<g transform="translate(14 23) scale(.9)">'+tree+labels+'</g>';
 }
 const clientPath=path.join(root,'client.js'),client=fs.readFileSync(clientPath,'utf8');

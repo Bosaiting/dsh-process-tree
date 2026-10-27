@@ -62,8 +62,8 @@ const setup = () => {
   };
 };
 const results = {mode:'Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.',cases:[]};
-async function fixture(browser,{style='quiet',calls=120,groups=1,nested=true,cap=0}={}){
-  const context=await browser.newContext({viewport:{width:1100,height:800}}),page=await context.newPage();
+async function fixture(browser,{style='quiet',calls=120,groups=1,nested=true,cap=0,scale=1}={}){
+  const context=await browser.newContext({viewport:{width:1100,height:800},deviceScaleFactor:scale}),page=await context.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text())});
   await page.route('https://dsh-tree-test.invalid/',r=>r.fulfill({contentType:'text/html',body:html}));
   await page.goto('https://dsh-tree-test.invalid/',{waitUntil:'networkidle'});await page.evaluate(setup);
@@ -271,6 +271,46 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         await page.locator('.dpt-cards').screenshot({path:path.join(out,'style-cards-dark.png')});
         await page.evaluate(()=>{document.querySelector('#settings-cards').style.width='390px'});await page.evaluate(()=>frames(6));
         const overflow=await page.evaluate(()=>{const cards=document.querySelector('.dpt-cards');return cards.scrollWidth>cards.clientWidth});assert.equal(overflow,false);
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('botanical soil follows the crown and its setting applies to chat and preview',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:4,scale:2});
+      try{
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.style.cssText='position:fixed;left:500px;top:0;width:590px;height:750px;overflow:auto';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(12));
+        await page.getByRole('radio',{name:/植物手稿/}).click();await page.evaluate(()=>frames(12));
+        await page.locator('.dpt-advanced > summary').click();
+        const soil=page.getByLabel('土壤装饰');assert.equal(await soil.inputValue(),'on');
+        const state=()=>page.evaluate(()=>[...instances].filter(v=>!v.stopped&&v.crownSvg).map(v=>({preview:v.crownIsPreview,visible:getComputedStyle(v.crownSoil).display!=='none',transform:v.crownSoil.getAttribute('transform'),overflow:v.crownSoil.getBoundingClientRect().bottom-v.crownSvg.getBoundingClientRect().bottom,texture:v.crownSoil.querySelector('.dpt-soil-speckles')?.getAttribute('d')})));
+        let crowns=await state();assert.equal(crowns.length,2);assert.ok(crowns.every(c=>c.visible&&c.transform));
+        const texture=crowns[0].texture;assert.ok(texture.length>100);assert.equal(crowns[1].texture,texture);
+        await page.screenshot({path:path.join(out,'soil-on.png')});
+        await page.locator('.dpt-preview-stage').screenshot({path:path.join(out,'soil-detail-light.png')});
+        const stageBox=await page.locator('.dpt-preview-stage').boundingBox();
+        await page.screenshot({path:path.join(out,'soil-preview.png'),clip:{x:stageBox.x,y:stageBox.y,width:Math.min(180,stageBox.width),height:Math.min(155,stageBox.height)}});
+        for(const size of ['0.15','0.35','0.26']){
+          await page.getByLabel('树冠大小').fill(size);await page.evaluate(()=>frames(8));
+          crowns=await state();assert.ok(crowns.every(c=>c.visible&&c.transform.includes('scale(')&&c.overflow<=1),JSON.stringify({size,crowns}));
+          const bridges=await page.evaluate(()=>[...instances].filter(v=>!v.stopped&&v.crownBridge).map(v=>{
+            const p=v.crownBridge.getAttribute('d').match(/-?\d+(?:\.\d+)?/g).map(Number);
+            return {drop:p[7]-p[1],shift:Math.abs(p[6]-p[0]),endTangent:Math.abs(p[6]-p[4])};
+          }));
+          assert.ok(bridges.every(b=>b.drop>=b.shift*.75&&b.endTangent<.02),JSON.stringify({size,bridges}));
+        }
+        await soil.selectOption('off');await page.evaluate(()=>frames(8));crowns=await state();assert.ok(crowns.every(c=>!c.visible));
+        await page.waitForFunction(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').soilEnabled===false);
+        await soil.selectOption('on');await page.evaluate(()=>frames(8));crowns=await state();assert.ok(crowns.every(c=>c.visible&&c.texture===texture));
+        await page.getByLabel('顶部树冠').selectOption('off');await page.evaluate(()=>frames(8));assert.equal((await state()).length,0);
+        await page.getByLabel('顶部树冠').selectOption('on');await page.evaluate(()=>frames(8));crowns=await state();assert.equal(crowns.length,2);assert.ok(crowns.every(c=>c.visible));
+        await page.evaluate(()=>{document.documentElement.dataset.dsDarkTheme='';document.documentElement.style.setProperty('--dsw-alias-bg-base','#1d2020');document.documentElement.style.setProperty('--dsw-alias-label-secondary','#d0d4cb');document.body.style.background='#1d2020'});
+        await page.evaluate(()=>frames(4));await page.locator('.dpt-preview-stage').screenshot({path:path.join(out,'soil-detail-dark.png')});
+        await page.getByRole('radio',{name:/经典曲线/}).click();await page.evaluate(()=>frames(8));assert.equal((await state()).length,0);
         await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});assert.deepEqual(errors,[]);return {};
       }finally{await context.close()}
     });
