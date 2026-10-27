@@ -31,6 +31,8 @@ window.__ModuleLoader__.load({
   const ROW_ANCHOR = 12
   // A solid think dot reads heavier than a ring, so it is slightly smaller.
   const TOOL_DOT_RADIUS = 2.8
+  // Line width above which dots may grow with it.
+  const DOT_FOLLOW_MIN_WIDTH = 3
   const THINK_DOT_RADIUS = 2.4
   const ROW_OVERSCAN = 320
   const QUIET_SELECTOR = '[data-dsh-claude-quiet], .dpt-layer'
@@ -175,7 +177,7 @@ window.__ModuleLoader__.load({
         : clampNumber(source.canopyScale ?? defaults.canopyScale, CANOPY_MIN, CANOPY_MAX, defaults.canopyScale),
       canopyDensity: clampNumber(source.canopyDensity ?? defaults.canopyDensity, 0.2, 1, defaults.canopyDensity),
       rootDetail: clampNumber(source.rootDetail ?? defaults.rootDetail, 0, 1, defaults.rootDetail),
-      topTransition: clampNumber(source.topTransition ?? Math.round(10 + curveShape * 8), 0, 96, defaults.topTransition),
+      topTransition: clampNumber(source.topTransition ?? Math.round(10 + curveShape * 8), 0, TOP_TRANSITION_MAX, defaults.topTransition),
       subTransition: clampNumber(source.subTransition ?? Math.round(14 + curveShape * 12), 0, 96, defaults.subTransition),
       // A wavy trunk read as a skewed line; only an explicit custom value keeps it.
       vineAmplitude: clampNumber(source.vineAmplitude === LEGACY_VINE_AMPLITUDE ? defaults.vineAmplitude
@@ -276,13 +278,13 @@ window.__ModuleLoader__.load({
   function dotRadius(node) {
     if (isQuiet()) return quietDotRadius(node)
     const base = node.kind === 'think' ? THINK_DOT_RADIUS : TOOL_DOT_RADIUS
-    const follow = SETTINGS.dotFollowWidth ? Math.max(1, node.width / 3) : 1
+    const follow = SETTINGS.dotFollowWidth ? Math.max(1, node.width / DOT_FOLLOW_MIN_WIDTH) : 1
     return Math.max(0.5, Math.min(MAX_DOT_SIZE / 2, base * SETTINGS.dotSize / 5.6 * follow))
   }
 
   function dotMetrics(settings = SETTINGS) {
     // Bound every node so large circles get space on both sides of the rail.
-    const follow = settings.dotFollowWidth ? Math.max(1, settings.lineWidth / 3) : 1
+    const follow = settings.dotFollowWidth ? Math.max(1, settings.lineWidth / DOT_FOLLOW_MIN_WIDTH) : 1
     const radius = isQuiet(settings)
       ? Math.min(MAX_DOT_SIZE / 2, QUIET_DOT_RADIUS * settings.dotSize / QUIET_DOT_SIZE)
       : Math.min(MAX_DOT_SIZE / 2, 2.8 * settings.dotSize / 5.6 * follow)
@@ -904,18 +906,18 @@ window.__ModuleLoader__.load({
     return Math.max(parent.y + stagger, child.y - drop)
   }
 
-  // Share of the row gap a sibling branch keeps clear of the dot above it.
-  const SIBLING_FORK_RATIO = 0.45
+  // Shortest curve a top-level branch draws; the transition setting adds to it.
+  const TOP_BRANCH_MIN_DROP = 8
+  // Beyond this the curve would need more than any row gap offers.
+  const TOP_TRANSITION_MAX = 48
 
   function topBranchStartY(previous, fromY, node) {
     if (isQuiet()) return Math.max(fromY, node.y - ELBOW_RADIUS)
     // A top-level tool is a sibling of the row above it: leave the trunk below
     // that row's dot, never from it, so the tool never reads as its child.
-    const dots = dotMetrics()
-    const clear = previous ? Math.max(dots.minRow / 2 + 4, (node.y - fromY) * SIBLING_FORK_RATIO) : 0
-    const dx = Math.max(0, node.dotX - railX() - dots.gutter)
-    const room = (24 + SETTINGS.topTransition) / 38
-    const drop = Math.max(24, dx * (0.95 + SETTINGS.curveShape * 0.45)) * room
+    // The transition setting is the curve's height within that gap.
+    const clear = previous ? dotMetrics().minRow / 2 + 4 : 0
+    const drop = TOP_BRANCH_MIN_DROP + SETTINGS.topTransition
     return Math.min(node.y - 1, Math.max(fromY + clear, node.y - drop))
   }
 
@@ -3176,10 +3178,10 @@ window.__ModuleLoader__.load({
           h(SliderRow, { label: '根系装饰细节', desc: '木纹细线与明暗；不改变原有曲线或粗细衰减', min: 0, max: 1, step: .05, value: settings.rootDetail, format: value => Math.round(value * 100) + '%', onChange: rootDetail => commit({ rootDetail }) }),
           ]),
           h('h3', { className: 'dpt-subhead' }, '枝条形态'),
-          h(SliderRow, {
+          !isQuiet(settings) && h(SliderRow, {
             label: '主干→分支过渡长度',
-            desc: '工具分支离开主干前的弯曲长度；不改变行距',
-            min: 0, max: 96, step: 1,
+            desc: '工具分支离开主干后的弯曲高度；不会越过上一行的圆点，也不改变行距',
+            min: 0, max: TOP_TRANSITION_MAX, step: 1,
             value: settings.topTransition,
             format: (value) => value + 'px',
             onChange: (topTransition) => commit({ topTransition }),
@@ -3192,7 +3194,7 @@ window.__ModuleLoader__.load({
             format: (value) => Math.round(value * 100) + '%',
             onChange: (topBend) => commit({ topBend }),
           }),
-          h(SliderRow, {
+          !isQuiet(settings) && h(SliderRow, {
             label: '分支→子分支过渡长度',
             desc: '子调用分叉的弯曲长度；不改变行距',
             min: 0, max: 96, step: 1,
@@ -3240,13 +3242,14 @@ window.__ModuleLoader__.load({
             format: (value) => Math.round(value * 100) + '%',
             onChange: (rootFusion) => commit({ rootFusion }),
           }),
-          h('h3', { className: 'dpt-subhead' }, '纹理与叶片'),
-          h('div', { className: 'dpt-presets', 'aria-label': '装饰预设' },
+          // Botanical draws its own wood grain and crown leaves: only strength applies there.
+          h('h3', { className: 'dpt-subhead' }, settings.treeStyle === 'botanical' ? '纹理' : '纹理与叶片'),
+          settings.treeStyle !== 'botanical' && h('div', { className: 'dpt-presets', 'aria-label': '装饰预设' },
             h('button', { className: 'dpt-btn', type: 'button', onClick: () => commit({ textureStyle: 'none', leafStyle: 'none' }) }, '素净'),
             h('button', { className: 'dpt-btn', type: 'button', onClick: () => commit({ textureStyle: 'ink', textureStrength: 0.24, leafStyle: 'slim', leafTint: 'mono', leafDensity: 0.55, leafSize: 9 }) }, '墨线'),
             h('button', { className: 'dpt-btn', type: 'button', onClick: () => commit({ textureStyle: 'bark', textureStrength: 0.35, leafStyle: 'round', leafTint: 'green', leafDensity: 0.7, leafSize: 9 }) }, '藤蔓')
           ),
-          h(SelectRow, {
+          settings.treeStyle !== 'botanical' && h(SelectRow, {
             label: '枝条纹理', desc: '纹理沿枝条走向排列，始终收在枝体轮廓内', value: settings.textureStyle,
             options: [{ value: 'none', label: '无纹理' }, { value: 'ink', label: '淡墨纹理' }, { value: 'bark', label: '细树皮纹理' }],
             onChange: (textureStyle) => commit({ textureStyle }),
@@ -3255,16 +3258,16 @@ window.__ModuleLoader__.load({
             label: '纹理强度', desc: '0 隐藏纹理；较细的枝条适合较低强度', min: 0, max: 1, step: 0.01,
             value: settings.textureStrength, format: (value) => Math.round(value * 100) + '%', onChange: (textureStrength) => commit({ textureStrength }),
           }),
-          h(SelectRow, {
+          settings.treeStyle !== 'botanical' && h(SelectRow, {
             label: '经典叶片样式', desc: '工具步骤完成时长出一片叶子；运行中或异常时不显示。仅经典样式生效', value: settings.leafStyle,
             options: [{ value: 'none', label: '隐藏叶片' }, { value: 'slim', label: '细长叶片' }, { value: 'round', label: '圆润叶片' }],
             onChange: (leafStyle) => commit({ leafStyle }),
           }),
-          h(SliderRow, {
+          settings.treeStyle !== 'botanical' && h(SliderRow, {
             label: '叶片大小', desc: '叶片向标签左侧的空白处生长', min: 3, max: 12, step: 0.5,
             value: settings.leafSize, format: (value) => value.toFixed(1) + 'px', onChange: (leafSize) => commit({ leafSize }),
           }),
-          h(SelectRow, {
+          settings.treeStyle !== 'botanical' && h(SelectRow, {
             label: '叶片色调', desc: '运行、异常和停止时跟随节点状态颜色', value: settings.leafTint,
             options: [{ value: 'muted', label: '灰绿' }, { value: 'green', label: '苔绿' }, { value: 'mono', label: '随主题墨色' }],
             onChange: (leafTint) => commit({ leafTint }),
@@ -3291,9 +3294,10 @@ window.__ModuleLoader__.load({
             format: (value) => value.toFixed(1) + 'px',
             onChange: (dotSize) => commit({ dotSize }),
           }),
-          h(SelectRow, {
+          // Dots only grow on lines wider than 3px, and quiet dots never follow width.
+          !isQuiet(settings) && settings.lineWidth > DOT_FOLLOW_MIN_WIDTH && h(SelectRow, {
             label: '圆点随线宽缩放',
-            desc: '开启后粗枝上的圆点自动放大；关闭后只由圆点大小和节点层级决定',
+            desc: '开启后粗枝上的圆点自动放大；关闭后只由圆点大小决定',
             value: settings.dotFollowWidth ? 'on' : 'off',
             options: [{ value: 'on', label: '开启' }, { value: 'off', label: '关闭' }],
             onChange: (value) => commit({ dotFollowWidth: value === 'on' }),

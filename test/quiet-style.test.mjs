@@ -155,10 +155,23 @@ test('a top-level tool branch leaves the trunk below the previous dot', () => {
   assert.ok(startY < node.y)
 })
 
-test('the first top-level branch may start at the root', () => {
+test('the first top-level branch may start near the root', () => {
   api.setSettings(api.normalize({ treeStyle: 'classic' }))
 
-  assert.equal(api.topBranchStartY(null, 0, { y: 30, dotX: 50 }), 0)
+  const startY = api.topBranchStartY(null, 0, { y: 30, dotX: 50 })
+  assert.ok(startY >= 0 && startY < 30)
+})
+
+test('the trunk-to-branch transition changes where a branch leaves the trunk', () => {
+  const previous = { y: 100 }
+  const node = { y: 160, dotX: 50 }
+  api.setSettings(api.normalize({ treeStyle: 'classic', topTransition: 4 }))
+  const short = api.topBranchStartY(previous, previous.y, node)
+  api.setSettings(api.normalize({ treeStyle: 'classic', topTransition: 30 }))
+  const long = api.topBranchStartY(previous, previous.y, node)
+
+  assert.ok(long < short, 'a longer transition leaves the trunk earlier')
+  assert.ok(long > previous.y + 4, 'but never from the previous dot')
 })
 
 test('the quiet rail sits left of the botanical rail', () => {
