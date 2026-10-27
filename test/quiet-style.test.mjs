@@ -22,10 +22,10 @@ test('legacy settings without treeStyle migrate to the classic preset', () => {
   assert.equal(settings.botanicalStyle, false)
   assert.equal(settings.lineWidth, 2.8)
   assert.equal(settings.thicknessDecay, 0.6)
-  assert.equal(settings.rootFusion, 0.7)
-  // The old organic default migrates to the straight trunk.
+  // Old organic defaults migrate to the classic preset: straight, light forks, no texture.
+  assert.equal(settings.rootFusion, 0.3)
   assert.equal(settings.vineAmplitude, 0)
-  assert.equal(settings.textureStyle, 'ink')
+  assert.equal(settings.textureStyle, 'none')
   assert.equal(settings.leafStyle, 'slim')
   assert.equal(settings.dotFollowWidth, true)
 })
@@ -171,4 +171,21 @@ test('a saved leaf density of 0 migrates to hidden leaves that the select can re
   assert.equal(migrated.leafStyle, 'none')
   assert.ok(migrated.leafDensity > 0)
   assert.equal(api.normalize({ ...migrated, leafStyle: 'slim' }).leafStyle, 'slim')
+})
+
+test('the untouched old classic preset adopts light forks and no texture', () => {
+  const settings = api.normalize({ treeStyle: 'classic', rootFusion: 0.7, textureStyle: 'ink' })
+
+  assert.equal(settings.rootFusion, 0.3)
+  assert.equal(settings.textureStyle, 'none')
+})
+
+test('custom classic texture and botanical wood keep their values', () => {
+  const custom = api.normalize({ treeStyle: 'classic', rootFusion: 0.5, textureStyle: 'ink' })
+  const botanical = api.normalize({ treeStyle: 'botanical' })
+
+  assert.equal(custom.rootFusion, 0.5)
+  assert.equal(custom.textureStyle, 'ink')
+  assert.equal(botanical.rootFusion, 0.7)
+  assert.equal(botanical.textureStyle, 'ink')
 })

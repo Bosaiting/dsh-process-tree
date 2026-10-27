@@ -6,7 +6,9 @@
 - Top-level tool branches leave the trunk between rows instead of from the previous dot, so siblings no longer read as children.
 - One dot rule everywhere: solid for thinking, ring for tools, same size at every depth, drawn in the line's own colour.
 - Even row rhythm: top-level steps and nested calls share one 16 px gap; branch transitions bend within it instead of adding padding.
-- Classic lines use the host's text colour at about two-thirds strength instead of a faint sage grey; the taper is stronger along the trunk, stems and forks.
+- Classic lines use the host's text colour at 38% strength, clearly lighter than labels; the taper is stronger along the trunk, stems and forks.
+- Classic drops the ink texture and lightens forks (root fusion 0.7 → 0.3); the untouched old classic preset migrates, custom values and botanical wood are kept.
+- Classic leaves are sage, the tree's one accent colour.
 - Classic leaves now mean something: a leaf sprouts when a tool step finishes, and running or failed steps stay bare. The random leaf-density slider is gone; a saved density of 0 migrates to hidden leaves. Default leaf size is 9 px.
 - Quiet lines are presented as the understated mode: listed last in the settings and READMEs.
 

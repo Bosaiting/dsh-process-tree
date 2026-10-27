@@ -44,6 +44,8 @@ window.__ModuleLoader__.load({
   const TREE_STYLES = ['quiet', 'botanical', 'classic']
   // Pre-0.8 organic preset value; saved copies of it migrate to a straight trunk.
   const LEGACY_VINE_AMPLITUDE = 29 / 6
+  // Pre-0.8 classic fork and texture; botanical keeps them for its wood roots.
+  const LEGACY_ROOT_FUSION = 0.7
   // Visual values a style switch applies; sliders stay editable afterwards.
   const ORGANIC_PRESET = Object.freeze({
     topTransition: 14,
@@ -51,8 +53,9 @@ window.__ModuleLoader__.load({
     vineAmplitude: 0,
     lineWidth: 2.8,
     thicknessDecay: 0.6,
-    rootFusion: 0.7,
-    textureStyle: 'ink',
+    // Light forks and no texture: on lines under 3px both read as smudges.
+    rootFusion: 0.3,
+    textureStyle: 'none',
     leafStyle: 'slim',
     dotStyle: 'ring',
     dotSize: 5.6,
@@ -72,7 +75,7 @@ window.__ModuleLoader__.load({
       dotSize: QUIET_DOT_SIZE,
       dotFollowWidth: false,
     }),
-    botanical: Object.freeze({ ...ORGANIC_PRESET, lineWidth: 5.6 }),
+    botanical: Object.freeze({ ...ORGANIC_PRESET, lineWidth: 5.6, rootFusion: LEGACY_ROOT_FUSION, textureStyle: 'ink' }),
     classic: ORGANIC_PRESET,
   })
   const DEFAULTS = Object.freeze({
@@ -102,6 +105,11 @@ window.__ModuleLoader__.load({
 
   function migrateStyle(source) {
     // Missing or invalid styles adopt the default preset; explicit choices survive.
+    if (source.treeStyle === 'classic' && source.rootFusion === LEGACY_ROOT_FUSION && source.textureStyle === 'ink') {
+      // The untouched old classic preset adopts the lighter forks and plain lines.
+      const { rootFusion, textureStyle } = STYLE_PRESETS.classic
+      return { ...source, rootFusion, textureStyle }
+    }
     if (TREE_STYLES.includes(source.treeStyle)) return source
     return { ...source, ...STYLE_PRESETS[DEFAULTS.treeStyle], treeStyle: DEFAULTS.treeStyle }
   }
@@ -321,7 +329,7 @@ window.__ModuleLoader__.load({
 
 .dpt-layer {
   /* The host's own text colour, mixed opaque with the page so joins never darken. */
-  --dpt-ink: color-mix(in srgb, currentColor 66%, var(--dsw-alias-bg-base, #fff));
+  --dpt-ink: color-mix(in srgb, currentColor 38%, var(--dsw-alias-bg-base, #fff));
   position: absolute;
   top: 0;
   left: 0;
@@ -339,13 +347,14 @@ window.__ModuleLoader__.load({
 .dpt-edge.dpt-error { fill: var(--dsw-alias-state-error-primary, #d9534f); }
 .dpt-edge.dpt-stopped { fill: var(--dsw-alias-state-warn-primary, #d9a441); }
 .dpt-texture { fill: none; stroke: var(--dsw-alias-bg-base, #fff); stroke-linecap: round; pointer-events: none; }
-.dpt-leaf { color: color-mix(in srgb, var(--dsw-alias-label-secondary, #777) 60%, #6a8068); }
+/* Sage: the tree's one accent, so a finished step reads at a glance. */
+.dpt-leaf { color: color-mix(in srgb, #8aa97c 85%, currentColor); }
 [data-leaf-tint="green"] .dpt-leaf { color: #6d936b; }
 [data-leaf-tint="mono"] .dpt-leaf { color: var(--dsw-alias-label-tertiary, #8a857c); }
 .dpt-leaf.dpt-live { color: var(--dsw-alias-label-deep-diving, #5b8def); }
 .dpt-leaf.dpt-error { color: var(--dsw-alias-state-error-primary, #d9534f); }
 .dpt-leaf.dpt-stopped { color: var(--dsw-alias-state-warn-primary, #d9a441); }
-.dpt-leaf-fill { fill: currentColor; opacity: .9; }
+.dpt-leaf-fill { fill: currentColor; opacity: .95; }
 .dpt-leaf-vein { fill: none; stroke: var(--dsw-alias-bg-base, #fff); stroke-width: .45; opacity: .5; }
 .dpt-leaf-petiole { stroke: currentColor; stroke-width: .65; fill: none; }
 .dpt-leaf-blade { transform-origin: 0 0; }
