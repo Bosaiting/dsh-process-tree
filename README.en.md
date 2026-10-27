@@ -8,27 +8,23 @@ This community UI plugin targets DSH Web and the Desktop web interface. It does 
 
 ## See it in action
 
-### A tree that grows with the task
-
-A real DSH Desktop conversation runs three read-only commands in sequence. Branches appear with each call; the second command fails deliberately. The GIF plays at 1.5× speed.
-
-![A process tree growing as tools run in a real DSH conversation](docs/images/process-tree-live.gif)
+These examples come from a real DSH Desktop conversation with three read-only steps and several nested calls; one check fails deliberately.
 
 ### Three styles
 
-The same conversation shown from top to bottom in **classic curve**, **botanical**, and **quiet lines**. The botanical image stitches together scroll captures to show the complete tree.
+The same branching excerpt shown from top to bottom in **classic curve**, **botanical**, and **quiet lines**.
 
 ![The same process in classic, botanical, and quiet styles](docs/images/process-tree-styles.png)
 
 ### Light and dark
 
-The same conversation in the botanical style, shown in both interface themes:
+The same multi-branch process in the botanical style, shown in both interface themes:
 
 ![The same process tree side by side in light and dark mode](docs/images/process-tree-themes.png)
 
 ### Before and after
 
-The same records without the plugin on the left, and with Process Tree's default classic curves on the right.
+The same records without the plugin above, and with Process Tree's default classic curves below.
 
 ![The same task before and after installing Process Tree](docs/images/process-tree-before-after.png)
 
@@ -38,7 +34,7 @@ Hollow dots mark completed tool steps, red marks the intentional failure, and bl
 
 ![Completed, failed and running nodes in the same task](docs/images/process-tree-states.png)
 
-The GIF and state image were captured from a dedicated Desktop demo. The style and comparison images replay sanitized records from that conversation in an isolated DSH Web instance. Images use the appearance settings selected at capture time; state colors are customizable.
+The state image was captured from a dedicated Desktop demo. The style and comparison images replay sanitized records from that conversation in an isolated DSH Web instance and stitch scroll captures to show the nested branches. Images use the appearance settings selected at capture time; state colors are customizable.
 
 ## Install
 
