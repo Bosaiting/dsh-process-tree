@@ -10,29 +10,35 @@ This community UI plugin targets DSH Web and the Desktop web interface. It does 
 
 ### A tree that grows with the task
 
-A real DSH Desktop conversation runs three read-only commands in sequence. Branches appear with each call; the second command fails deliberately.
+A real DSH Desktop conversation runs three read-only commands in sequence. Branches appear with each call; the second command fails deliberately. The GIF plays at 1.5× speed.
 
 ![A process tree growing as tools run in a real DSH conversation](docs/images/process-tree-live.gif)
 
+### Three styles
+
+The same conversation shown from top to bottom in **classic curve**, **botanical**, and **quiet lines**. The botanical image stitches together scroll captures to show the complete tree.
+
+![The same process in classic, botanical, and quiet styles](docs/images/process-tree-styles.png)
+
 ### Light and dark
 
-The same conversation in both interface themes:
+The same conversation in the botanical style, shown in both interface themes:
 
 ![The same process tree side by side in light and dark mode](docs/images/process-tree-themes.png)
 
 ### Before and after
 
-The same records without the plugin on the left, and with Process Tree installed on the right.
+The same records without the plugin on the left, and with Process Tree's default classic curves on the right.
 
 ![The same task before and after installing Process Tree](docs/images/process-tree-before-after.png)
 
 ### States at a glance
 
-Grey nodes have finished, red marks the intentional failure, and blue shows a running call.
+Hollow dots mark completed tool steps, red marks the intentional failure, and blue shows a running call. In the botanical style, running branches retain their wood color.
 
 ![Completed, failed and running nodes in the same task](docs/images/process-tree-states.png)
 
-The GIF and state image were captured from a dedicated Desktop demo. The comparisons replay sanitized records from that conversation in an isolated DSH Web instance. Images show the development build at capture time; state colors are customizable and appearance may differ from the published release.
+The GIF and state image were captured from a dedicated Desktop demo. The style and comparison images replay sanitized records from that conversation in an isolated DSH Web instance. Images show the development build at capture time; state colors are customizable and appearance may differ from the published release.
 
 ## Install
 
