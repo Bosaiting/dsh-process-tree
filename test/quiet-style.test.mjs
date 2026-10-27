@@ -23,7 +23,8 @@ test('legacy settings without treeStyle migrate to the classic preset', () => {
   assert.equal(settings.lineWidth, 2.8)
   assert.equal(settings.thicknessDecay, 0.6)
   assert.equal(settings.rootFusion, 0.7)
-  assert.equal(settings.vineAmplitude, 29 / 6)
+  // The old organic default migrates to the straight trunk.
+  assert.equal(settings.vineAmplitude, 0)
   assert.equal(settings.textureStyle, 'ink')
   assert.equal(settings.leafStyle, 'slim')
   assert.equal(settings.dotFollowWidth, true)
@@ -43,7 +44,13 @@ test('an explicit botanical style keeps its own values', () => {
   assert.equal(settings.treeStyle, 'botanical')
   assert.equal(settings.botanicalStyle, true)
   assert.equal(settings.lineWidth, 2.8)
-  assert.equal(settings.vineAmplitude, 29 / 6)
+  assert.equal(settings.vineAmplitude, 0)
+})
+
+test('a custom vine amplitude survives normalization', () => {
+  const settings = api.normalize({ treeStyle: 'classic', vineAmplitude: 3 })
+
+  assert.equal(settings.vineAmplitude, 3)
 })
 
 test('an unknown treeStyle falls back to classic', () => {
@@ -79,7 +86,8 @@ test('botanical roots are thicker while classic and quiet keep their widths', ()
   assert.equal(api.normalize({ treeStyle: 'botanical' }).lineWidth, 5.6)
   assert.equal(preset.thicknessDecay, 0.6)
   assert.equal(preset.rootFusion, 0.7)
-  assert.equal(preset.vineAmplitude, 29 / 6)
+  assert.equal(preset.vineAmplitude, 0)
+  assert.equal(api.STYLE_PRESETS.classic.vineAmplitude, 0)
   assert.equal(preset.textureStyle, 'ink')
   assert.equal(preset.dotFollowWidth, true)
 })
@@ -114,14 +122,37 @@ test('elbowD rejects targets that are not below and to the right', () => {
   assert.equal(api.elbowCurve(10, 10, 40, 10).d, '')
 })
 
-test('quiet dots step down by depth and ignore line width', () => {
+test('quiet dots keep one size per kind at every depth and ignore line width', () => {
   api.setSettings(api.normalize({ treeStyle: 'quiet', lineWidth: 9 }))
 
-  assert.equal(api.dotRadius({ kind: 'tool', depth: 1, width: 9 }), 3)
-  assert.equal(api.dotRadius({ kind: 'tool', depth: 2, width: 9 }), 2.5)
-  assert.equal(api.dotRadius({ kind: 'tool', depth: 3, width: 9 }), 2)
-  assert.equal(api.dotRadius({ kind: 'tool', depth: 6, width: 9 }), 2)
+  for (const depth of [1, 2, 3, 6]) assert.equal(api.dotRadius({ kind: 'tool', depth, width: 9 }), 3)
   assert.equal(api.dotRadius({ kind: 'think', depth: 1, width: 9 }), 2.5)
+})
+
+test('classic dots keep one size per kind at every depth', () => {
+  api.setSettings(api.normalize({ treeStyle: 'classic' }))
+  const tool = api.dotRadius({ kind: 'tool', depth: 1, width: 2 })
+
+  for (const depth of [2, 3, 6]) assert.equal(api.dotRadius({ kind: 'tool', depth, width: 2 }), tool)
+  assert.ok(api.dotRadius({ kind: 'think', depth: 1, width: 2 }) < tool)
+})
+
+test('a top-level tool branch leaves the trunk below the previous dot', () => {
+  api.setSettings(api.normalize({ treeStyle: 'classic' }))
+  const previous = { y: 100 }
+  const node = { y: 140, dotX: 50 }
+
+  // Arrange: rows only 40px apart, so the curve wants more room than exists.
+  const startY = api.topBranchStartY(previous, previous.y, node)
+
+  assert.ok(startY > previous.y + 4, 'branch must not start at the previous dot')
+  assert.ok(startY < node.y)
+})
+
+test('the first top-level branch may start at the root', () => {
+  api.setSettings(api.normalize({ treeStyle: 'classic' }))
+
+  assert.equal(api.topBranchStartY(null, 0, { y: 30, dotX: 50 }), 0)
 })
 
 test('the quiet rail sits left of the botanical rail', () => {

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Draw a straight trunk in classic and botanical; the old wavy default (4.83 px) migrates to 0, custom values are kept.
+- Top-level tool branches leave the trunk between rows instead of from the previous dot, so siblings no longer read as children.
+- One dot rule everywhere: solid for thinking, ring for tools, same size at every depth, drawn in the line's own colour.
+- Even row rhythm: top-level steps and nested calls share one 16 px gap; branch transitions bend within it instead of adding padding.
+
 ## 0.7.4
 
 - Increase the botanical root preset from 2.8 px to 5.6 px, retaining taper and texture.

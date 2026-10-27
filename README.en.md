@@ -70,7 +70,7 @@ Restart the corresponding DSH instance. Use Desktop's plugin manager for its man
 
 ## Settings
 
-Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves, texture and leaves. Quiet uses 1.5 px uniform lines, rounded corners and smaller dots at deeper levels; botanical adds original canopy artwork, wood roots and halos. Selecting a style applies its preset; sliders remain editable.
+Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves, texture and leaves. Quiet uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds original canopy artwork, wood roots and halos. Selecting a style applies its preset; sliders remain editable.
 
 Controls cover transitions, line width, indentation, summary dimming, leading, dots, growth and decoration. Botanical controls appear in that style. The settings preview shares the chat renderer. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
 
