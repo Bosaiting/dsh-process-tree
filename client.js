@@ -44,6 +44,15 @@ window.__ModuleLoader__.load({
   const TREE_STYLES = ['quiet', 'botanical', 'classic']
   // Pre-0.8 organic preset value; saved copies of it migrate to a straight trunk.
   const LEGACY_VINE_AMPLITUDE = 29 / 6
+  // The crown is a small emblem (about 70px tall); pre-0.8 sizes were 0.45–0.85.
+  const CANOPY_SCALE = 0.26
+  const CANOPY_MIN = 0.15
+  const CANOPY_MAX = 0.35
+  // Half the crown artwork's width, in artwork units, for keeping it on-page.
+  const CROWN_HALF_WIDTH = 124
+  // The artwork's canopy ends at y=232; a short fixed neck joins it to the first row.
+  const CROWN_ART_HEIGHT = 232
+  const CROWN_NECK = 10
   // Pre-0.8 classic fork and texture; botanical keeps them for its wood roots.
   const LEGACY_ROOT_FUSION = 0.7
   // Visual values a style switch applies; sliders stay editable afterwards.
@@ -82,7 +91,7 @@ window.__ModuleLoader__.load({
     treeStyle: 'classic',
     botanicalStyle: false,
     canopyEnabled: true,
-    canopyScale: 0.65,
+    canopyScale: CANOPY_SCALE,
     canopyDensity: 1,
     rootDetail: 0.8,
     topBend: 0.5,
@@ -102,6 +111,13 @@ window.__ModuleLoader__.load({
     leading: 0,
     ...STYLE_PRESETS.classic,
   })
+
+  // The wood gradient keeps its original span so a small crown does not band the roots.
+  const woodScale = () => Math.max(SETTINGS.canopyScale, 0.5)
+
+  function crownHeight() {
+    return Math.ceil(CROWN_ART_HEIGHT * SETTINGS.canopyScale + CROWN_NECK)
+  }
 
   function migrateStyle(source) {
     // Missing or invalid styles adopt the default preset; explicit choices survive.
@@ -130,7 +146,9 @@ window.__ModuleLoader__.load({
       // Derived; kept in storage so older plugin builds still read a value.
       botanicalStyle: source.treeStyle === 'botanical',
       canopyEnabled: typeof source.canopyEnabled === 'boolean' ? source.canopyEnabled : defaults.canopyEnabled,
-      canopyScale: clampNumber(source.canopyScale ?? defaults.canopyScale, 0.45, 0.85, defaults.canopyScale),
+      // Old full-size crowns become the emblem; emblem sizes stay editable.
+      canopyScale: Number(source.canopyScale) > CANOPY_MAX ? defaults.canopyScale
+        : clampNumber(source.canopyScale ?? defaults.canopyScale, CANOPY_MIN, CANOPY_MAX, defaults.canopyScale),
       canopyDensity: clampNumber(source.canopyDensity ?? defaults.canopyDensity, 0.2, 1, defaults.canopyDensity),
       rootDetail: clampNumber(source.rootDetail ?? defaults.rootDetail, 0, 1, defaults.rootDetail),
       topTransition: clampNumber(source.topTransition ?? Math.round(10 + curveShape * 8), 0, 96, defaults.topTransition),
@@ -457,7 +475,11 @@ window.__ModuleLoader__.load({
   fill: var(--dsw-alias-state-warn-primary, #d9a441);
   stroke: var(--dsw-alias-state-warn-primary, #d9a441);
 }
-.dpt-root-hairs {fill:none;stroke:var(--dpt-wood);stroke-width:.35;stroke-linecap:round;pointer-events:none;}
+/* Cylindrical wood shading along each root, matching the crown's lit trunk. */
+.dpt-root-shade {pointer-events:none;}
+.dpt-root-shade-dark {fill:var(--dpt-wood-dark);opacity:.55;}
+.dpt-root-shade-light {fill:var(--dpt-wood-light);opacity:.75;}
+.dpt-edge.dpt-error ~ .dpt-root-shade,.dpt-edge.dpt-stopped ~ .dpt-root-shade {display:none;}
 .dpt-root-flow {fill:none;stroke:var(--dpt-live);stroke-width:.8;stroke-linecap:round;opacity:.55;pointer-events:none;display:none;}
 .dpt-halo {opacity:0;pointer-events:none;}
 .dpt-halo.dpt-halo-live {opacity:.42;}
@@ -899,6 +921,23 @@ window.__ModuleLoader__.load({
         smoothOutline(reversed, false) + ' A' + startRadius + ',' + startRadius + ' 0 0 0 ' + coord(start.x) + ',' + coord(start.y) + ' Z',
       length,
     }
+  }
+
+  function stripeD(geometry, widthAt, offset, scale) {
+    // A narrow band inside a root's outline, shifted across it by `offset`
+    // (in radii; positive is the shadow side) to suggest a lit cylinder.
+    const length = geometry.length
+    if (!Number.isFinite(length) || length < 4) return ''
+    const count = Math.max(8, Math.min(80, Math.ceil(length / 6)))
+    const left = [], right = []
+    for (let i = 0; i <= count; i++) {
+      const p = geometry.sample(length * i / count)
+      const r = widthAt(i / count, p.y) / 2
+      const cx = p.x + p.nx * r * offset, cy = p.y + p.ny * r * offset
+      left.push({ x: cx + p.nx * r * scale, y: cy + p.ny * r * scale })
+      right.push({ x: cx - p.nx * r * scale, y: cy - p.ny * r * scale })
+    }
+    return smoothOutline(left, true) + smoothOutline(right.reverse(), false) + ' Z'
   }
 
   function textureD(geometry, length, widthAt, key) {
@@ -1443,20 +1482,6 @@ window.__ModuleLoader__.load({
     }
     return d
   }
-  function rootHairD(geometry, key) {
-    let d = ''
-    const count = Math.min(8, Math.floor(geometry.length / 48))
-    for (let i = 0; i < count; i++) {
-      const p = geometry.sample(geometry.length * (i + 0.5) / count)
-      const w = trunkWidth(p.y)
-      const x = p.x + p.nx * w * 0.44, y = p.y + p.ny * w * 0.44
-      const length = 5 + hash(key + i) % 7
-      d += ' M' + coord(x) + ',' + coord(y) + ' C' + coord(x - 1.4) + ',' + coord(y + length * 0.2) +
-        ' ' + coord(x - length * 0.68) + ',' + coord(y + length * 0.42) + ' ' + coord(x - length * 0.48) + ',' + coord(y + length)
-    }
-    return d
-  }
-
   class TreeView {
     constructor(content) {
       this.content = content
@@ -1551,7 +1576,7 @@ window.__ModuleLoader__.load({
         this.content.prepend(header)
         this.crownHeader = header
       }
-      this.crownHeight = Math.ceil(330 * SETTINGS.canopyScale)
+      this.crownHeight = crownHeight()
       this.crownHeader.style.height = this.crownHeight + 'px'
       if (this.suspended) return
       if (!this.crownSvg) {
@@ -1580,7 +1605,7 @@ window.__ModuleLoader__.load({
         registerFloatingCrown(this)
       }
       this.crownHeader.style.display=''
-      this.crownHeight=Math.ceil(330*SETTINGS.canopyScale)
+      this.crownHeight=crownHeight()
       this.crownHeader.style.height=this.crownHeight+'px'
       this.paintCrown(this.crownHeight)
       syncCrownLibraries()
@@ -1589,7 +1614,10 @@ window.__ModuleLoader__.load({
     paintCrown(space) {
       if(!this.crownHeader||!SETTINGS.botanicalStyle||!SETTINGS.canopyEnabled)return
       this.crownSpace=space
-      const s=SETTINGS.canopyScale,vine=createVine(this.vineKey),start=vine(0),x=start.x,n=this.crownNeck
+      const s=SETTINGS.canopyScale,vine=createVine(this.vineKey),start=vine(0),n=this.crownNeck
+      // Centre the crown over the trunk unless that would push it off the content's left edge;
+      // the neck below then leans back to the trunk.
+      const x=Math.max(start.x,CROWN_HALF_WIDTH*s+2)
       attr(this.crownUse,'transform','translate('+coord(x-128*s)+',0) scale('+s+')')
       // Exact cross-section and tangents of the original crown at y=232.
       // A longer Hermite bridge then joins the unchanged native root outline.
@@ -1603,7 +1631,9 @@ window.__ModuleLoader__.load({
       const d='M'+pt(left[0])+' C'+left.slice(1).map(pt).join(' ')+' L'+pt(right[3])+' C'+[right[2],right[1],right[0]].map(pt).join(' ')+' Z'
       for(const el of [this.crownBridge,n.silhouette,n.shade])attr(el,'d',d)
       attr(n.canopyRect,'height',y+.12)
-      attr(n.wood,'x1',x-19*s);attr(n.wood,'x2',x+25*s);attr(n.wood,'y1',0);attr(n.wood,'y2',0)
+      // Shade the neck like the roots it joins, so the two meet in one tone.
+      const woodX=start.x,woodS=woodScale()
+      attr(n.wood,'x1',woodX-19*woodS);attr(n.wood,'x2',woodX+25*woodS);attr(n.wood,'y1',0);attr(n.wood,'y2',0)
       for(const [k,v]of Object.entries({x1:0,x2:0,y1:y,y2:space}))attr(n.fade,k,v)
       for(const [k,v]of Object.entries({x:Math.min(left[0].x,finish.x-half)-10,y:y-1,width:Math.abs(right[0].x-left[0].x)+Math.abs(finish.x-x)+20,height:span+3}))attr(n.fadeRect,k,v)
       const sample=(curve,t)=>{const a=1-t;return{x:a*a*a*curve[0].x+3*a*a*t*curve[1].x+3*a*t*t*curve[2].x+t*t*t*curve[3].x,y:a*a*a*curve[0].y+3*a*a*t*curve[1].y+3*a*t*t*curve[2].y+t*t*t*curve[3].y}}
@@ -1984,7 +2014,7 @@ window.__ModuleLoader__.load({
     syncWoodPaint() {
       if(!this.rootWoodGradient)return
       // Same gradient, coordinates and theme tokens as the crown wood.
-      const x=createVine(this.vineKey)(0).x,s=SETTINGS.canopyScale
+      const x=createVine(this.vineKey)(0).x,s=woodScale()
       for(const [k,v]of Object.entries({x1:x-19*s,x2:x+25*s,y1:0,y2:0}))attr(this.rootWoodGradient,k,v)
     }
 
@@ -2438,6 +2468,26 @@ window.__ModuleLoader__.load({
       }
     }
 
+    syncRootShade(record, plan) {
+      const wanted = SETTINGS.botanicalStyle && SETTINGS.rootDetail > 0
+      if (!wanted) {
+        if (record.shade) { record.shade.remove(); record.shade = null }
+        return
+      }
+      if (!plan.body) return
+      if (!record.shade) {
+        const group = document.createElementNS(NS, 'g')
+        group.classList.add('dpt-root-shade')
+        group.innerHTML = '<path class="dpt-root-shade-dark"/><path class="dpt-root-shade-light"/>'
+        record.bodyGroup.append(group)
+        record.shade = group
+      }
+      record.shade.style.opacity = String(SETTINGS.rootDetail)
+      const [dark, light] = record.shade.children
+      attr(dark, 'd', stripeD(plan.geometry, plan.widthAt, 0.62, 0.3))
+      attr(light, 'd', stripeD(plan.geometry, plan.widthAt, -0.28, 0.24))
+    }
+
     createEdge(edge, node, fragment) {
       const bodyGroup = document.createElementNS(NS, 'g')
       const path = document.createElementNS(NS, 'path')
@@ -2581,15 +2631,7 @@ window.__ModuleLoader__.load({
         record.geometry = geometry
         record.centerD = edge.d
         record.length = geometry.length
-        if (SETTINGS.botanicalStyle && SETTINGS.rootDetail > 0 && edge.type === 'trunk') {
-          if (!record.hairs) {
-            record.hairs = document.createElementNS(NS, 'path')
-            record.hairs.classList.add('dpt-root-hairs')
-            record.bodyGroup.append(record.hairs)
-          }
-          if (record.hairD !== edge.d) { attr(record.hairs, 'd', rootHairD(geometry, this.vineKey + edge.key)); record.hairD = edge.d }
-          record.hairs.style.opacity = String(SETTINGS.rootDetail * 0.45)
-        } else if (record.hairs) { record.hairs.remove(); record.hairs = null; record.hairD = null }
+        this.syncRootShade(record, plan)
         if (plan.textured) {
           if (!record.texture) {
             const clip = document.createElementNS(NS, 'clipPath')
@@ -2982,9 +3024,9 @@ window.__ModuleLoader__.load({
           ...(settings.treeStyle !== 'botanical' ? [] : [
           h('h3', { className: 'dpt-subhead' }, '植物手稿'),
           h(SelectRow, { label: '顶部树冠', desc: '树冠随本轮过程一起折叠；不改变根系的曲线和缩进', value: settings.canopyEnabled ? 'on' : 'off', options: [{ value: 'on', label: '显示' }, { value: 'off', label: '隐藏' }], onChange: value => commit({ canopyEnabled: value === 'on' }) }),
-          h(SliderRow, { label: '树冠大小', desc: '缩放顶部树冠，根系坐标保持独立', min: .45, max: .85, step: .01, value: settings.canopyScale, format: value => Math.round(value * 100) + '%', onChange: canopyScale => commit({ canopyScale }) }),
+          h(SliderRow, { label: '树冠大小', desc: '顶部小树冠徽记的大小；树冠始终留在内容区内', min: CANOPY_MIN, max: CANOPY_MAX, step: .01, value: settings.canopyScale, format: value => Math.round(value * 100) + '%', onChange: canopyScale => commit({ canopyScale }) }),
           h(SliderRow, { label: '树冠疏密', desc: '稳定分布的枝叶，重绘时不会随机跳动', min: .2, max: 1, step: .05, value: settings.canopyDensity, format: value => Math.round(value * 100) + '%', onChange: canopyDensity => commit({ canopyDensity }) }),
-          h(SliderRow, { label: '根系装饰细节', desc: '细纤维与少量毛细根；不改变原有曲线或粗细衰减', min: 0, max: 1, step: .05, value: settings.rootDetail, format: value => Math.round(value * 100) + '%', onChange: rootDetail => commit({ rootDetail }) }),
+          h(SliderRow, { label: '根系装饰细节', desc: '木纹细线与明暗；不改变原有曲线或粗细衰减', min: 0, max: 1, step: .05, value: settings.rootDetail, format: value => Math.round(value * 100) + '%', onChange: rootDetail => commit({ rootDetail }) }),
           ]),
           h('h3', { className: 'dpt-subhead' }, '枝条形态'),
           h(SliderRow, {

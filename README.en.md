@@ -18,9 +18,9 @@ Flowing branches with a clear taper, drawn in the interface's own text colour. A
 
 ### Botanical
 
-Original canopy artwork and thicker wood roots (5.6 px line-width preset) connect the calls into a tree.
+A small original canopy emblem tops shaded wood roots (5.6 px line-width preset) that connect the calls into a tree. The crown is about 70 px tall and stays inside the content area.
 
-![Botanical style with a full canopy, wood trunk and nested calls](docs/images/botanical.png)
+![Botanical style with a small canopy, wood trunk and nested calls](docs/images/botanical.png)
 
 ### Quiet lines (understated)
 

@@ -9,6 +9,8 @@
 - Classic lines use the host's text colour at 38% strength, clearly lighter than labels; the taper is stronger along the trunk, stems and forks.
 - Classic drops the ink texture and lightens forks (root fusion 0.7 → 0.3); the untouched old classic preset migrates, custom values and botanical wood are kept.
 - Classic leaves are sage, the tree's one accent colour.
+- Botanical crown is a small emblem (about 70 px instead of about 215 px) on a short neck, and never extends past the content's left edge; saved full-size crowns migrate to the emblem.
+- Botanical roots get the crown's lit-wood shading; the stray root-hair arcs beside the trunk are removed.
 - Classic leaves now mean something: a leaf sprouts when a tool step finishes, and running or failed steps stay bare. The random leaf-density slider is gone; a saved density of 0 migrates to hidden leaves. Default leaf size is 9 px.
 - Quiet lines are presented as the understated mode: listed last in the settings and READMEs.
 

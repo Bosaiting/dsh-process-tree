@@ -30,12 +30,18 @@ test('legacy settings without treeStyle migrate to the classic preset', () => {
   assert.equal(settings.dotFollowWidth, true)
 })
 
-test('migration keeps row appearance and canopy preferences', () => {
+test('migration keeps row appearance; old full-size crowns become the emblem', () => {
   const settings = api.normalize(LEGACY_BOTANICAL)
 
   assert.equal(settings.indent, 12)
   assert.equal(settings.toolDim, 0.8)
-  assert.equal(settings.canopyScale, 0.65)
+  assert.equal(settings.canopyScale, api.DEFAULTS.canopyScale)
+  assert.ok(api.DEFAULTS.canopyScale < 0.45)
+})
+
+test('an emblem-sized canopy preference is kept', () => {
+  assert.equal(api.normalize({ treeStyle: 'botanical', canopyScale: 0.3 }).canopyScale, 0.3)
+  assert.equal(api.normalize({ treeStyle: 'botanical', canopyScale: 0.05 }).canopyScale, 0.15)
 })
 
 test('an explicit botanical style keeps its own values', () => {
