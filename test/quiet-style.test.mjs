@@ -195,3 +195,25 @@ test('custom classic texture and botanical wood keep their values', () => {
   assert.equal(botanical.rootFusion, 0.7)
   assert.equal(botanical.textureStyle, 'ink')
 })
+
+test('intensity scales the style preset line width and dots', () => {
+  const subtle = api.intensityPatch('classic', 'subtle')
+  const vivid = api.intensityPatch('classic', 'vivid')
+  const standard = api.intensityPatch('classic', 'standard')
+
+  assert.equal(standard.lineWidth, api.STYLE_PRESETS.classic.lineWidth)
+  assert.ok(subtle.lineWidth < standard.lineWidth && standard.lineWidth < vivid.lineWidth)
+  assert.ok(subtle.dotSize < standard.dotSize && standard.dotSize < vivid.dotSize)
+})
+
+test('an advanced line width edit reads as custom intensity', () => {
+  const base = api.normalize({ treeStyle: 'quiet', ...api.STYLE_PRESETS.quiet, ...api.intensityPatch('quiet', 'vivid') })
+
+  assert.equal(base.intensity, 'vivid')
+  assert.equal(api.matchesIntensity(base), true)
+  assert.equal(api.matchesIntensity({ ...base, lineWidth: base.lineWidth + 1 }), false)
+})
+
+test('an unknown intensity falls back to standard', () => {
+  assert.equal(api.normalize({ treeStyle: 'classic', intensity: 'loud' }).intensity, 'standard')
+})

@@ -240,9 +240,9 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
           window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
         });await page.evaluate(()=>frames(12));
         assert.equal(await page.evaluate(()=>api.resources().views),2);
-        await page.getByLabel('风格',{exact:true}).selectOption('botanical');await page.evaluate(()=>frames(10));
+        await page.getByRole('radio',{name:/植物手稿/}).click();await page.evaluate(()=>frames(10));
         assert.equal(await page.locator('.dpt-crown-portal').count(),2);assert.equal(await page.locator('.dpt-crown-library').count(),1);
-        await page.getByLabel('新增分支生长',{exact:true}).selectOption('on');await page.evaluate(()=>frames());await page.getByRole('button',{name:'播放生长',exact:true}).click();await page.evaluate(()=>frames(2));
+        await page.getByRole('switch',{name:'动画',exact:true}).check();await page.evaluate(()=>frames());await page.getByRole('button',{name:'播放生长',exact:true}).click();await page.evaluate(()=>frames(2));
         const preview=await page.evaluate(()=>[...instances].filter(v=>v.content.getRootNode()!==document).map(v=>({stopped:v.stopped,suspended:v.suspended,inViewport:v.inViewport,nodes:v.model?.nodes.length,replay:v.replayRequested,rect:v.content.getBoundingClientRect().toJSON(),motions:v.motions.size})));
         await page.screenshot({path:path.join(out,'settings.png')});
         assert.ok(preview.some(v=>v.motions>0),JSON.stringify(preview));

@@ -87,8 +87,31 @@ window.__ModuleLoader__.load({
     botanical: Object.freeze({ ...ORGANIC_PRESET, lineWidth: 5.6, rootFusion: LEGACY_ROOT_FUSION, textureStyle: 'ink' }),
     classic: ORGANIC_PRESET,
   })
+  // One knob for how present the tree is: scales the style's line and dot
+  // presets and the line tone. Advanced sliders can still diverge from it.
+  const INTENSITIES = Object.freeze({
+    subtle: Object.freeze({ width: 0.75, dot: 0.85, ink: 30, quiet: 32 }),
+    standard: Object.freeze({ width: 1, dot: 1, ink: 38, quiet: 42 }),
+    vivid: Object.freeze({ width: 1.3, dot: 1.2, ink: 48, quiet: 56 }),
+  })
+
+  function intensityPatch(treeStyle, intensity) {
+    const preset = STYLE_PRESETS[treeStyle], level = INTENSITIES[intensity]
+    return {
+      intensity,
+      lineWidth: Number((preset.lineWidth * level.width).toFixed(2)),
+      dotSize: Number((preset.dotSize * level.dot).toFixed(2)),
+    }
+  }
+
+  function matchesIntensity(settings) {
+    const expected = intensityPatch(settings.treeStyle, settings.intensity)
+    return Math.abs(expected.lineWidth - settings.lineWidth) < 0.01 && Math.abs(expected.dotSize - settings.dotSize) < 0.01
+  }
+
   const DEFAULTS = Object.freeze({
     treeStyle: 'classic',
+    intensity: 'standard',
     botanicalStyle: false,
     canopyEnabled: true,
     canopyScale: CANOPY_SCALE,
@@ -143,6 +166,7 @@ window.__ModuleLoader__.load({
     const curveShape = clampNumber(source.curveShape ?? source.curvature, 0, 1.2, defaults.curveShape)
     return {
       treeStyle: source.treeStyle,
+      intensity: Object.hasOwn(INTENSITIES, source.intensity) ? source.intensity : defaults.intensity,
       // Derived; kept in storage so older plugin builds still read a value.
       botanicalStyle: source.treeStyle === 'botanical',
       canopyEnabled: typeof source.canopyEnabled === 'boolean' ? source.canopyEnabled : defaults.canopyEnabled,
@@ -274,6 +298,8 @@ window.__ModuleLoader__.load({
     style.setProperty('--dsh-tool-dim', String(SETTINGS.toolDim))
     style.setProperty('--dsh-think-dim', String(SETTINGS.thinkDim))
     style.setProperty('--dsh-row-leading', SETTINGS.leading + 'px')
+    style.setProperty('--dpt-ink-mix', INTENSITIES[SETTINGS.intensity].ink + '%')
+    style.setProperty('--dpt-quiet-mix', INTENSITIES[SETTINGS.intensity].quiet + '%')
     // Rows follow the rail so the dot-to-label gap is the same in every style.
     style.setProperty('--dpt-rail-shift', (BASE_X - railX()) + 'px')
     const dots = dotMetrics()
@@ -284,6 +310,8 @@ window.__ModuleLoader__.load({
   function clearLineVars() {
     const style = document.documentElement.style
     style.removeProperty('--dsh-tool-indent')
+    style.removeProperty('--dpt-ink-mix')
+    style.removeProperty('--dpt-quiet-mix')
     style.removeProperty('--dsh-tool-dim')
     style.removeProperty('--dsh-think-dim')
     style.removeProperty('--dsh-row-leading')
@@ -347,7 +375,7 @@ window.__ModuleLoader__.load({
 
 .dpt-layer {
   /* The host's own text colour, mixed opaque with the page so joins never darken. */
-  --dpt-ink: color-mix(in srgb, currentColor 38%, var(--dsw-alias-bg-base, #fff));
+  --dpt-ink: color-mix(in srgb, currentColor var(--dpt-ink-mix, 38%), var(--dsw-alias-bg-base, #fff));
   position: absolute;
   top: 0;
   left: 0;
@@ -450,7 +478,7 @@ window.__ModuleLoader__.load({
 /* Quiet: one opaque theme-derived tone, so overlapping joins never darken.
    Only node dots carry state colour. */
 [data-dpt-style="quiet"] {
-  --dpt-quiet-line: color-mix(in srgb, var(--dsw-alias-label-tertiary, #8a857c) 42%, var(--dsw-alias-bg-base, #fff));
+  --dpt-quiet-line: color-mix(in srgb, var(--dsw-alias-label-tertiary, #8a857c) var(--dpt-quiet-mix, 42%), var(--dsw-alias-bg-base, #fff));
 }
 [data-dpt-style="quiet"] .dpt-edges { opacity: 1; }
 [data-dpt-style="quiet"] .dpt-edge,
@@ -560,6 +588,47 @@ window.__ModuleLoader__.load({
   border-radius: 6px;
 }
 .dpt-actions { display: flex; gap: 8px; margin-top: 12px; }
+.dpt-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.dpt-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0;
+  padding: 8px 8px 10px; font: inherit; text-align: left; cursor: pointer;
+  color: var(--dsw-alias-label-primary, currentColor); background: transparent;
+  border: 1px solid var(--dsw-alias-border-l2, #444); border-radius: 10px;
+}
+.dpt-card:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, .08)); }
+.dpt-card[aria-checked="true"] { border-color: var(--dsw-alias-brand-primary, #5b8def); box-shadow: 0 0 0 1px var(--dsw-alias-brand-primary, #5b8def); }
+.dpt-card-label { font-weight: 600; }
+.dpt-card-desc { font-size: 11px; line-height: 1.4; color: var(--dsw-alias-label-tertiary, #888); }
+.dpt-thumb { width: 100%; height: auto; margin-bottom: 4px; border-radius: 6px; background: var(--dsw-alias-bg-layer-1, rgba(127, 127, 127, .06)); }
+.dpt-thumb { color: var(--dsw-alias-label-secondary, currentColor); }
+.dpt-thumb-line { fill: none; stroke: color-mix(in srgb, currentColor 60%, transparent); stroke-linecap: round; }
+.dpt-thumb-solid { fill: color-mix(in srgb, currentColor 70%, transparent); }
+.dpt-thumb-ring { fill: var(--dsw-alias-bg-base, #fff); stroke: color-mix(in srgb, currentColor 70%, transparent); stroke-width: 1.2; }
+.dpt-thumb-leaf { fill: #8aa97c; }
+.dpt-thumb-crown { fill: #7d9a6a; opacity: .85; }
+.dpt-thumb-wood { fill: none; stroke: var(--dpt-wood, #9c8770); stroke-linecap: round; }
+.dpt-thumb-wood-ring { fill: var(--dsw-alias-bg-base, #fff); stroke: var(--dpt-wood, #9c8770); stroke-width: 1.2; }
+.dpt-segmented { display: inline-flex; padding: 2px; border: 1px solid var(--dsw-alias-border-l2, #444); border-radius: 8px; }
+.dpt-segmented button {
+  min-width: 64px; padding: 5px 12px; font: inherit; cursor: pointer;
+  color: var(--dsw-alias-label-secondary, #aaa); background: transparent; border: 0; border-radius: 6px;
+}
+.dpt-segmented button[aria-checked="true"] { color: var(--dsw-alias-label-primary, currentColor); background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, .16)); font-weight: 600; }
+.dpt-under { margin: 4px 0 0 !important; }
+.dpt-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px;
+  padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l2, #333); border-radius: 8px; cursor: pointer;
+}
+.dpt-toggle > span { display: flex; flex-direction: column; }
+.dpt-toggle-desc { font-size: 11px; color: var(--dsw-alias-label-tertiary, #888); }
+.dpt-toggle input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--dsw-alias-brand-primary, #4a9eff); }
+.dpt-advanced { margin-top: 20px; border-top: 1px solid var(--dsw-alias-border-l2, #333); padding-top: 10px; }
+.dpt-advanced > summary { display: flex; align-items: baseline; gap: 8px; cursor: pointer; padding: 4px 0; list-style: none; }
+.dpt-advanced > summary::-webkit-details-marker { display: none; }
+.dpt-advanced > summary::before { content: '›'; display: inline-block; width: 10px; transition: transform .15s ease; color: var(--dsw-alias-label-tertiary, #888); }
+.dpt-advanced[open] > summary::before { transform: rotate(90deg); }
+.dpt-advanced-hint { font-size: 11px; color: var(--dsw-alias-label-tertiary, #888); }
+.dpt-card:focus-visible, .dpt-segmented button:focus-visible, .dpt-advanced > summary:focus-visible, .dpt-toggle input:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary, #5b8def); outline-offset: 2px; }
 .dpt-btn {
   padding: 6px 12px;
   font: inherit;
@@ -2864,6 +2933,7 @@ window.__ModuleLoader__.load({
   if (typeof window[TEST_HOOK] === 'function') {
     window[TEST_HOOK]({
       DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX, topBranchStartY,
+      INTENSITIES, intensityPatch, matchesIntensity,
       setSettings: (next) => { SETTINGS = next },
     })
   }
@@ -2979,7 +3049,7 @@ window.__ModuleLoader__.load({
         return h('section', { className: 'dpt-preview-panel', 'aria-label': '实时预览' },
           h('div', { className: 'dpt-preview-heading' },
             h('h3', null, '实时预览'),
-            h('p', null, '拖动滑块查看形态；点击按钮重播分支生长'),
+            h('p', null, '随设置实时更新；点击按钮重播分支生长'),
             h('div', { className: 'dpt-preview-toolbar' },
               h('button', { className: 'dpt-btn', type: 'button', disabled: !settings.growthEnabled, onClick: () => viewRef.current?.replayGrowth() }, '播放生长'),
               h('select', { className: 'dpt-select', 'aria-label': '预览状态', value: previewState, onChange: (event) => setPreviewState(event.currentTarget.value) },
@@ -2989,6 +3059,86 @@ window.__ModuleLoader__.load({
           ),
           h('div', { ref: hostRef, className: 'dpt-preview-stage', role: 'img', 'aria-label': '过程树实时预览，包含主干和两层子分支' })
         )
+      }
+
+      const STYLE_CARDS = [
+        { value: 'classic', label: '经典曲线', desc: '流动枝条，完成的步骤长出叶片' },
+        { value: 'botanical', label: '植物手稿', desc: '小树冠与带明暗的木质根系' },
+        { value: 'quiet', label: '安静线条', desc: '低调模式，等宽细线' },
+      ]
+      const INTENSITY_OPTIONS = [
+        { value: 'subtle', label: '轻' },
+        { value: 'standard', label: '标准' },
+        { value: 'vivid', label: '鲜明' },
+      ]
+
+      function StyleThumb({ style }) {
+        // Hand-drawn miniatures: every card stays static while the large preview is live.
+        const svg = (...children) => h('svg', { className: 'dpt-thumb', viewBox: '0 0 120 64', 'aria-hidden': 'true' }, ...children)
+        if (style === 'quiet') return svg(
+          h('path', { className: 'dpt-thumb-line', d: 'M16 6V58M16 26Q16 30 20 30H46M46 30V46Q46 50 50 50H74', strokeWidth: 1.3 }),
+          h('circle', { className: 'dpt-thumb-solid', cx: 16, cy: 12, r: 2.2 }),
+          h('circle', { className: 'dpt-thumb-ring', cx: 48, cy: 30, r: 2.6 }),
+          h('circle', { className: 'dpt-thumb-ring', cx: 76, cy: 50, r: 2.6 }),
+          h('circle', { className: 'dpt-thumb-solid', cx: 16, cy: 58, r: 2.2 }))
+        if (style === 'botanical') return svg(
+          h('g', { className: 'dpt-thumb-crown' },
+            h('circle', { cx: 22, cy: 11, r: 7 }), h('circle', { cx: 30, cy: 8, r: 6 }), h('circle', { cx: 14, cy: 9, r: 5 })),
+          h('path', { className: 'dpt-thumb-wood', d: 'M22 16C22 22 17 24 17 30V60', strokeWidth: 3.2 }),
+          h('path', { className: 'dpt-thumb-wood', d: 'M17 36C18 42 30 40 44 44', strokeWidth: 2 }),
+          h('path', { className: 'dpt-thumb-wood', d: 'M44 44C45 50 54 52 64 54', strokeWidth: 1.4 }),
+          h('circle', { className: 'dpt-thumb-wood-ring', cx: 45, cy: 44, r: 2.6 }),
+          h('circle', { className: 'dpt-thumb-wood-ring', cx: 66, cy: 54, r: 2.4 }))
+        return svg(
+          h('path', { className: 'dpt-thumb-line', d: 'M16 6V58', strokeWidth: 2.4 }),
+          h('path', { className: 'dpt-thumb-line', d: 'M16 22C16 30 30 30 44 32', strokeWidth: 1.6 }),
+          h('path', { className: 'dpt-thumb-line', d: 'M46 34C46 44 56 50 70 52', strokeWidth: 1.1 }),
+          h('path', { className: 'dpt-thumb-leaf', d: 'M40 31Q37 24 41 20Q43 26 40 31Z' }),
+          h('circle', { className: 'dpt-thumb-solid', cx: 16, cy: 12, r: 2.2 }),
+          h('circle', { className: 'dpt-thumb-ring', cx: 46, cy: 32, r: 2.6 }),
+          h('circle', { className: 'dpt-thumb-ring', cx: 72, cy: 52, r: 2.4 }))
+      }
+
+      function StyleCards({ settings, commit }) {
+        return h('div', { className: 'dpt-cards', role: 'radiogroup', 'aria-label': '风格' },
+          STYLE_CARDS.map((card) => h('button', {
+            key: card.value,
+            type: 'button',
+            role: 'radio',
+            'aria-checked': settings.treeStyle === card.value,
+            className: 'dpt-card',
+            onClick: () => commit({ ...STYLE_PRESETS[card.value], ...intensityPatch(card.value, settings.intensity), treeStyle: card.value }),
+          }, h(StyleThumb, { style: card.value }),
+            h('span', { className: 'dpt-card-label' }, card.label),
+            h('span', { className: 'dpt-card-desc' }, card.desc))))
+      }
+
+      function MainSettings({ settings, commit }) {
+        const custom = !matchesIntensity(settings)
+        const animated = settings.growthEnabled && settings.stateMotion
+        return h('div', { className: 'dpt-main' },
+          h('h3', { className: 'dpt-subhead' }, '风格'),
+          h(StyleCards, { settings, commit }),
+          h('h3', { className: 'dpt-subhead' }, '强度'),
+          h('div', { className: 'dpt-segmented', role: 'radiogroup', 'aria-label': '强度' },
+            INTENSITY_OPTIONS.map((option) => h('button', {
+              key: option.value,
+              type: 'button',
+              role: 'radio',
+              'aria-checked': !custom && settings.intensity === option.value,
+              onClick: () => commit(intensityPatch(settings.treeStyle, option.value)),
+            }, option.label))),
+          h('p', { className: 'dpt-hint dpt-under' }, custom ? '已在高级设置中自定义线宽或圆点；选择一档即可恢复' : '同时调整线条深浅、粗细和圆点大小'),
+          h('label', { className: 'dpt-toggle' },
+            h('span', null, h('span', { className: 'dpt-label' }, '动画'),
+              h('span', { className: 'dpt-toggle-desc' }, '新步骤的生长、运行中的呼吸和完成时的收光；系统减少动态效果时始终关闭')),
+            h('input', {
+              type: 'checkbox',
+              role: 'switch',
+              'aria-label': '动画',
+              checked: animated,
+              onChange: (event) => commit({ growthEnabled: event.currentTarget.checked, stateMotion: event.currentTarget.checked }),
+            })))
       }
 
       function SettingsPage() {
@@ -3011,16 +3161,13 @@ window.__ModuleLoader__.load({
         }
         return h('div', { className: 'dpt-page' },
           h('h3', null, '过程树'),
-          h('p', { className: 'dpt-hint' }, '改动立即生效并自动保存，预览会同步更新。'),
+          h('p', { className: 'dpt-hint' }, '选好风格和强度即可；改动立即生效并自动保存。'),
           h('div', { className: 'dpt-settings-layout' },
           h('div', { className: 'dpt-controls' },
-          h('h3', { className: 'dpt-subhead' }, '整体风格'),
-          h(SelectRow, {
-            label: '风格', desc: '切换时套用该风格的线宽、曲线、纹理与圆点预设，之后仍可单独微调',
-            value: settings.treeStyle,
-            options: [{ value: 'classic', label: '经典曲线' }, { value: 'botanical', label: '植物手稿' }, { value: 'quiet', label: '安静线条（低调）' }],
-            onChange: (treeStyle) => commit({ ...STYLE_PRESETS[treeStyle], treeStyle }),
-          }),
+          h(MainSettings, { settings, commit }),
+          h('details', { className: 'dpt-advanced' },
+          h('summary', null, h('span', { className: 'dpt-label' }, '高级设置'),
+            h('span', { className: 'dpt-advanced-hint' }, '枝条形态、纹理、圆点和行外观的细项')),
           ...(settings.treeStyle !== 'botanical' ? [] : [
           h('h3', { className: 'dpt-subhead' }, '植物手稿'),
           h(SelectRow, { label: '顶部树冠', desc: '树冠随本轮过程一起折叠；不改变根系的曲线和缩进', value: settings.canopyEnabled ? 'on' : 'off', options: [{ value: 'on', label: '显示' }, { value: 'off', label: '隐藏' }], onChange: value => commit({ canopyEnabled: value === 'on' }) }),
@@ -3122,11 +3269,7 @@ window.__ModuleLoader__.load({
             options: [{ value: 'muted', label: '灰绿' }, { value: 'green', label: '苔绿' }, { value: 'mono', label: '随主题墨色' }],
             onChange: (leafTint) => commit({ leafTint }),
           }),
-          h('h3', { className: 'dpt-subhead' }, '动画与状态'),
-          h(SelectRow, {
-            label: '新增分支生长', desc: '控制新增调用和预览中的生长动画；历史记录始终直接显示完整形态', value: settings.growthEnabled ? 'on' : 'off',
-            options: [{ value: 'on', label: '开启' }, { value: 'off', label: '关闭' }], onChange: (value) => commit({ growthEnabled: value === 'on' }),
-          }),
+          h('h3', { className: 'dpt-subhead' }, '动画细节'),
           h(SliderRow, {
             label: '生长速度',
             desc: '新增调用的枝条生长速度；在预览中点击「播放生长」查看',
@@ -3134,10 +3277,6 @@ window.__ModuleLoader__.load({
             value: settings.growthSpeed,
             format: (value) => value.toFixed(2) + '×',
             onChange: (growthSpeed) => commit({ growthSpeed }),
-          }),
-          h(SelectRow, {
-            label: '状态微动效', desc: '运行根尖微光与节点呼吸，完成时轻微收光；异常和停止保持静态', value: settings.stateMotion ? 'on' : 'off',
-            options: [{ value: 'on', label: '开启' }, { value: 'off', label: '关闭' }], onChange: (value) => commit({ stateMotion: value === 'on' }),
           }),
           h(SliderRow, {
             label: '微动效幅度', desc: '越小越安静；0 关闭微动效，系统减少动态效果设置始终优先', min: 0, max: 1, step: 0.01,
@@ -3203,6 +3342,7 @@ window.__ModuleLoader__.load({
             format: (value) => (value > 0 ? '+' : '') + value + 'px',
             onChange: (leading) => commit({ leading }),
           }),
+          ),
           h('div', { className: 'dpt-actions' },
             h('button', { className: 'dpt-btn', type: 'button', onClick: reset }, '恢复默认')
           )

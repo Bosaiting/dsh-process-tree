@@ -70,9 +70,9 @@ Restart the corresponding DSH instance. Use Desktop's plugin manager for its man
 
 ## Settings
 
-Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves, texture, and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds original canopy artwork, wood roots and halos. Selecting a style applies its preset; sliders remain editable.
+Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds a small original canopy, shaded wood roots and halos. The main settings are just three: style cards with thumbnails, intensity (subtle / standard / vivid, which sets line tone, width and dots together), and an animation switch.
 
-Controls cover transitions, line width, indentation, summary dimming, leading, dots, growth and decoration. Botanical controls appear in that style. The settings preview shares the chat renderer. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
+Everything else (transitions, line width, texture, leaves, dots, indentation, summary dimming, leading, growth speed) lives under a collapsed **Advanced** section. Changing line width or dots there marks intensity as custom; picking a level restores it. Botanical controls appear in that style. The settings preview shares the chat renderer. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
 
 ## Data and permissions
 

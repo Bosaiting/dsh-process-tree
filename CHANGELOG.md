@@ -11,6 +11,7 @@
 - Classic leaves are sage, the tree's one accent colour.
 - Botanical crown is a small emblem (about 70 px instead of about 215 px) on a short neck, and never extends past the content's left edge; saved full-size crowns migrate to the emblem.
 - Botanical roots get the crown's lit-wood shading; the stray root-hair arcs beside the trunk are removed.
+- Settings lead with three choices: style cards with thumbnails, intensity (subtle / standard / vivid: line tone, width and dots together) and one animation switch. Everything else moves into a collapsed Advanced section; edits there show intensity as custom.
 - Classic leaves now mean something: a leaf sprouts when a tool step finishes, and running or failed steps stay bare. The random leaf-density slider is gone; a saved density of 0 migrates to hidden leaves. Default leaf size is 9 px.
 - Quiet lines are presented as the understated mode: listed last in the settings and READMEs.
 
