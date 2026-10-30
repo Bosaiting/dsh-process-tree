@@ -1044,6 +1044,7 @@ window.__ModuleLoader__.load({
 [data-dpt-function-comment-label]::before { content: "# " / ""; white-space: pre; color: var(--dpt-code-comment); font: inherit; flex: none; }
 [data-dpt-function-caption] { display: none !important; }
 [data-dpt-function-comment-label] > [data-shimmer-decoration] { display: none !important; }
+.dpt-host[data-dpt-code-layout="function"] [data-dpt-function-comment] [data-shimmer] > [aria-hidden="true"][inert] { display: none !important; }
 [data-dpt-function-line][data-expandable="true"]:is([data-dpt-function-comment], :has([data-dpt-function-label])) > span:first-child:has(svg) > span:has(svg) { display: none; }
 [data-dpt-function-line][data-expandable="true"]:is([data-dpt-function-comment], :has([data-dpt-function-label])) > span:first-child > svg { opacity: .55 !important; }
 .dpt-host[data-dpt-code-layout="function"] [data-variant="think"] p { color: var(--dpt-code-comment); font-family: var(--dpt-code-font); }
@@ -1256,6 +1257,18 @@ window.__ModuleLoader__.load({
     let target = [...header.children].findLast((el) => !el.hasAttribute('data-dpt-owned') && el.tagName === 'SPAN' && el.textContent.trim()) || header
     while (!target.hasAttribute('data-dpt-function-label') && target.children.length === 1 && target.firstElementChild.tagName === 'SPAN' && target.firstElementChild.textContent.trim()) target = target.firstElementChild
     return target
+  }
+
+  function codeCommentTitle(header) {
+    const label = codeTitle(header)
+    // A running thought is a shimmer grid containing real text and a separate
+    // aria-hidden animation copy. Put the comment marker in the real content,
+    // rather than inserting another grid item beside both layers.
+    if (label.hasAttribute('data-shimmer')) {
+      const content = [...label.children].find(el => !el.hasAttribute('aria-hidden') && !el.hasAttribute('inert') && el.textContent.trim())
+      if (content) return content
+    }
+    return label
   }
 
   function hash(text) {
@@ -2808,7 +2821,7 @@ window.__ModuleLoader__.load({
         const header = entry.header
         if (!header) return null
         const sub = entry.call && directSubcalls(entry.call)
-        const label = entry.kind === 'think' ? codeTitle(header) : null
+        const label = entry.kind === 'think' ? codeCommentTitle(header) : null
         const first = label?.firstElementChild, last = label?.lastElementChild
         return { left: header.getBoundingClientRect().left, width: header.clientWidth,
           fontSize: parseFloat(getComputedStyle(header).fontSize) || 13, sub,
@@ -2824,7 +2837,7 @@ window.__ModuleLoader__.load({
         if (header.style.getPropertyValue('--dpt-code-number-x') !== numberX) header.style.setProperty('--dpt-code-number-x', numberX)
         if (entry.kind === 'think') {
           attr(header, 'data-dpt-function-comment', '')
-          const label = codeTitle(header)
+          const label = codeCommentTitle(header)
           if (label !== header) { attr(label, 'data-dpt-function-comment-label', ''); decorated.add(label) }
           const first = label.firstElementChild, last = label.lastElementChild
           if (measure.captionVisible) {
