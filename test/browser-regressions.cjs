@@ -233,6 +233,41 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.deepEqual(errors,[]);return {};
       } finally {await context.close()}
     });
+    await test('function outcomes keep failure interruption unknown and running distinct',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:5,nested:false});
+      try {
+        await page.evaluate(()=>{
+          const observable=value=>({value,listeners:new Set(),getSnapshot(){return this.value},subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},publish(value){this.value=value;for(const fn of this.listeners)fn()}});
+          const result=(id,name,extra)=>({callId:id,kind:'tool-result',call:{name,argsRaw:'{}'},subCalls:[],...extra});
+          window.outcomeBlocks=[result('g0-0','fail',{isError:true,content:[{type:'text',text:'failed'}]}),result('g0-1','interrupt',{isError:true,error:{code:'interrupted'}}),result('g0-2','unknown',{isError:undefined}),{callId:'g0-3',name:'running',argsRaw:'{}',subCalls:[]},result('g0-4','success',{isError:false})];
+          const states=['error','error','ok','running','unknown'];states.forEach((state,i)=>document.querySelector('[data-chat-call-id="g0-'+i+'"] [data-state]').dataset.state=state);
+          window.outcomeNodes=()=>new Map(outcomeBlocks.map(b=>[b.callId,{kind:'tool-call',data:{root:b}}]));
+          window.chat=observable({nodes:outcomeNodes()});const current=observable({key:'outcomes',hooks:{chat}});
+          api.setCodeSource(api.createCodeSource(current,{list:{getSnapshot:()=>({byId:{outcomes:{title:'状态测试'}}})}}));
+        });await page.evaluate(()=>frames(12));
+        const status=id=>page.locator(`[data-chat-call-id="g0-${id}"] .dpt-code-status`);
+        assert.equal(await status(0).innerText(),'失败');assert.equal(await status(1).innerText(),'已中断');
+        assert.equal(await status(2).innerText(),'结果未知');assert.equal(await status(3).innerText(),'运行中');assert.equal(await status(4).innerText(),'');
+        const header=id=>page.locator(`[data-chat-call-id="g0-${id}"] [data-disclosure-row]`).first();
+        assert.notEqual(await header(0).getAttribute('data-dpt-function-failed'),null);
+        assert.equal(await header(1).getAttribute('data-dpt-function-outcome'),'stopped');
+        assert.equal(await header(2).getAttribute('data-dpt-function-outcome'),'unknown');
+        assert.equal(await header(4).getAttribute('data-dpt-function-outcome'),null);
+        assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 5 · 已记录失败 1 · 已中断 1 · 结果未知 1 · 未结束 1');
+        await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'outcome-states.png')});
+        await page.locator('.dpt-failure-count').click();await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-failure-item').count(),1);assert.ok((await page.locator('.dpt-failure-item').innerText()).includes('fail'));
+        await page.evaluate(()=>{document.querySelector('[data-chat-call-id="g0-3"] [data-state]').dataset.state='unknown'});await page.evaluate(()=>frames(10));
+        assert.equal(await status(3).innerText(),'结果未知');assert.equal(await header(3).getAttribute('data-dpt-function-outcome'),'unknown');
+        assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 5 · 已记录失败 1 · 已中断 1 · 结果未知 2');
+        await page.evaluate(()=>{document.querySelector('[data-chat-call-id="g0-3"] [data-state]').dataset.state='error'});await page.evaluate(()=>frames(10));
+        assert.equal(await status(3).innerText(),'未结束');assert.equal(await header(3).getAttribute('data-dpt-function-failed'),null);
+        await page.evaluate(()=>{outcomeBlocks[2]={...outcomeBlocks[2],isError:false};chat.publish({nodes:outcomeNodes()})});await page.evaluate(()=>frames(10));
+        assert.equal(await status(2).innerText(),'');assert.equal(await header(2).getAttribute('data-dpt-function-outcome'),null);
+        assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 5 · 已记录失败 1 · 已中断 1 · 未结束 1');
+        assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
     await test('failure list reveals folded ancestors and preserves native results',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:3,nested:true,cap:230});
       try {
@@ -286,15 +321,15 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
           for(let i=9;i<=15;i++)inner.append(outer.querySelector('[data-chat-call-id="g0-'+i+'"]'));
           const children=[];for(let i=1;i<26;i++)if(i<9||i>15)children.push({callId:'g0-'+i,name:i===8?'code_8':'call_'+i,argsRaw:'{}',subCalls:i===8?Array.from({length:7},(_,j)=>({callId:'g0-'+(j+9),name:'call_'+(j+9),argsRaw:'{}',subCalls:[]})):[]});
           const reasoning=document.createElement('div');reasoning.dataset.chatFlowKind='reasoning';reasoning.dataset.chatAnchorKey='after-scope';reasoning.style.height='300px';reasoning.innerHTML='<div data-variant="think"><div data-disclosure-row><span>完成后总结</span></div></div>';document.querySelector('[data-step-process-content]').append(reasoning);
-          const root={callId:'g0-0',name:'code_0',argsRaw:'{}',subCalls:children};
+          const root={callId:'g0-0',name:'code_0',argsRaw:'{}',subCalls:children};window.navRoot=root;
           api.setCodeSource({sync(){},read(){return {key:'test',context:{title:'调试任务'},nodes:new Map([['g0-0',{kind:'tool-call',data:{root}}]])}}});
           for(const view of instances){view.structureDirty=true;view.schedule(17)}
         });await page.evaluate(()=>frames(12));
         const scroller=page.locator('[data-step-process-body]'), nav=page.locator('.dpt-minimap-anchor'), map=page.locator('.dpt-minimap');
         assert.equal(await nav.count(),1);assert.ok(await map.locator('.dpt-map-mark').count()>10);
         assert.equal(await page.locator('.dpt-function-crumbs,.dpt-nav-link').count(),0);
-        await page.evaluate(()=>{document.querySelector('[data-chat-call-id="g0-20"] [data-state]').dataset.state='error'});await page.evaluate(()=>frames(8));
-        assert.equal(await map.getByRole('button',{name:'跳到调用 call_20，错误'}).getAttribute('data-state'),'error');
+        await page.evaluate(()=>{navRoot.subCalls=navRoot.subCalls.map(b=>b.callId==='g0-20'?{callId:b.callId,kind:'tool-result',isError:true,call:{name:b.name,argsRaw:b.argsRaw},subCalls:[]}:b);document.querySelector('[data-chat-call-id="g0-20"] [data-state]').dataset.state='error'});await page.evaluate(()=>frames(8));
+        assert.equal(await map.getByRole('button',{name:'跳到调用 call_20，失败'}).getAttribute('data-state'),'error');
         await page.evaluate(()=>{const s=document.querySelector('[data-step-process-body]'),target=document.querySelector('[data-chat-call-id="g0-11"] [data-disclosure-row]');s.scrollTop+=target.getBoundingClientRect().top-s.getBoundingClientRect().top-55});
         await page.evaluate(()=>frames(12));
         const boxes=await page.evaluate(()=>({nav:document.querySelector('.dpt-minimap-anchor').getBoundingClientRect().top,scroller:document.querySelector('[data-step-process-body]').getBoundingClientRect().top}));
@@ -341,6 +376,11 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
       try{
         assert.equal(await page.locator('.dpt-code-expression').count(),0);
         assert.ok((await page.locator('[data-chat-call-id="g0-0"]').innerText()).includes('工具 0'));
+        await page.evaluate(()=>{document.querySelector('[data-chat-call-id="g0-0"] [data-state]').dataset.state='unknown'});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-status').innerText(),'结果未知');
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] [data-disclosure-row]').getAttribute('data-dpt-function-outcome'),'unknown');
+        await page.evaluate(()=>{document.querySelector('[data-chat-call-id="g0-0"] [data-state]').dataset.state='running'});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-status').count(),0);
         await page.evaluate(()=>api.setCodeSource({sync(){},read(){return {key:'other',context:{title:'Another'},nodes:new Map([['g0-0',{kind:'tool-call',data:{root:{callId:'different-call',name:'fake',argsRaw:'{}'}}}]])}}}));
         await page.evaluate(()=>{for(const view of instances)view.schedule(1)});await page.evaluate(()=>frames(8));
         assert.equal(await page.locator('.dpt-code-expression').count(),0);

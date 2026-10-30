@@ -44,16 +44,20 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   const process=page.locator('[data-step-process-content]');
   assert.ok((await process.locator('.dpt-function-header').innerText()).startsWith('def '));
   assert.ok((await process.locator('.dpt-function-header').innerText()).includes('workspace='));
-  assert.equal(await process.locator('.dpt-code-expression').count(),7);
-  check('function header uses real current-session context and seven structured calls');
+  assert.equal(await process.locator('.dpt-code-expression').count(),8);
+  check('function header uses real current-session context and eight structured calls');
   const expression=id=>process.locator(`[data-chat-call-id="${id}"] .dpt-code-expression`).first();
   assert.match((await expression('function-call-1').innerText()).replace(/\s+/g,' '), /path="package.json".*offset=10.*limit=40/);
-  assert.match(await process.locator('.dpt-function-stats').innerText(), /已加载调用 7 · 已记录失败 2/);
+  assert.match(await process.locator('.dpt-function-stats').innerText(), /已加载调用 8 · 已记录失败 2 · 已中断 1/);
   assert.equal(await process.locator('.dpt-code-duration').count(),7);
   assert.equal(await expression('function-call-2').innerText(),'bash(command="npm test", cwd="./demo")');
   assert.match(await expression('function-call-4').innerText(), /^def code\([\s\S]*\):/);
   assert.match(await expression('function-child-2').innerText(), /^def code\([\s\S]*\):/);
   assert.equal(await expression('function-child-1').innerText(),'read(path="src/index.ts")');
+  const interrupted=process.locator('[data-chat-call-id="function-call-5"]');
+  assert.equal(await interrupted.locator('.dpt-code-status').innerText(),'已中断');
+  assert.equal(await interrupted.locator('[data-dpt-function-outcome="stopped"]').count(),1);
+  assert.equal(await interrupted.locator('[data-dpt-function-failed],.dpt-code-error,.dpt-code-duration').count(),0);
   assert.match((await expression('function-grandchild').innerText()).replace(/\s+/g,' '), /^write\(\s*path="summary.txt",\s*content="ready"\s*\)$/);
   assert.equal(await process.locator('[data-dpt-function-scope]').count(),2);
   assert.equal(await process.locator('[data-dpt-code-suffix],[data-dpt-code-scope]').count(),0);
@@ -122,7 +126,7 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   const write=process.locator('[data-chat-call-id="function-call-3"]');await write.locator('.dpt-code-more').click();
   const full=JSON.parse(await write.locator('.dpt-code-arguments').innerText());assert.ok(full.content.length>300);await write.locator('.dpt-code-more').click();
   check('abbreviated long strings expose their exact full recorded value');
-  assert.equal(await process.locator('[data-chat-call-id="function-call-2"] .dpt-code-status').innerText(),'错误');
+  assert.equal(await process.locator('[data-chat-call-id="function-call-2"] .dpt-code-status').innerText(),'失败');
   assert.equal(await expression('function-call-2').locator('[data-token="function"]').evaluate(e=>getComputedStyle(e).color),'rgb(187, 128, 9)');
   assert.ok(await process.locator('[data-dpt-function-comment]').count()>0);
   check('error status is separate from syntax colours and reasoning reads as comments');
@@ -138,12 +142,12 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   check('native tool result disclosure remains operational');
   for(const theme of ['light','dark']){await page.emulateMedia({colorScheme:theme});await frames(page);await process.screenshot({path:path.join(out,`function-host-${theme}.png`)});}
   check('light and dark host visuals captured');
-  for(const width of [520,1440]){await page.setViewportSize({width,height:1000});await frames(page);assert.equal(await process.locator('.dpt-code-expression').count(),7);if(width===520){await more.click();assert.equal(await more.getAttribute('aria-expanded'),'true');await more.click()}}
-  await page.evaluate(()=>document.body.style.zoom='.8');await frames(page);assert.equal(await process.locator('.dpt-code-expression').count(),7);await page.evaluate(()=>document.body.style.zoom='');await frames(page);
+  for(const width of [520,1440]){await page.setViewportSize({width,height:1000});await frames(page);assert.equal(await process.locator('.dpt-code-expression').count(),8);if(width===520){await more.click();assert.equal(await more.getAttribute('aria-expanded'),'true');await more.click()}}
+  await page.evaluate(()=>document.body.style.zoom='.8');await frames(page);assert.equal(await process.locator('.dpt-code-expression').count(),8);await page.evaluate(()=>document.body.style.zoom='');await frames(page);
   check('narrow layout and host zoom preserve function rows');
   const writes=await page.evaluate(async()=>{let n=0;const observer=new MutationObserver(r=>n+=r.length);observer.observe(document.querySelector('[data-step-process-content]'),{subtree:true,attributes:true,childList:true,characterData:true});for(let i=0;i<24;i++)await new Promise(requestAnimationFrame);observer.disconnect();return n});assert.equal(writes,0);
   check('settled function view has no repeated DOM writes',{writes});
-  await activity.click();await activity.click();await frames(page);assert.equal(await process.locator('.dpt-function-header').count(),1);assert.equal(await process.locator('.dpt-code-expression').count(),7);
+  await activity.click();await activity.click();await frames(page);assert.equal(await process.locator('.dpt-function-header').count(),1);assert.equal(await process.locator('.dpt-code-expression').count(),8);
   await page.reload({waitUntil:'networkidle'});await frames(page);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')).codeLayout),'function');
   check('native process folding and persisted layout survive reload');
   assert.deepEqual(errors,[]);results.errors=errors;

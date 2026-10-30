@@ -110,3 +110,25 @@ test('folded scope failure counts use distinct recorded descendants', () => {
   assert.equal(api.codeDescendantFailures(parent),2)
   assert.equal(api.codeDescendantFailures({callId:'root',subCalls:[{...failed('root')}]}),0)
 })
+
+
+test('outcomes distinguish failure, interruption and unknown from unfinished calls', () => {
+  const running={name:'code',argsRaw:'{}'}
+  const failed={kind:'tool-result',isError:true}
+  const stopped={kind:'tool-result',isError:true,error:{code:'interrupted'}}
+  const unknown={kind:'tool-result',isError:undefined}
+  const succeeded={kind:'tool-result',isError:false}
+  assert.equal(api.codeOutcome(failed,'error'),'error')
+  assert.equal(api.codeOutcome(stopped,'error'),'stopped')
+  assert.equal(api.codeOutcome(unknown,'ok'),'unknown')
+  assert.equal(api.codeOutcome(succeeded,'unknown'),'ok')
+  assert.equal(api.codeOutcome(running,'unknown'),'unknown')
+  assert.equal(api.codeOutcome(running,'running'),'running')
+  assert.equal(api.codeOutcome(running),'pending')
+  assert.equal(api.codeOutcomeLabel('error'),'失败')
+  assert.equal(api.codeOutcomeLabel('stopped'),'已中断')
+  assert.equal(api.codeOutcomeLabel('unknown'),'结果未知')
+  assert.equal(api.codeFailed(unknown),false)
+  const calls=new Map([['failed',failed],['stopped',stopped],['unknown',unknown],['running',running],['success',succeeded],['host-unknown',running]])
+  assert.equal(api.codeStats(calls,new Map([['running','running'],['host-unknown','unknown']])), '已加载调用 6 · 已记录失败 1 · 已中断 1 · 结果未知 2 · 未结束 1')
+})

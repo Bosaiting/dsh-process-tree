@@ -909,6 +909,7 @@ window.__ModuleLoader__.load({
 .dpt-map-mark[data-state="error"] { background: var(--dpt-state-error); }
 .dpt-map-mark[data-state="running"], .dpt-map-mark[data-state="preparing"] { background: var(--dpt-state-running); }
 .dpt-map-mark[data-state="stopped"] { background: var(--dsw-alias-state-warn-primary, #a87932); }
+.dpt-map-mark[data-state="unknown"] { background: var(--dsw-alias-label-tertiary, #888); }
 .dpt-map-mark:hover { height: 7px; filter: brightness(1.2); z-index: 2; }
 .dpt-host[data-dpt-code-layout="function"] [data-dpt-function-line] { scroll-margin-top: 8px; }
 .dpt-function-header {
@@ -945,6 +946,14 @@ window.__ModuleLoader__.load({
   font: 400 11px/26px var(--dpt-code-font);
   color: color-mix(in srgb, var(--dpt-code-text) 40%, transparent);
 }
+[data-dpt-function-outcome="stopped"]::before { color: var(--dsw-alias-state-warn-primary, #a87932) !important; }
+[data-dpt-function-outcome="unknown"]::before { color: var(--dsw-alias-label-tertiary, #888) !important; }
+[data-dpt-function-outcome="stopped"]::after, [data-dpt-function-outcome="unknown"]::after {
+  position: absolute; left: calc(var(--dpt-code-number-x, -28px) + 20px); top: 0; width: 10px;
+  font: 600 11px/26px var(--dpt-code-font); pointer-events: none;
+}
+[data-dpt-function-outcome="stopped"]::after { content: '■' / ''; color: var(--dsw-alias-state-warn-primary, #a87932); font-size: 8px; }
+[data-dpt-function-outcome="unknown"]::after { content: '?' / ''; color: var(--dsw-alias-label-tertiary, #888); }
 [data-dpt-function-failed]::before { color: var(--dpt-state-error) !important; }
 [data-dpt-function-failed]::after { content: '×' / ''; position: absolute; left: calc(var(--dpt-code-number-x, -28px) + 20px); top: 0;
   width: 10px; color: var(--dpt-state-error); font: 600 12px/26px var(--dpt-code-font); pointer-events: none; }
@@ -1029,6 +1038,7 @@ window.__ModuleLoader__.load({
 .dpt-code-status[data-state="running"], .dpt-code-status[data-state="preparing"] { color: var(--dpt-state-running); }
 .dpt-code-status[data-state="error"] { color: var(--dpt-state-error); }
 .dpt-code-status[data-state="stopped"] { color: var(--dsw-alias-state-warn-primary, #a87932); }
+.dpt-code-status[data-state="unknown"], .dpt-code-status[data-state="pending"] { color: var(--dsw-alias-label-tertiary, #888); }
 [data-dpt-function-comment] { color: var(--dpt-code-comment) !important; }
 [data-dpt-function-comment-label] { gap: 0 !important; }
 [data-dpt-function-comment-label]::before { content: "# " / ""; white-space: pre; color: var(--dpt-code-comment); font: inherit; flex: none; }
@@ -1159,9 +1169,25 @@ window.__ModuleLoader__.load({
     if (ms < 60000) return (ms / 1000).toFixed(1) + ' s'
     return Math.floor(ms / 60000) + ' min ' + Math.round((ms % 60000) / 1000) + ' s'
   }
-  function codeFailed(block) {
-    return block?.kind === 'tool-result' && block.isError === true && block.error?.code !== 'interrupted'
+  // Completed structured results take precedence over transient presentation
+  // state. An unfinished call alone is not evidence of an unknown outcome.
+  function codeOutcome(block, hostState = '') {
+    if (block?.kind === 'tool-result') {
+      if (block.error?.code === 'interrupted') return 'stopped'
+      if (block.isError === true) return 'error'
+      if (block.isError === false) return 'ok'
+      return 'unknown'
+    }
+    if (hostState === 'stopped') return 'stopped'
+    if (hostState === 'unknown') return 'unknown'
+    if (hostState === 'preparing' || hostState === 'running') return hostState
+    if (!block && (hostState === 'error' || hostState === 'ok' || hostState === 'completed')) return hostState
+    return 'pending'
   }
+  function codeOutcomeLabel(state) {
+    return ({ preparing: '准备中', running: '运行中', error: '失败', stopped: '已中断', unknown: '结果未知', pending: '未结束' })[state] || ''
+  }
+  function codeFailed(block) { return codeOutcome(block) === 'error' }
   function codeErrorInfo(block) {
     if (!codeFailed(block)) return null
     const message = typeof block.error?.message === 'string' ? block.error.message : ''
@@ -1187,15 +1213,17 @@ window.__ModuleLoader__.load({
     return total
   }
 
-  function codeStats(calls) {
-    let failures = 0, stopped = 0, pending = 0
-    for (const block of calls.values()) {
-      if (block?.kind !== 'tool-result') pending++
-      else if (block.error?.code === 'interrupted') stopped++
-      else if (codeFailed(block)) failures++
+  function codeStats(calls, hostStates = new Map()) {
+    let failures = 0, stopped = 0, unknown = 0, pending = 0
+    for (const [id, block] of calls) {
+      const state = codeOutcome(block, hostStates.get(id))
+      if (state === 'error') failures++
+      else if (state === 'stopped') stopped++
+      else if (state === 'unknown') unknown++
+      else if (state === 'pending' || state === 'running' || state === 'preparing') pending++
     }
     return '已加载调用 ' + calls.size + ' · 已记录失败 ' + failures +
-      (stopped ? ' · 已中断 ' + stopped : '') + (pending ? ' · 未结束 ' + pending : '')
+      (stopped ? ' · 已中断 ' + stopped : '') + (unknown ? ' · 结果未知 ' + unknown : '') + (pending ? ' · 未结束 ' + pending : '')
   }
 
   function codeElement(tag, className) {
@@ -2551,11 +2579,14 @@ window.__ModuleLoader__.load({
       if (retainLayout) return
       for (const record of this.functionRows?.values() || []) this.releaseFunctionRow(record)
       this.functionRows?.clear()
+      for (const status of this.functionNativeStates?.values() || []) status.remove()
+      this.functionNativeStates?.clear()
       this.functionHeader?.remove()
       this.functionStats?.remove()
       this.functionFailureList?.remove()
       this.functionFailureList = null
       this.functionFailures = null
+      this.functionBlocks = null
       this.functionFailureSignature = null
       this.functionBar?.remove()
       this.functionNav?.remove()
@@ -2567,8 +2598,8 @@ window.__ModuleLoader__.load({
       this.functionHeader = null
       this.functionStats = null
       this.functionIdentity = null
-      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-comment], [data-dpt-function-scope], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed]')) {
-        for (const key of ['line', 'comment', 'scope', 'comment-label', 'caption', 'failed']) el.removeAttribute('data-dpt-function-' + key)
+      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-comment], [data-dpt-function-scope], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed], [data-dpt-function-outcome]')) {
+        for (const key of ['line', 'comment', 'scope', 'comment-label', 'caption', 'failed', 'outcome']) el.removeAttribute('data-dpt-function-' + key)
         el.style.removeProperty('--dpt-code-number-x')
       }
       this.content.removeAttribute('data-dpt-code-layout')
@@ -2596,6 +2627,8 @@ window.__ModuleLoader__.load({
         if (entry.kind === 'think' && node?.kind === 'assistant-step') ownsContext = true
       }
       if (source.calls) for (const [id, block] of source.calls) calls.set(id, block)
+      this.functionBlocks = calls
+      const hostStates = new Map(this.structure.filter(item => item.callId).map(item => [item.callId, stateOf(item.call)]))
       const turn = Number(this.group?.dataset.chatTurn) || 1
       const contextKey = ownsContext ? source.key : null
       if (!this.functionIdentity || this.functionIdentity.key !== contextKey) this.functionIdentity = {
@@ -2648,7 +2681,7 @@ window.__ModuleLoader__.load({
           this.functionStats = codeElement('div', 'dpt-function-stats')
           this.content.insertBefore(this.functionStats, this.functionHeader)
         }
-        const stats = codeStats(calls), failures = [...calls.values()].filter(codeFailed)
+        const stats = codeStats(calls, hostStates), failures = [...calls.values()].filter(codeFailed)
         this.functionFailures = new Map(failures.map(block => [block.callId, block]))
         if (this.functionStatsText !== stats || this.functionStats.textContent !== stats) {
           this.functionStats.replaceChildren()
@@ -2703,6 +2736,7 @@ window.__ModuleLoader__.load({
         this.functionFailureList?.remove(); this.functionFailureList = null; this.functionFailureSignature = null; this.functionFailures = null
       }
       const previous = this.functionRows || new Map(), next = new Map(), decorated = new Set()
+      const previousNative = this.functionNativeStates || new Map(), nextNative = new Map()
       const box = this.content.getBoundingClientRect(), scale = this.content.offsetWidth > 0 ? box.width / this.content.offsetWidth : 1
       // Native rows keep their own icons/disclosure. Align every line number to
       // one gutter, even when nested rows have different native leading widths.
@@ -2728,9 +2762,11 @@ window.__ModuleLoader__.load({
         const sub = entry.call && directSubcalls(entry.call)
         if (sub) { attr(sub, 'data-dpt-function-scope', ''); decorated.add(sub) }
         const block = calls.get(entry.callId)
-        const failed = codeFailed(block) || !block && stateOf(entry.call) === 'error'
-        if (failed) attr(header, 'data-dpt-function-failed', '')
+        const outcome = codeOutcome(block, stateOf(entry.call))
+        if (outcome === 'error') attr(header, 'data-dpt-function-failed', '')
         else header.removeAttribute('data-dpt-function-failed')
+        if (outcome === 'stopped' || outcome === 'unknown') attr(header, 'data-dpt-function-outcome', outcome)
+        else header.removeAttribute('data-dpt-function-outcome')
         const call = codeCall(block)
         // A scope is shown only when the matched projection records children.
         // A folded native row may temporarily remove its child DOM entirely.
@@ -2743,9 +2779,18 @@ window.__ModuleLoader__.load({
         }
         const collapsed = scope && (folded || !!sub && (!!sub.closest('[hidden]') || !(sub.checkVisibility?.() ?? true)))
         const label = codeTitle(header)
+        const showNativeOutcome = () => {
+          if (!['error', 'stopped', 'unknown'].includes(outcome)) return
+          let status = previousNative.get(header)
+          if (!status) { status = codeElement('span', 'dpt-code-status'); status.setAttribute('role', 'status'); header.append(status) }
+          attr(status, 'data-state', outcome)
+          const text = codeOutcomeLabel(outcome)
+          if (status.textContent !== text) status.textContent = text
+          nextNative.set(header, status)
+        }
         // Custom rows without structured records or a safe text seat keep
         // their native summary; never reverse-engineer arguments from labels.
-        if (!call || label === header) continue
+        if (!call || label === header) { showNativeOutcome(); continue }
         let record = previous.get(header)
         if (record && record.label !== label) { this.releaseFunctionRow(record); record = null }
         const links = [...label.querySelectorAll('button:not([data-dpt-owned]), a:not([data-dpt-owned])')]
@@ -2758,7 +2803,7 @@ window.__ModuleLoader__.load({
         const multiline = call.valid && fullCount > 0 &&
           (singleText.length > 72 || call.raw.length > 100 || singleText.length * fontSize * .62 > available)
         const syntax = multiline ? codeExpression(call, true, scope, collapsed) : single
-        if (links.some(el => !syntax.tokens.some(item => codeTokenLink(item, el))) || label.querySelector('input, select, textarea, [role="button"]')) continue
+        if (links.some(el => !syntax.tokens.some(item => codeTokenLink(item, el))) || label.querySelector('input, select, textarea, [role="button"]')) { showNativeOutcome(); continue }
         if (!record) record = { label, links, header }
         record.callId = entry.callId
         record.callName = call.name
@@ -2808,9 +2853,13 @@ window.__ModuleLoader__.load({
         }
         attr(label, 'data-dpt-function-label', '')
         if (!record.status) { record.status = codeElement('span', 'dpt-code-status'); record.status.setAttribute('role', 'status'); header.append(record.status) }
-        const state = stateOf(entry.call)
-        const stateLabel = ({ preparing: '准备中', running: '运行中', error: '错误', stopped: '已停止' })[state] || ''
+        const state = outcome
+        const stateLabel = codeOutcomeLabel(state)
         attr(record.status, 'data-state', state)
+        const stateTitle = state === 'unknown' ? '宿主标记未知，或已记录的结果缺少有效状态' :
+          state === 'stopped' ? '调用被标记为中断；外部操作是否停止或回滚取决于工具' : ''
+        if (stateTitle) attr(record.status, 'title', stateTitle)
+        else record.status.removeAttribute('title')
         if (record.status.textContent !== stateLabel) record.status.textContent = stateLabel
         const duration = codeDuration(calls.get(entry.callId))
         if (duration) {
@@ -2841,12 +2890,14 @@ window.__ModuleLoader__.load({
         next.set(header, record)
       }
       for (const [header, record] of previous) if (!next.has(header)) this.releaseFunctionRow(record)
-      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-scope], [data-dpt-function-comment], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed]')) {
+      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-scope], [data-dpt-function-comment], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed], [data-dpt-function-outcome]')) {
         if (el === this.functionHeader || decorated.has(el)) continue
-        for (const key of ['line', 'scope', 'comment', 'comment-label', 'caption', 'failed']) el.removeAttribute('data-dpt-function-' + key)
+        for (const key of ['line', 'scope', 'comment', 'comment-label', 'caption', 'failed', 'outcome']) el.removeAttribute('data-dpt-function-' + key)
         el.style.removeProperty('--dpt-code-number-x')
       }
       this.functionRows = next
+      for (const [header, status] of previousNative) if (!nextNative.has(header)) status.remove()
+      this.functionNativeStates = nextNative
       if (!this.functionClick) {
         this.functionClick = event => {
           const button = event.target.closest?.('.dpt-code-more, .dpt-code-link, .dpt-scope-toggle, .dpt-code-error, .dpt-map-mark, .dpt-failure-count, .dpt-failure-item, .dpt-scope-failures')
@@ -2923,7 +2974,7 @@ window.__ModuleLoader__.load({
           if (box.width <= 0 || box.height <= 0) continue
           const record = this.functionRows?.get(entry.header)
           rows.push({ entry, top: (box.top - rect.top) / scale, name: record?.callName || '工具调用',
-            scope: !!record?.scope, state: stateOf(entry.call || entry.el) })
+            scope: !!record?.scope, state: codeOutcome(this.functionBlocks?.get(entry.callId), stateOf(entry.call || entry.el)) })
         }
         rows.sort((a, b) => a.top - b.top)
         this.functionNavRows = rows
@@ -2950,7 +3001,7 @@ window.__ModuleLoader__.load({
         for (let index = 0; index < rows.length; index++) {
           const row = rows[index]
           const slot = Math.min(slots - 1, Math.floor(row.top / height * slots))
-          const weight = row.state === 'error' ? 3 : isLive(row.state) ? 2 : row.state === 'stopped' ? 1 : 0
+          const weight = row.state === 'error' ? 3 : isLive(row.state) ? 2 : row.state === 'stopped' || row.state === 'unknown' ? 1 : 0
           if (!selected.has(slot) || selected.get(slot).weight < weight) selected.set(slot, { row, index, weight })
         }
         const marks = [...selected.values()]
@@ -2960,7 +3011,7 @@ window.__ModuleLoader__.load({
           for (const { row, index } of marks) {
             const mark = codeElement('button', 'dpt-map-mark'); mark.type = 'button'; mark.dataset.navIndex = String(index)
             mark.dataset.state = row.state; mark.style.top = Math.min(97, Math.max(0, row.top / height * 100)).toFixed(2) + '%'
-            const label = '跳到调用 ' + row.name + (row.state === 'error' ? '，错误' : isLive(row.state) ? '，运行中' : '')
+            const label = '跳到调用 ' + row.name + (row.state === 'error' ? '，失败' : row.state === 'stopped' ? '，已中断' : row.state === 'unknown' ? '，结果未知' : isLive(row.state) ? '，运行中' : '')
             mark.title = label; mark.setAttribute('aria-label', label); fragment.append(mark)
           }
           this.functionMap.replaceChildren(fragment)
@@ -3985,8 +4036,9 @@ window.__ModuleLoader__.load({
           if (record) for (const el of [record.title, record.sub]) if (el) attr(el, 'data-dpt-code-state', node.state)
           const fn = this.functionRows?.get(this.structureByElement.get(node.el)?.header)
           if (fn?.status) {
-            attr(fn.status, 'data-state', node.state)
-            const label = ({ preparing: '准备中', running: '运行中', error: '错误', stopped: '已停止' })[node.state] || ''
+            const state = codeOutcome(this.functionBlocks?.get(node.callId), node.state)
+            attr(fn.status, 'data-state', state)
+            const label = codeOutcomeLabel(state)
             if (fn.status.textContent !== label) fn.status.textContent = label
           }
         }
@@ -4318,7 +4370,7 @@ window.__ModuleLoader__.load({
   if (typeof window[TEST_HOOK] === 'function') {
     window[TEST_HOOK]({
        DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX, topBranchStartY,
-       codeFunctionName, codeCall, codeExpression, codeValue, codeString, codeDuration, codeError, codeErrorInfo, codeFailed, codeDescendantFailures, codeStats, createCodeSource,
+       codeFunctionName, codeCall, codeExpression, codeValue, codeString, codeDuration, codeError, codeErrorInfo, codeOutcome, codeOutcomeLabel, codeFailed, codeDescendantFailures, codeStats, createCodeSource,
        setCodeSource: source => { codeSource = source; codeSource?.sync() },
       INTENSITIES, intensityPatch, matchesIntensity, matchesLegacyIntensity,
       setSettings: (next) => { SETTINGS = next },

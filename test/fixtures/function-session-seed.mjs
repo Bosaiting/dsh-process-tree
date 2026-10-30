@@ -14,6 +14,7 @@ export async function apply(ctx) {
     ['bash', { command: 'npm test', cwd: './demo' }],
     ['write', { path: 'report.txt', content: 'Synthetic report\n' + 'Long argument for disclosure validation. '.repeat(10) }],
     ['code', { code: 'read(path="src/index.ts")' }],
+    ['read', { path: 'interrupted.txt' }],
   ]
   for (let index = 0; index < records.length; index++) {
     const step = index + 1, callId = `function-call-${step}`, [name, args] = records[index]
@@ -33,12 +34,12 @@ export async function apply(ctx) {
         append('tool/ptc-dispatch', { turn: 1, step, rootCallId: callId, ...data, content: [{ type: 'text', text: data.subCallId === 'function-grandchild' ? 'Synthetic nested failure.' : 'Synthetic child result.' }], isError: data.subCallId === 'function-grandchild' })
       }
     }
-    append('tool/result', { turn: 1, step, message: { ...message('user', [{ type: 'text', text: `Synthetic output ${step}.` }], { kind: 'tool', callId }), isError: step === 2 } }, true)
+    append('tool/result', { turn: 1, step, ...(step === 5 ? { error: { name: 'Interrupted', code: 'interrupted' } } : {}), message: { ...message('user', [{ type: 'text', text: `Synthetic output ${step}.` }], { kind: 'tool', callId }), isError: step === 2 || step === 5 } }, true)
     append('step/end', { turn: 1, step })
   }
-  append('step/start', { turn: 1, step: 5 })
-  append('assistant/message', { turn: 1, step: 5, stream: [], message: message('assistant', [{ type: 'text', text: 'Synthetic function fixture complete.' }], { kind: 'model', provider: 'fixture', model: 'no-network' }) }, true)
-  append('step/end', { turn: 1, step: 5 })
+  append('step/start', { turn: 1, step: 6 })
+  append('assistant/message', { turn: 1, step: 6, stream: [], message: message('assistant', [{ type: 'text', text: 'Synthetic function fixture complete.' }], { kind: 'model', provider: 'fixture', model: 'no-network' }) }, true)
+  append('step/end', { turn: 1, step: 6 })
   append('turn/end', { turn: 1, reason: { kind: 'completed' } })
   console.info('[process-tree-function-fixture] ready')
 }
