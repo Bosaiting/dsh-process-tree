@@ -1,7 +1,7 @@
 {
   "name": "dsh-process-tree",
-  "version": "0.8.2",
-  "description": "Classic flowing process tree by default, with quiet lines and botanical artwork as optional styles.",
+  "version": "0.10.0",
+  "description": "Configurable process trees with classic curves, botanical artwork, quiet lines and IDE task functions.",
   "type": "module",
   "main": "./index.js",
   "exports": {
@@ -30,7 +30,12 @@
     "docs/images/process-tree-states.png",
     "docs/verification/0.7.4.json",
     "docs/verification/0.8.2.json",
-    "docs/verification/rc2-final-regression.json"
+    "docs/verification/rc2-final-regression.json",
+    "docs/images/code.png",
+    "docs/verification/0.9.0.json",
+    "docs/verification/0.9.1.json",
+    "docs/images/function-code.png",
+    "docs/verification/0.10.0.json"
   ],
   "license": "MIT",
   "keywords": [

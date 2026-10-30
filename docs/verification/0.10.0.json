@@ -1,0 +1,119 @@
+{
+  "version": "0.10.0",
+  "date": "2026-10-30",
+  "clientSha256": "11cba357c9085083219852b1a3caf0301a851545f5cc1f99c56eaaf8db577206",
+  "unit": {
+    "passed": 37,
+    "failed": 0
+  },
+  "chromium": {
+    "passed": 30,
+    "failed": 0,
+    "cases": [
+      "function code uses genuine calls, folds full arguments, preserves native actions and releases sources",
+      "function code preserves native summaries when structured data is absent or belongs to another session",
+      "code blocks preserve text and native folding, match scope pairs, and follow streamed children",
+      "code blocks keep closing-row layout on suspension and restore long nested scopes",
+      "code IDE colors follow syntax depth, themes and status without changing source text",
+      "botanical scroll optimization is opt-in, persistent, reversible, and has a stylesheet fallback",
+      "window snapshots retry after compute or paint failures",
+      "window invalidates cached coordinates when the crown gap changes",
+      "quantized band preserves visible nodes and invalidations during scrolling",
+      "quantized band supports nested calls and two scroll containers",
+      "empty rows gain nodes on text insertion or character data without stream rescans",
+      "classic intensity controls apply the wider presets and preserve saved custom widths",
+      "botanical intensity controls apply the narrower presets and preserve saved widths",
+      "state colors remain independent across themes, styles, preview and reload",
+      "last top-level fork joins the trunk smoothly without changing other rows",
+      "viewport windows do not make intermediate top-level forks terminal",
+      "nested stem tapers smoothly into its last fork at every fusion level",
+      "same-size text, quiet decoration and incremental state",
+      "quiet fast path, bounded paint and style switches",
+      "row-size changes with unchanged group size, font, leading and zoom",
+      "outer and capped inner scrolling preserve visible nodes",
+      "growth, reduced motion and fold restoration",
+      "far history sleeps without changing height and restores without growth",
+      "new turns do not rescan or remeasure folded historical groups",
+      "crown ignores unrelated mutations and settings coalesce per frame",
+      "classic growth masks finish and offscreen calls stay static",
+      "style cards render miniature conversations and remain selectable",
+      "botanical soil follows the crown and its setting applies to chat and preview",
+      "botanical settings preview crown follows sticky panel and inner scrolling",
+      "real React settings, shadow preview growth and shared-resource teardown"
+    ]
+  },
+  "host": {
+    "0.2.1-rc2": {
+      "functionChecks": 12,
+      "braceChecks": 13,
+      "functionChecksPassed": [
+        "function layout and explicit IDE preview themes",
+        "function header uses real current-session context and seven structured calls",
+        "actual nested PTC names and arguments retain Python call syntax",
+        "full parameter disclosure works with mouse and keyboard independently of native folding",
+        "abbreviated long strings expose their exact full recorded value",
+        "error status is separate from syntax colours and reasoning reads as comments",
+        "code file parameter invokes the retained native file action",
+        "native tool result disclosure remains operational",
+        "light and dark host visuals captured",
+        "narrow layout and host zoom preserve function rows",
+        "settled function view has no repeated DOM writes",
+        "native process folding and persisted layout survive reload"
+      ],
+      "braceChecksPassed": [
+        "explicit preview themes use the IDE palette independently of the host",
+        "fourth style selectable, previewed and saved",
+        "native tool summaries retain their text and links",
+        "nested brackets align with native summary labels and reserve closing rows",
+        "native summaries use function and string colours with three stable bracket depths",
+        "hover highlights only its matching pair",
+        "native DOM status changes preserve bracket-depth colours",
+        "reduced motion respected",
+        "light and dark host visuals captured",
+        "nested scope survives host zoom",
+        "native process fold restores decorations without changing copied text",
+        "settled code layout has no repeated DOM writes",
+        "code preference survives reload"
+      ]
+    },
+    "0.2.1-rc5": {
+      "functionChecks": 12,
+      "braceChecks": 13,
+      "functionChecksPassed": [
+        "function layout and explicit IDE preview themes",
+        "function header uses real current-session context and seven structured calls",
+        "actual nested PTC names and arguments retain Python call syntax",
+        "full parameter disclosure works with mouse and keyboard independently of native folding",
+        "abbreviated long strings expose their exact full recorded value",
+        "error status is separate from syntax colours and reasoning reads as comments",
+        "code file parameter invokes the retained native file action",
+        "native tool result disclosure remains operational",
+        "light and dark host visuals captured",
+        "narrow layout and host zoom preserve function rows",
+        "settled function view has no repeated DOM writes",
+        "native process folding and persisted layout survive reload"
+      ],
+      "braceChecksPassed": [
+        "explicit preview themes use the IDE palette independently of the host",
+        "fourth style selectable, previewed and saved",
+        "native tool summaries retain their text and links",
+        "nested brackets align with native summary labels and reserve closing rows",
+        "native summaries use function and string colours with three stable bracket depths",
+        "hover highlights only its matching pair",
+        "native DOM status changes preserve bracket-depth colours",
+        "reduced motion respected",
+        "light and dark host visuals captured",
+        "nested scope survives host zoom",
+        "native process fold restores decorations without changing copied text",
+        "settled code layout has no repeated DOM writes",
+        "code preference survives reload"
+      ]
+    }
+  },
+  "scope": "Synthetic browser fixtures and real DSH Web projections of synthetic Session/PTC records. No model or tool execution. The final archive contains the same client bytes. Desktop installation and old-setting preservation have a separate private receipt.",
+  "limitations": [
+    "Only the current already-loaded UI Chat source is borrowed; unmatched or special native summaries fall back conservatively.",
+    "Code view is a visual representation, not executable Python.",
+    "No sustained model-session, Windows/Linux or desktop FPS claim."
+  ]
+}

@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.10.3
+
+- Fix the light-theme function colour left brown by the dark-only yellow adjustment. Change only that swatch to a more yellow gold; retain the dark palette and all other settings and behaviour.
+
+## 0.10.2
+
+- Lighten only the dark-theme function yellow and its first bracket colour to a cleaner pale gold. Keep every other colour, the light palette, layout and saved settings unchanged.
+
+## 0.10.1
+
+- Refine the individual code-colour swatches while retaining the original blue, warm-yellow, orange/red and green token families and gold/pink/blue bracket roles. Keep backgrounds, layout, behaviour and all saved settings unchanged.
+
+## 0.10.0
+
+- Add a Python-like task-function layout within the fourth Code blocks style: `def`, recorded context, genuine tool arguments, comment reasoning, line numbers and compact indentation guides. Keep trailing braces selectable.
+- Borrow the current UI Chat projection read-only; match native identities, retain native summaries when data or safe action mapping is unavailable, and release subscriptions on suspension, style switch and unload.
+- Disclose long/additional arguments without triggering native folding. Delegate file parameters to original file actions; keep execution status separate from syntax colours.
+- Preserve existing saved visual preferences, add only `codeLayout`, and retain the classic fresh-install default.
+
+## 0.9.1
+
+- Give Code blocks an IDE palette based on VS Code Dark+/Light+: function-coloured summaries, string-coloured file links, comment-coloured reasoning summaries and three alternating bracket depths.
+- Keep each opening/closing pair and its guide at the same depth colour across status changes; execution status colours apply to tool summaries. Matching highlights retain the pair hue.
+- Apply the same palette to theme previews and the style thumbnail; preserve saved preferences and the other three styles.
+
+## 0.9.0
+
+- Add Code blocks as a fourth style: trailing opening braces, closing rows in normal flow, subtle scope guides, native tool status colours and matched-pair hover/focus.
+- Keep host text, links and disclosure controls intact; known collapsed groups show `{ … }`. Preserve scope layout during suspension and clean up on style switch or disable.
+- Add a style card, shared live preview and relevant controls; retain existing saved styles and settings.
+- Cover nested scopes, streamed child insertion, folding/unmounting, status changes, reduced motion, scrolling, zoom, cleanup and real rc.5 host markup.
+
 ## 0.8.2
 
 - Add an opt-in botanical scrolling optimization that isolates the root graphics from rc.5 host selector invalidation. The default stays off to preserve direct DOM and custom CSS access; the settings preview is unchanged.

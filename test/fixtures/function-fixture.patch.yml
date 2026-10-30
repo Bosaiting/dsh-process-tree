@@ -1,0 +1,3 @@
+- insert:
+    - id: process-tree-function-fixture
+      name: ./function-session-seed.mjs

@@ -117,6 +117,18 @@ test('state colors migrate safely and preserve valid custom values', () => {
   assert.equal(custom.errorColorDark, '#d59188')
 })
 
+test('code palettes preserve valid independent choices and migrate missing or invalid colors', () => {
+  const old = api.normalize({ treeStyle: 'code', indent: 24 })
+  assert.equal(old.codeLightFunction, '#bb8009')
+  assert.equal(old.codeDarkFunction, '#ffdb94')
+  assert.equal(old.indent, 24)
+  const custom = api.normalize({ codeLightFunction: '#123ABC', codeDarkPair1: '#456DEF', codeLightComment: 'red' })
+  assert.equal(custom.codeLightFunction, '#123abc')
+  assert.equal(custom.codeDarkPair1, '#456def')
+  assert.equal(custom.codeLightComment, '#008000')
+  assert.equal(custom.codeDarkFunction, '#ffdb94')
+})
+
 test('each style keeps its own standard preset width', () => {
   const preset = api.STYLE_PRESETS.botanical
   assert.equal(preset.lineWidth, 4.6)
@@ -296,4 +308,18 @@ test('an advanced line width edit reads as custom intensity', () => {
 
 test('an unknown intensity falls back to standard', () => {
   assert.equal(api.normalize({ treeStyle: 'classic', intensity: 'loud' }).intensity, 'standard')
+})
+
+
+test('code is an explicit fourth style and normalization preserves existing preferences', () => {
+  const original = api.normalize({ treeStyle: 'botanical', lineWidth: 6.22, dotSize: 6.72, indent: 33, runningColorDark: '#123456', botanicalScrollOptimization: true })
+  const code = api.normalize({ ...original, ...api.STYLE_PRESETS.code, treeStyle: 'code' })
+  assert.equal(code.treeStyle, 'code')
+  assert.equal(code.botanicalStyle, false)
+  assert.equal(code.indent, original.indent)
+  assert.equal(code.runningColorDark, original.runningColorDark)
+  assert.equal(code.botanicalScrollOptimization, true)
+  assert.equal(api.matchesIntensity(api.normalize({ ...code, ...api.intensityPatch('code', 'standard') })), true)
+  assert.deepEqual(api.normalize(original), original)
+  assert.equal(api.normalize({}).treeStyle, 'classic')
 })

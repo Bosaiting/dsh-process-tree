@@ -1,0 +1,25 @@
+{
+  "version": "0.10.2",
+  "date": "2026-10-30",
+  "clientSha256": "c35fb94944169ec6f23a1c4aed3fbe5af3ab82cfcd0a886a1a611b943054cd0c",
+  "runtimeDiff": {
+    "dark.function": {
+      "before": "#e0cd9b",
+      "after": "#ebdfad"
+    },
+    "dark.pair1": {
+      "before": "#e7c66a",
+      "after": "#e4d38c"
+    }
+  },
+  "otherRuntimeBytesUnchanged": true,
+  "targetedChromium": {
+    "passed": 2,
+    "failed": 0,
+    "cases": [
+      "code IDE colors follow syntax depth, themes and status without changing source text",
+      "style cards render miniature conversations and remain selectable"
+    ]
+  },
+  "scope": "Dark yellow only. Other colour values, light palette, layout, behaviour and settings are unchanged. Native Desktop appearance and exact preference equality have a separate private receipt. Structural host regression not repeated for this colour-only change."
+}

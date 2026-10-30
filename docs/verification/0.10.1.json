@@ -1,0 +1,19 @@
+{
+  "version": "0.10.1",
+  "date": "2026-10-30",
+  "clientSha256": "9c618ef158c3a173d15ee44b47d4dbdfa9f70905c93a0a45e671563ee8cff21a",
+  "scope": "Only existing code token swatches and their comment changed in the runtime. Original blue, warm yellow, orange/red, green and bracket-depth families retained. No structure, background, settings or behaviour changes.",
+  "targetedChromium": {
+    "passed": 6,
+    "failed": 0,
+    "cases": [
+      "function code uses genuine calls, folds full arguments, preserves native actions and releases sources",
+      "function code preserves native summaries when structured data is absent or belongs to another session",
+      "code blocks preserve text and native folding, match scope pairs, and follow streamed children",
+      "code blocks keep closing-row layout on suspension and restore long nested scopes",
+      "code IDE colors follow syntax depth, themes and status without changing source text",
+      "style cards render miniature conversations and remain selectable"
+    ]
+  },
+  "hostRegression": "Not repeated for this palette-only patch; structural compatibility checks remain recorded under 0.10.0. Native Desktop palette and exact preference preservation have a separate private receipt."
+}

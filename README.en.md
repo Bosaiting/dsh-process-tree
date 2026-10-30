@@ -2,7 +2,7 @@
 
 [中文](README.md)
 
-A process tree for DeepSeek Harness: classic flowing branches by default, with optional quiet lines and botanical artwork. Supports nested calls, state dots, viewport rendering and reduced motion.
+A process tree for DeepSeek Harness: classic flowing branches by default, with optional quiet lines, botanical artwork and code blocks. Supports nested calls, state dots, viewport rendering and reduced motion.
 
 This community UI plugin targets DSH Web and the Desktop web interface. It does not render in TUI. See [compatibility and verification](docs/COMPATIBILITY.md) for tested environments and limits.
 
@@ -79,9 +79,25 @@ dsh plugin --profile web add ./dsh-process-tree-VERSION.tgz
 
 Restart the corresponding DSH instance. Use Desktop's plugin manager for its managed configuration. The Desktop-bundled CLI also handled its `desktop` profile in the verified macOS build; a separately installed CLI may differ. No install-time build is required. Claude Style is optional. Disable overlapping indentation or process-connector plugins, including `dsh-tool-indent`, to avoid competing spacing and CSS variables.
 
+## Code blocks: task functions (0.10.0)
+
+The fourth style now defaults to Python-like task functions: an outer `def task_01(workspace="..."):` with genuine tool names and arguments inside, green reasoning comments, a narrow line-number gutter and indentation guides. A suitable short recorded title becomes the function name; otherwise a stable numbered name is used. This is a visualization of recorded execution, not executable Python.
+
+![Task function and argument preview](docs/images/function-code.png)
+
+The view borrows the UI's already-loaded current Chat projection and matches native row identities. It shows two arguments inline; ellipsis buttons disclose additional or long values. File arguments delegate to the retained native file action, and native result disclosure remains available. Missing records, incomplete arguments and special interactive summaries fall back conservatively instead of guessing parameters. Syntax colours remain independent of execution status. Data subscriptions are released when the view is inactive.
+
+Choose **Trailing braces** under Code layout to retain `() {`, normal-flow closing rows, subtle scope guides and pair matching. Existing styles and visual preferences remain intact; the new `codeLayout` field defaults to `function`.
+
+![Optional trailing braces](docs/images/code.png)
+
+Colours follow VS Code Dark+/Light+: [official themes](https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes) and [bracket colour registry](https://github.com/microsoft/vscode/blob/main/src/vs/editor/common/core/editorColorRegistry.ts). The function preview uses synthetic examples; the brace screenshot uses an isolated rc.5 host with explicitly injected nesting. Neither executes models or tools for the capture.
+
 ## Settings
 
 Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds a small original canopy, shaded wood roots and halos. The main settings cover style, intensity, animation, and state colors. Choose or enter separate six-digit HEX colors for running and errors in light and dark themes; changes apply immediately and are saved automatically. State colors can be reset without changing other preferences.
+
+With Code blocks selected, expand the light or dark **Code colours** settings to adjust functions and tools, keywords, parameter names, strings and files, numbers, reasoning and comments, plain text, and all three bracket levels separately. Use the colour picker or enter a six-digit HEX value; the live preview can show either theme. Each theme has its own reset button, independent of status colours and other settings.
 
 Classic's subtle, standard, and vivid presets use line widths of 3.10, 3.80, and 4.64 px respectively; botanical uses 3.20, 4.60, and 6.28 px. Saved line widths remain unchanged; choose an intensity again to apply its new preset.
 
@@ -91,7 +107,7 @@ Botanical Advanced settings include an opt-in **植物滚动优化** (botanical 
 
 ## Data and permissions
 
-The plugin reads rendered chat structure and element sizes, and adds decorative SVG. It registers no model tools, executes no commands and sends no network requests. Preferences stay in the current interface's `localStorage` under `dsh.process-tree.v1`. It does not change session content or read API keys. Uninstalling retains preferences; use the settings reset control to restore defaults.
+The function layout reads the current UI’s already-loaded Chat projection without loading more history. Calls with recorded children appear as nested `def` scopes; leaf calls remain ordinary calls. These scopes visualize execution relationships and are not actual function definitions or executable code. Short calls remain on one line; longer calls or narrow rows expand to one argument per line. The heading counts loaded calls, recorded failures, and, when present, interrupted and unfinished calls, including nested calls. Completed calls show elapsed time only when both recorded timestamps are available. The plugin reads rendered chat structure and element sizes, and adds owned SVG, code expressions or CSS decorations. It registers no model tools, executes no commands and sends no network requests. Preferences stay in the current interface's `localStorage` under `dsh.process-tree.v1`. It does not change session content or read API keys. Uninstalling retains preferences; use the settings reset control to restore defaults.
 
 ## Remove
 

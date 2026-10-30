@@ -1,0 +1,22 @@
+{
+  "version": "0.10.3",
+  "date": "2026-10-30",
+  "clientSha256": "b19e9b35a51ef07634326e933a5d6c7a9aa862244d9a0208e72172564a569d84",
+  "runtimeDiff": {
+    "light.function": {
+      "before": "#80653b",
+      "after": "#8f7216"
+    }
+  },
+  "otherRuntimeBytesUnchanged": true,
+  "cause": "The previous patch changed dark yellow only; the light-theme function colour remained brown. Confirmed in native chat DOM before the fix.",
+  "targetedChromium": {
+    "passed": 2,
+    "failed": 0,
+    "cases": [
+      "code IDE colors follow syntax depth, themes and status without changing source text",
+      "style cards render miniature conversations and remain selectable"
+    ]
+  },
+  "scope": "Light-theme function colour only; other colour values, layout, behaviour and settings retained. Native chat computed-colour and exact preference checks have a separate private receipt. Structural host regression not repeated."
+}

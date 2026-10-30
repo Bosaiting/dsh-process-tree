@@ -2,6 +2,26 @@
 
 Version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5; other releases are not declared compatible. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2.
 
+## 0.10.0 task functions / 任务函数
+
+Code blocks now have a default `function` layout and an optional `braces` layout. The function layout borrows `uiSession.adapter.current` and its existing `hooks.chat` source in the verified rc.2/rc.5 clients. It reads native-flow-keyed nodes and recursive `data.root.subCalls`, never writes Session events, retains a Session, requests a model or loads history. Context is used only for matched current-session rows. Unsupported/custom summaries retain native presentation; special controls are not hidden without a safe action mapping.
+
+Owned expression nodes are appended alongside intact native summary nodes. Native file actions and disclosure are retained, and complete parameters are exposed by an independent keyboard-operable disclosure. Inactive views retain their normal-flow layout while releasing data subscriptions and delegated events. The new `codeLayout` field defaults to `function`; all existing settings retain their values. This visual representation is not an executable program or a guarantee of Python call semantics.
+
+Validation uses pure normalization/formatting checks, Chromium fixtures and synthetic Session records, including actual PTC event projection in both supported Web hosts. No model or tool is executed. Final counts and runtime hash are recorded in `verification/0.10.0.json`; native macOS installation/settings checks are recorded separately in a private receipt. No sustained model-session, Windows/Linux or desktop FPS claim is made.
+
+## 0.9.1 IDE colours / IDE 配色
+
+Code blocks now use VS Code Dark+/Light+ token colours for function-like summaries, file links and reasoning headers. Brackets and guides cycle through three nesting colours; execution status colours apply to summaries, preserving stable pair identity. Explicit preview themes override the ambient palette. No settings fields were added or reset.
+
+The final runtime passed 31 unit and 28 Chromium cases plus 13 code-style checks in each isolated rc.2 and rc.5 Web host. Precise colour assertions use reduced motion to avoid sampling a 140ms transition; normal animation coverage remains separate. Results are in `verification/0.9.1.json`. Desktop installation and exact settings equality are recorded separately in the private installation receipt. Prior test records remain unchanged.
+
+## 0.9.0 code blocks / 代码块
+
+The fourth style uses CSS generated content attached to existing summary and subcall anchors. It preserves the host text, links, folding and status. Closing braces reserve normal-flow rows; inactive views retain lightweight scope attributes so suspension does not change history height. Existing preferences and the classic fresh-install default are retained.
+
+Validation covers synthetic Chromium fixtures and a real isolated DSH 0.2.1-rc.5 Web host. Nested Web-host scopes are explicitly injected DOM based on genuine host summaries, not evidence of model/tool execution. The code style also passed 11 checks in a fresh isolated DSH 0.2.1-rc.2 Web profile using the same packed runtime. Final test counts are recorded in `verification/0.9.0.json`; machine-specific Desktop installation and preference equality are recorded separately in a private local receipt. No sustained live-model, Windows/Linux or native Desktop performance claim is made.
+
 ## Test levels / 验证层次
 
 - Unit: normalization, migrations and geometry helpers.

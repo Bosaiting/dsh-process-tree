@@ -1,0 +1,1130 @@
+{
+  "date": "2026-10-30",
+  "version": "0.9.1",
+  "clientSha256": "1f3ef6df1b75973b1457389d057548ce27acb5e295b68341078608457f08bd05",
+  "change": "IDE syntax and bracket-depth palette scoped to code style; existing stored preferences unchanged.",
+  "references": [
+    "https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes",
+    "https://github.com/microsoft/vscode/blob/main/src/vs/editor/common/core/editorColorRegistry.ts"
+  ],
+  "unit": {
+    "passed": 31
+  },
+  "browser": {
+    "mode": "Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.",
+    "cases": [
+      {
+        "name": "code blocks preserve text and native folding, match scope pairs, and follow streamed children",
+        "pass": true
+      },
+      {
+        "name": "code blocks keep closing-row layout on suspension and restore long nested scopes",
+        "pass": true
+      },
+      {
+        "name": "code IDE colors follow syntax depth, themes and status without changing source text",
+        "pass": true
+      },
+      {
+        "name": "botanical scroll optimization is opt-in, persistent, reversible, and has a stylesheet fallback",
+        "pass": true,
+        "faultModes": [
+          "replaceSync",
+          "adoption"
+        ],
+        "reload": true
+      },
+      {
+        "name": "window snapshots retry after compute or paint failures",
+        "pass": true
+      },
+      {
+        "name": "window invalidates cached coordinates when the crown gap changes",
+        "pass": true
+      },
+      {
+        "name": "quantized band preserves visible nodes and invalidations during scrolling",
+        "pass": true,
+        "checkedPositions": 84,
+        "checks": [
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 0,
+            "visible": 19
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 1,
+            "visible": 19
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 7,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 31,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 127,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 255,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 256,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 257,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 400,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 1000,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 3000,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 1000,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 257,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "quiet",
+            "offset": 0,
+            "visible": 19
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 0,
+            "visible": 19
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 1,
+            "visible": 19
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 7,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 31,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 127,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 255,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 256,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 257,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 400,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 1000,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 3000,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 1000,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 257,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "classic",
+            "offset": 0,
+            "visible": 19
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 0,
+            "visible": 17
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 1,
+            "visible": 17
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 7,
+            "visible": 17
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 31,
+            "visible": 18
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 127,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 255,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 256,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 257,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 400,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 1000,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 3000,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 1000,
+            "visible": 21
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 257,
+            "visible": 20
+          },
+          {
+            "cap": 0,
+            "style": "botanical",
+            "offset": 0,
+            "visible": 17
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 0,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 1,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 7,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 31,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 127,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 255,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 256,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 257,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 400,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 1000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 3000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 1000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 257,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "quiet",
+            "offset": 0,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 0,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 1,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 7,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 31,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 127,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 255,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 256,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 257,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 400,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 1000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 3000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 1000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 257,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "classic",
+            "offset": 0,
+            "visible": 8
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 0,
+            "visible": 5
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 1,
+            "visible": 5
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 7,
+            "visible": 6
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 31,
+            "visible": 6
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 127,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 255,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 256,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 257,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 400,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 1000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 3000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 1000,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 257,
+            "visible": 9
+          },
+          {
+            "cap": 260,
+            "style": "botanical",
+            "offset": 0,
+            "visible": 5
+          }
+        ]
+      },
+      {
+        "name": "quantized band supports nested calls and two scroll containers",
+        "pass": true
+      },
+      {
+        "name": "empty rows gain nodes on text insertion or character data without stream rescans",
+        "pass": true
+      },
+      {
+        "name": "classic intensity controls apply the wider presets and preserve saved custom widths",
+        "pass": true
+      },
+      {
+        "name": "botanical intensity controls apply the narrower presets and preserve saved widths",
+        "pass": true
+      },
+      {
+        "name": "state colors remain independent across themes, styles, preview and reload",
+        "pass": true
+      },
+      {
+        "name": "last top-level fork joins the trunk smoothly without changing other rows",
+        "pass": true,
+        "samples": [
+          {
+            "fusion": 0.3,
+            "trunkStart": 11.131,
+            "trunkEnd": 8.027,
+            "branchStart": 8.027,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 0,
+            "trunkStart": 11.131,
+            "trunkEnd": 6.735,
+            "branchStart": 6.735,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 0.15,
+            "trunkStart": 11.131,
+            "trunkEnd": 7.381,
+            "branchStart": 7.381,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 0.7,
+            "trunkStart": 11.131,
+            "trunkEnd": 9.749,
+            "branchStart": 9.749,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 1,
+            "trunkStart": 11.131,
+            "trunkEnd": 11.041,
+            "branchStart": 11.041,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          }
+        ],
+        "terminal": {
+          "trunkStart": 11.131,
+          "trunkEnd": 8.027,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        },
+        "continuing": {
+          "trunkStart": 11.131,
+          "trunkEnd": 11.041,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        },
+        "hidden": {
+          "trunkStart": 11.131,
+          "trunkEnd": 8.027,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        },
+        "cssHidden": {
+          "trunkStart": 11.131,
+          "trunkEnd": 8.027,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        }
+      },
+      {
+        "name": "viewport windows do not make intermediate top-level forks terminal",
+        "pass": true,
+        "early": {
+          "last": "g0-7",
+          "total": 120,
+          "hasPaths": true,
+          "end": 10.454,
+          "source": 10.454131470043983
+        },
+        "late": {
+          "present": true,
+          "end": 6.107,
+          "start": 6.107
+        }
+      },
+      {
+        "name": "nested stem tapers smoothly into its last fork at every fusion level",
+        "pass": true,
+        "samples": [
+          {
+            "fusion": 0,
+            "start": 4.88,
+            "end": 2.884,
+            "forkStart": 2.884,
+            "span": 32
+          },
+          {
+            "fusion": 0.15,
+            "start": 4.88,
+            "end": 3.161,
+            "forkStart": 3.161,
+            "span": 32
+          },
+          {
+            "fusion": 0.3,
+            "start": 4.88,
+            "end": 3.437,
+            "forkStart": 3.437,
+            "span": 32
+          },
+          {
+            "fusion": 0.7,
+            "start": 4.88,
+            "end": 4.175,
+            "forkStart": 4.175,
+            "span": 32
+          },
+          {
+            "fusion": 1,
+            "start": 4.88,
+            "end": 4.728,
+            "forkStart": 4.728,
+            "span": 32
+          }
+        ]
+      },
+      {
+        "name": "same-size text, quiet decoration and incremental state",
+        "pass": true,
+        "samples": {
+          "text": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "quiet": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "state": {
+            "stats": {
+              "readUpdate": 1,
+              "commitUpdate": 1
+            },
+            "rectReads": 0
+          }
+        }
+      },
+      {
+        "name": "quiet fast path, bounded paint and style switches",
+        "pass": true,
+        "initial": {
+          "dots": 28,
+          "halos": 0,
+          "materials": 0,
+          "edges": 30,
+          "strokes": 30,
+          "outlineCalls": 0,
+          "pathChars": 1641
+        }
+      },
+      {
+        "name": "row-size changes with unchanged group size, font, leading and zoom",
+        "pass": true,
+        "before": {
+          "height": 384,
+          "y": 134
+        },
+        "after": {
+          "height": 384,
+          "y": 154
+        }
+      },
+      {
+        "name": "outer and capped inner scrolling preserve visible nodes",
+        "pass": true,
+        "records": [
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 19,
+            "dots": 28,
+            "nodes": 28,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.25,
+            "visible": 21,
+            "dots": 39,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.6,
+            "visible": 21,
+            "dots": 39,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 1,
+            "visible": 19,
+            "dots": 28,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 19,
+            "dots": 28,
+            "nodes": 28,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.25,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.6,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 1,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 9,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          }
+        ]
+      },
+      {
+        "name": "growth, reduced motion and fold restoration",
+        "pass": true,
+        "running": 1
+      },
+      {
+        "name": "far history sleeps without changing height and restores without growth",
+        "pass": true,
+        "before": 249,
+        "away": {
+          "awake": 9,
+          "sleeping": 15,
+          "firstSleeping": true,
+          "height": 249,
+          "retained": false
+        }
+      },
+      {
+        "name": "new turns do not rescan or remeasure folded historical groups",
+        "pass": true,
+        "work": {
+          "fullScans": 0,
+          "oldRects": 0
+        }
+      },
+      {
+        "name": "crown ignores unrelated mutations and settings coalesce per frame",
+        "pass": true,
+        "unrelated": {
+          "rectReads": 0
+        },
+        "settings": {
+          "applySettings": 1,
+          "paintCrown": 1,
+          "syncCrownLibraries": 1,
+          "positionCrowns": 2,
+          "readUpdate": 1,
+          "collect": 1,
+          "buildModel": 1,
+          "geometryOf": 11,
+          "branchBody": 11,
+          "commitUpdate": 1
+        }
+      },
+      {
+        "name": "classic growth masks finish and offscreen calls stay static",
+        "pass": true
+      },
+      {
+        "name": "style cards render miniature conversations and remain selectable",
+        "pass": true
+      },
+      {
+        "name": "botanical soil follows the crown and its setting applies to chat and preview",
+        "pass": true
+      },
+      {
+        "name": "botanical settings preview crown follows sticky panel and inner scrolling",
+        "pass": true,
+        "samples": [
+          {
+            "scroll": 0,
+            "delta": 0,
+            "headerTop": 180.96875
+          },
+          {
+            "scroll": 60,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 150,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 250,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 100,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 0,
+            "delta": 0,
+            "headerTop": 180.96875
+          }
+        ]
+      },
+      {
+        "name": "real React settings, shadow preview growth and shared-resource teardown",
+        "pass": true,
+        "remaining": {
+          "views": 1,
+          "rows": 16,
+          "clips": 1,
+          "crowns": 1,
+          "libraries": 1,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        },
+        "final": {
+          "views": 0,
+          "rows": 0,
+          "clips": 0,
+          "crowns": 0,
+          "libraries": 0,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        }
+      }
+    ]
+  },
+  "rc5CodeHost": {
+    "scope": "DSH Web, synthetic Session fixture and explicitly injected nested DOM; no model or tool execution; no native Desktop performance claim.",
+    "checks": [
+      {
+        "name": "explicit preview themes use the IDE palette independently of the host",
+        "pass": true
+      },
+      {
+        "name": "fourth style selectable, previewed and saved",
+        "pass": true
+      },
+      {
+        "name": "native tool summaries retain their text and links",
+        "pass": true,
+        "links": 6
+      },
+      {
+        "name": "nested brackets align with native summary labels and reserve closing rows",
+        "pass": true,
+        "alignment": [
+          {
+            "gap": 0.0003459124830555993,
+            "space": 22
+          },
+          {
+            "gap": 0.0003459124829987559,
+            "space": 22
+          }
+        ]
+      },
+      {
+        "name": "native summaries use function and string colours with three stable bracket depths",
+        "pass": true,
+        "palette": {
+          "pairs": [
+            "rgb(4, 49, 250)",
+            "rgb(49, 147, 49)",
+            "rgb(123, 56, 20)"
+          ],
+          "fn": "rgb(121, 94, 38)",
+          "file": "rgb(163, 21, 21)"
+        }
+      },
+      {
+        "name": "hover highlights only its matching pair",
+        "pass": true
+      },
+      {
+        "name": "native DOM status changes preserve bracket-depth colours",
+        "pass": true
+      },
+      {
+        "name": "reduced motion respected",
+        "pass": true
+      },
+      {
+        "name": "light and dark host visuals captured",
+        "pass": true
+      },
+      {
+        "name": "nested scope survives host zoom",
+        "pass": true
+      },
+      {
+        "name": "native process fold restores decorations without changing copied text",
+        "pass": true
+      },
+      {
+        "name": "settled code layout has no repeated DOM writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "code preference survives reload",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  "rc2CodeHost": {
+    "scope": "DSH Web, synthetic Session fixture and explicitly injected nested DOM; no model or tool execution; no native Desktop performance claim.",
+    "checks": [
+      {
+        "name": "explicit preview themes use the IDE palette independently of the host",
+        "pass": true
+      },
+      {
+        "name": "fourth style selectable, previewed and saved",
+        "pass": true
+      },
+      {
+        "name": "native tool summaries retain their text and links",
+        "pass": true,
+        "links": 6
+      },
+      {
+        "name": "nested brackets align with native summary labels and reserve closing rows",
+        "pass": true,
+        "alignment": [
+          {
+            "gap": 0.0003459124830555993,
+            "space": 22
+          },
+          {
+            "gap": 0.0003459124829987559,
+            "space": 22
+          }
+        ]
+      },
+      {
+        "name": "native summaries use function and string colours with three stable bracket depths",
+        "pass": true,
+        "palette": {
+          "pairs": [
+            "rgb(4, 49, 250)",
+            "rgb(49, 147, 49)",
+            "rgb(123, 56, 20)"
+          ],
+          "fn": "rgb(121, 94, 38)",
+          "file": "rgb(163, 21, 21)"
+        }
+      },
+      {
+        "name": "hover highlights only its matching pair",
+        "pass": true
+      },
+      {
+        "name": "native DOM status changes preserve bracket-depth colours",
+        "pass": true
+      },
+      {
+        "name": "reduced motion respected",
+        "pass": true
+      },
+      {
+        "name": "light and dark host visuals captured",
+        "pass": true
+      },
+      {
+        "name": "nested scope survives host zoom",
+        "pass": true
+      },
+      {
+        "name": "native process fold restores decorations without changing copied text",
+        "pass": true
+      },
+      {
+        "name": "settled code layout has no repeated DOM writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "code preference survives reload",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  "testCorrection": "The initial exact-color assertion sampled a 140ms transition. Exact final-palette checks now use reduced motion; separate tests retain normal animation coverage. Initial failure is preserved in source-only verification records.",
+  "desktop": "Machine-specific upgrade, preview and exact preference equality are recorded separately after packing.",
+  "limits": [
+    "Synthetic fixtures with injected nested host DOM; no model/tool execution.",
+    "No Windows/Linux, sustained live-model task or native Desktop frame-rate claim."
+  ]
+}

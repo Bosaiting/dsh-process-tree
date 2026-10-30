@@ -63,7 +63,7 @@ const setup = () => {
   };
 };
 const results = {mode:'Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.',cases:[]};
-async function fixture(browser,{style='quiet',calls=120,groups=1,nested=true,cap=0,scale=1}={}){
+async function fixture(browser,{style='quiet',calls=120,groups=1,nested=true,cap=0,scale=1,codeLayout='braces'}={}){
   const context=await browser.newContext({viewport:{width:1100,height:800},deviceScaleFactor:scale}),page=await context.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text())});
   await page.route('https://dsh-tree-test.invalid/',r=>r.fulfill({contentType:'text/html',body:html}));
@@ -71,17 +71,17 @@ async function fixture(browser,{style='quiet',calls=120,groups=1,nested=true,cap
   await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});
   await page.addScriptTag({content:tested});
   await page.evaluate(()=>{window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)})});
-  await page.evaluate(({style,calls,groups,nested,cap})=>{
+  await page.evaluate(({style,calls,groups,nested,cap,codeLayout})=>{
     for(const key of ['collect','buildModel','readUpdate','commitUpdate','applySettings','paintCrown']){
       const original=api.TreeView.prototype[key];api.TreeView.prototype[key]=function(...args){count(key);return original.apply(this,args)};
     }
     const start=api.TreeView.prototype.start;api.TreeView.prototype.start=function(...args){instances.add(this);return start.apply(this,args)};
-    api.change({treeStyle:style,...api.STYLE_PRESETS[style],growthEnabled:false});
+    api.change({treeStyle:style,codeLayout,...api.STYLE_PRESETS[style],growthEnabled:false});
     const css=document.createElement('style');css.textContent=api.CSS;document.head.append(css);
     for(let i=0;i<groups;i++)makeGroup('g'+i,calls,nested);
     if(cap){const body=document.querySelector('[data-step-process-body]');body.style.height=cap+'px';body.style.overflow='auto'}
     window.manager=api.createManager();manager.start();
-  },{style,calls,groups,nested,cap});
+  },{style,calls,groups,nested,cap,codeLayout});
   await page.evaluate(()=>frames(10));return {page,context,errors};
 }
 async function test(name,fn){if(process.env.DSH_TEST_FILTER&&!name.includes(process.env.DSH_TEST_FILTER))return;try{const detail=await fn();results.cases.push({name,pass:true,...detail});console.log('PASS',name)}catch(error){results.cases.push({name,pass:false,error:error.stack});console.log('FAIL',name,error.stack)}finally{fs.writeFileSync(path.join(out,'browser-results.json'),JSON.stringify(results,null,2))}}
@@ -89,6 +89,258 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
 (async()=>{
   const browser=await chromium.launch({headless:true,...(process.env.DSH_CHROMIUM_EXECUTABLE?{executablePath:process.env.DSH_CHROMIUM_EXECUTABLE}:{})});
   try{
+    await test('function code uses genuine calls, folds full arguments, preserves native actions and releases sources',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:3,nested:true});
+      try{
+        await page.evaluate(()=>{
+          const observable=value=>({value,listeners:new Set(),getSnapshot(){return this.value},subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},publish(value){this.value=value;for(const fn of this.listeners)fn()}});
+          const root=document.querySelector('[data-chat-call-id="g0-0"]'),header=root.querySelector('[data-disclosure-row]');
+          header.setAttribute('role','button');header.setAttribute('tabindex','0');header.setAttribute('aria-expanded','false');
+          header.querySelector('span').innerHTML='<span>Read</span><button type="button">package.json</button>';
+          window.opens=0;window.folds=0;
+          header.querySelector('button').addEventListener('click',e=>{e.stopPropagation();opens++});
+          header.addEventListener('click',()=>{folds++;header.setAttribute('aria-expanded',String(header.getAttribute('aria-expanded')!=='true'))});
+          window.rootBlock={callId:'g0-0',kind:'tool-result',time:2800,callTime:1000,isError:true,call:{name:'read',argsRaw:JSON.stringify({path:'package.json',offset:2,limit:30})},subCalls:[
+            {callId:'g0-1',phase:'start',name:'bash',argsRaw:JSON.stringify({command:'npm test'}),subCalls:[]},
+            {callId:'g0-2',phase:'preparing',name:'write',argsRaw:'{"path":"unfinished',subCalls:[]},
+          ]};
+          window.chat=observable({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:rootBlock}}]])});
+          window.current=observable({key:'session-one',hooks:{chat}});
+          window.codeBridge=api.createCodeSource(current,{list:{getSnapshot:()=>({byId:{'session-one':{title:'检查项目',cwd:'./demo'}}})}});
+          api.setCodeSource(codeBridge);
+        });await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-function-header').innerText(),'def 检查项目(workspace="./demo"):');
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().innerText(),'def read(path="package.json", offset=2, limit=30):');
+        assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 3 · 已记录失败 1 · 未结束 2');
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-duration').first().innerText(),'1.8 s');
+        assert.equal(await page.locator('[data-chat-call-id="g0-1"] .dpt-code-duration').count(),0);
+        await page.evaluate(()=>{document.querySelector('[data-chat-flow]').style.width='240px'});await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().getAttribute('data-multiline'),'');
+        await page.evaluate(()=>{document.querySelector('[data-chat-flow]').style.width='760px'});await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().getAttribute('data-multiline'),null);
+        await page.evaluate(()=>{rootBlock={...rootBlock,call:{name:'read',argsRaw:JSON.stringify({path:'package.json',offset:2,limit:30,content:'long '.repeat(20)})}};chat.publish({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:rootBlock}}]])})});await page.evaluate(()=>frames(8));
+        assert.ok((await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().innerText()).startsWith('def read(\n    path="package.json",\n    offset=2,\n    limit=30,\n    content='));
+        await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'function-code-multiline.png')});
+        const expression=page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first();
+        assert.ok((await expression.boundingBox()).height > 80);
+        const closeX=await expression.evaluate(el=>{const tokens=[...el.querySelectorAll('[data-token=pair]')];return tokens.map(e=>e.getBoundingClientRect().left)});
+        assert.ok(Math.abs(closeX.at(-1) - (await expression.boundingBox()).x) < 2,JSON.stringify(closeX));
+        assert.equal(await page.locator('[data-chat-call-id="g0-1"] .dpt-code-expression').innerText(),'bash(command="npm test")');
+        assert.equal(await page.locator('[data-chat-call-id="g0-2"] .dpt-code-expression').innerText(),'write(…) ···');
+        assert.equal(await page.locator('[data-dpt-code-suffix], [data-dpt-code-scope]').count(),0);
+        const more=page.locator('[data-chat-call-id="g0-0"] .dpt-code-more').first();
+        await more.click();assert.equal(await more.getAttribute('aria-expanded'),'true');
+        assert.deepEqual(JSON.parse(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-arguments').first().innerText()),{path:'package.json',offset:2,limit:30,content:'long '.repeat(20)});
+        assert.equal(await page.evaluate(()=>folds),0);
+        await page.locator('[data-chat-call-id="g0-0"] .dpt-code-link').first().click();assert.equal(await page.evaluate(()=>opens),1);assert.equal(await page.evaluate(()=>folds),0);
+        await more.focus();await page.keyboard.press('Enter');assert.equal(await more.getAttribute('aria-expanded'),'false');assert.equal(await page.evaluate(()=>folds),0);
+        await page.locator('[data-chat-call-id="g0-0"] > [data-state] > [data-disclosure-row]').click({position:{x:5,y:5}});assert.equal(await page.evaluate(()=>folds),1);
+        await page.evaluate(()=>{
+          document.querySelector('[data-chat-call-id="g0-0"] [data-dpt-function-label] button:not([data-dpt-owned])').textContent='main.py';
+          rootBlock={...rootBlock,call:{name:'read',argsRaw:JSON.stringify({path:'src/main.py'})},subCalls:rootBlock.subCalls.map(b=>b.callId==='g0-2'?{...b,phase:'start',argsRaw:JSON.stringify({path:'report.txt',content:'<img src=x onerror=alert(1)>'})}:b)};
+          chat.publish({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:rootBlock}}]])});
+        });await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().innerText(),'def read(path="src/main.py"):');
+        assert.ok((await page.locator('[data-chat-call-id="g0-2"] .dpt-code-expression').innerText()).includes('<img src=x onerror=alert(1)>'));
+        assert.equal(await page.locator('[data-dpt-owned] img').count(),0);
+        for(const theme of ['light','dark']){
+          await page.evaluate(theme=>{document.body.toggleAttribute('data-ds-dark-theme',theme==='dark');document.body.style.background=theme==='dark'?'#1e1e1e':'#fff'},theme);
+          await page.locator('[data-step-process-content]').screenshot({path:path.join(out,`function-code-${theme}.png`)});
+        }
+        const gutter=await page.evaluate(()=>[...document.querySelectorAll('[data-dpt-function-line]')].map(e=>e.getBoundingClientRect().left+parseFloat(getComputedStyle(e,'::before').left)));
+        assert.ok(Math.max(...gutter)-Math.min(...gutter)<1,JSON.stringify(gutter));
+        const writes=await page.evaluate(async()=>{await frames(8);let n=0;const observer=new MutationObserver(r=>n+=r.length);observer.observe(document.querySelector('[data-step-process-content]'),{subtree:true,attributes:true,childList:true,characterData:true});await frames(16);observer.disconnect();return n});assert.equal(writes,0);
+        await page.evaluate(()=>{api.change({codeLayout:'braces'})});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-function-header,.dpt-code-expression,[data-dpt-function-label],[data-dpt-function-line]').count(),0);
+        assert.equal(await page.evaluate(()=>chat.listeners.size+current.listeners.size),0);
+        assert.equal(await page.locator('[data-dpt-code-suffix]').count(),3);
+        await page.evaluate(()=>api.change({codeLayout:'function'}));await page.evaluate(()=>frames(8));
+        assert.equal(await page.evaluate(()=>chat.listeners.size+current.listeners.size),2);
+        await page.evaluate(()=>{for(const view of instances)view.suspend()});await page.evaluate(()=>frames(3));
+        assert.equal(await page.evaluate(()=>chat.listeners.size+current.listeners.size),0);
+        assert.equal(await page.locator('.dpt-function-header').count(),1);
+        await page.evaluate(()=>{for(const view of instances)view.resume()});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-function-header').count(),1);
+        assert.equal(await page.locator('.dpt-code-expression').count(),3);
+        await page.evaluate(()=>{api.change({treeStyle:'quiet',...api.STYLE_PRESETS.quiet})});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('[data-dpt-code-layout],.dpt-code-expression,.dpt-code-arguments,[data-dpt-function-line]').count(),0);
+        assert.equal(await page.evaluate(()=>chat.listeners.size+current.listeners.size),0);
+        assert.deepEqual(errors,[]);return {writes,gutter};
+      }finally{await context.close()}
+    });
+    await test('function scopes follow streamed children and retain native interactions',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:1,nested:false});
+      try {
+        await page.evaluate(()=>{
+          const observable=value=>({value,listeners:new Set(),getSnapshot(){return this.value},subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},publish(value){this.value=value;for(const fn of this.listeners)fn()}});
+          window.rootBlock={callId:'g0-0',name:'code',argsRaw:JSON.stringify({code:'do stuff '.repeat(20)}),subCalls:[]};
+          window.chat=observable({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:rootBlock}}]])});
+          window.current=observable({key:'session-one',hooks:{chat}});
+          api.setCodeSource(api.createCodeSource(current,{list:{getSnapshot:()=>({byId:{'session-one':{title:'运行任务'}}})}}));
+        }); await page.evaluate(()=>frames(8));
+        const root=page.locator('[data-chat-call-id="g0-0"]'), expr=root.locator('.dpt-code-expression').first(), more=root.locator('.dpt-code-more').first();
+        assert.ok((await expr.innerText()).startsWith('code('));
+        await more.click();assert.equal(await more.getAttribute('aria-expanded'),'true');
+        await page.evaluate(()=>{
+          rootBlock={...rootBlock,subCalls:[{callId:'child',name:'read',argsRaw:'{"path":"a.txt"}',subCalls:[]}]};
+          const sub=document.createElement('div');sub.dataset.subcalls='';sub.innerHTML='<div data-chat-call-id="child"><div data-state="completed"><div data-disclosure-row><span>Read</span></div></div></div>';document.querySelector('[data-chat-call-id="g0-0"]').append(sub);
+          chat.publish({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:rootBlock}}]])});
+        }); await page.evaluate(()=>frames(10));
+        assert.ok((await expr.innerText()).startsWith('def code('));assert.ok((await expr.innerText()).includes('):'));
+        assert.equal(await more.getAttribute('aria-expanded'),'true');assert.equal(await root.locator('.dpt-code-arguments').first().isVisible(),true);
+        assert.equal(await root.locator('[data-chat-call-id="child"] .dpt-code-expression').innerText(),'read(path="a.txt")');
+        assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 2 · 已记录失败 0 · 未结束 2');
+        await page.evaluate(()=>{document.querySelector('[data-subcalls]').hidden=true});await page.evaluate(()=>frames(10));
+        assert.ok((await expr.innerText()).includes('): …'));
+        await page.evaluate(()=>{document.querySelector('[data-subcalls]').hidden=false});await page.evaluate(()=>frames(10));
+        assert.ok(!(await expr.innerText()).includes('): …'));
+        assert.equal(await more.getAttribute('aria-expanded'),'true');
+        await page.evaluate(()=>{document.querySelector('[data-subcalls]').remove()});await page.evaluate(()=>frames(10));
+        assert.ok((await expr.innerText()).includes('): …'));
+        assert.deepEqual(errors,[]);return {};
+      } finally {await context.close()}
+    });
+    await test('function code preserves native summaries when structured data is absent or belongs to another session',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:false});
+      try{
+        assert.equal(await page.locator('.dpt-code-expression').count(),0);
+        assert.ok((await page.locator('[data-chat-call-id="g0-0"]').innerText()).includes('工具 0'));
+        await page.evaluate(()=>api.setCodeSource({sync(){},read(){return {key:'other',context:{title:'Another'},nodes:new Map([['g0-0',{kind:'tool-call',data:{root:{callId:'different-call',name:'fake',argsRaw:'{}'}}}]])}}}));
+        await page.evaluate(()=>{for(const view of instances)view.schedule(1)});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-code-expression').count(),0);
+        assert.equal(await page.locator('.dpt-function-header').innerText(),'def task_01():');
+        await page.setViewportSize({width:400,height:800});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('[data-dpt-code-layout]').count(),1);
+        assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('code blocks preserve text and native folding, match scope pairs, and follow streamed children',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',calls:6,nested:true});
+      try {
+        assert.equal(await page.locator('[data-dpt-code-suffix]').count(),6);
+        assert.equal(await page.locator('[data-dpt-code-scope]').count(),1);
+        assert.equal(await page.locator('.dpt-dot,.dpt-edge,.dpt-leaf').count(),0);
+        const copy=await page.locator('[data-step-process-content]').textContent();
+        const header=page.locator('[data-chat-call-id="g0-0"] > [data-state] > [data-disclosure-row]');
+        const sub=page.locator('[data-chat-call-id="g0-0"] > [data-subcalls]');
+        const standardHeight=(await header.boundingBox()).height;
+        await page.evaluate(()=>api.change({leading:-8}));await page.evaluate(()=>frames(10));
+        assert.ok((await header.boundingBox()).height<standardHeight,'negative leading makes code rows more compact');
+        await page.evaluate(()=>api.change({leading:0}));await page.evaluate(()=>frames(10));
+        assert.equal(await header.locator('[data-dpt-code-suffix]').getAttribute('data-dpt-code-suffix'),'() {');
+        assert.ok((await sub.evaluate(e=>getComputedStyle(e,'::after').content)).includes('}'));
+        const before=await sub.boundingBox();
+        await header.evaluate(e=>{
+          e.tabIndex=0;e.setAttribute('role','button');e.setAttribute('aria-expanded','true');
+          e.addEventListener('click',()=>{const sub=e.closest('[data-chat-call-id]').querySelector(':scope > [data-subcalls]');sub.hidden=!sub.hidden;e.setAttribute('aria-expanded',String(!sub.hidden))});
+        });
+        await header.click();await page.evaluate(()=>frames(12));
+        assert.equal(await sub.isVisible(),false);
+        assert.equal(await header.locator('[data-dpt-code-suffix]').getAttribute('data-dpt-code-suffix'),'() { … }');
+        // Some hosts unmount descendants when folded. Keep the known scope,
+        // without inventing scopes for calls that never had children.
+        await sub.evaluate(e=>{window.savedCodeSub=e;e.remove()});await page.evaluate(()=>frames(10));
+        assert.equal(await header.locator('[data-dpt-code-suffix]').getAttribute('data-dpt-code-suffix'),'() { … }');
+        await header.evaluate(e=>e.closest('[data-chat-call-id]').append(savedCodeSub));
+        await header.click();await page.evaluate(()=>frames(12));
+        assert.ok(Math.abs((await sub.boundingBox()).height-before.height)<.5);
+        await header.hover();
+        assert.equal(await page.locator('[data-dpt-code-match]').count(),2);
+        await page.mouse.move(1000,750);await header.focus();
+        assert.equal(await sub.getAttribute('data-dpt-code-match'),'');
+        await header.evaluate(e=>e.blur());
+        await page.evaluate(()=>document.querySelector('[data-chat-call-id="g0-0"] > [data-state]').dataset.state='error');
+        await page.evaluate(()=>frames(12));
+        const tones=await page.evaluate(()=>{
+          const title=document.querySelector('[data-dpt-code-suffix]'),sub=document.querySelector('[data-dpt-code-scope]');
+          const child=sub.querySelector('[data-dpt-code-suffix]');
+          return {title:getComputedStyle(title,'::after').color,end:getComputedStyle(sub,'::after').color,child:getComputedStyle(child,'::after').color};
+        });assert.equal(tones.title,tones.end);assert.notEqual(tones.child,tones.end,'a parent error does not colour completed descendants');
+        await page.evaluate(()=>{
+          const child=document.createElement('div');child.dataset.chatCallId='streamed-code';
+          child.innerHTML='<div data-state="running"><div data-disclosure-row><a href="#local">新增子步骤</a></div></div>';
+          document.querySelector('[data-subcalls]').append(child);
+        });await page.evaluate(()=>frames(15));
+        assert.equal(await page.locator('[data-chat-call-id="streamed-code"] [data-dpt-code-suffix]').getAttribute('data-dpt-code-suffix'),'()');
+        assert.ok((await sub.boundingBox()).height>before.height+25,'closing row follows added child');
+        assert.equal(await page.locator('[data-chat-call-id="streamed-code"] a').getAttribute('href'),'#local');
+        await page.locator('[data-chat-call-id="streamed-code"]').evaluate(e=>e.remove());await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('[data-step-process-content]').textContent(),copy,'decorations do not change copied content');
+        await page.emulateMedia({reducedMotion:'reduce'});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('[data-step-process-content]').getAttribute('data-dpt-code-motion'),'off');
+        for(const style of ['classic','quiet','botanical','code']) {
+          await page.evaluate(style=>api.change({treeStyle:style,...api.STYLE_PRESETS[style]}),style);await page.evaluate(()=>frames(15));
+          assert.equal(await page.locator('[data-dpt-code-suffix]').count(),style==='code'?6:0);
+          if(style!=='code')await aligned(page);
+        }
+        await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'code-nested-light.png')});
+        await page.evaluate(()=>{document.documentElement.dataset.dsDarkTheme='';document.body.style.background='#222525';document.body.style.color='#ddd';document.documentElement.style.setProperty('--dsw-alias-bg-base','#222525')});
+        await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'code-nested-dark.png')});
+        await page.evaluate(()=>manager.stop());
+        assert.equal(await page.locator('[data-dpt-code-suffix],[data-dpt-code-scope],[data-dpt-code-match]').count(),0);
+        assert.equal(await page.locator('[data-step-process-content]').textContent(),copy);
+        assert.deepEqual(errors,[]);
+      } finally {await context.close()}
+    });
+    await test('code blocks keep closing-row layout on suspension and restore long nested scopes',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',calls:180,nested:true,cap:280});
+      try {
+        const before=await page.locator('[data-step-process-content]').evaluate(e=>e.getBoundingClientRect().height);
+        await page.evaluate(()=>[...instances][0].suspend());
+        assert.equal(await page.evaluate(()=>[...instances][0].codeEvents),null);
+        assert.equal(await page.locator('[data-step-process-content]').evaluate(e=>e.getBoundingClientRect().height),before);
+        await page.evaluate(()=>[...instances][0].resume());await page.evaluate(()=>frames(15));
+        const scroll=page.locator('[data-step-process-body]');
+        await scroll.evaluate(e=>e.scrollTop=e.scrollHeight);await page.evaluate(()=>frames(15));
+        assert.equal(await page.locator('[data-dpt-code-suffix]').count(),180);
+        assert.equal(await page.locator('[data-dpt-code-scope]').count(),1);
+        const endpoint=await page.locator('[data-dpt-code-scope]').evaluate(e=>({height:e.getBoundingClientRect().height,after:getComputedStyle(e,'::after').height}));
+        assert.equal(endpoint.after,'22px');assert.ok(endpoint.height>5000);
+        await page.evaluate(()=>{document.body.style.zoom='.8'});await page.evaluate(()=>frames(12));
+        await scroll.evaluate(e=>e.scrollTop=0);await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('[data-dpt-code-suffix]').first().getAttribute('data-dpt-code-suffix'),'() {');
+        await page.evaluate(()=>manager.stop());assert.equal(await page.evaluate(()=>api.resources().views),0);
+        assert.equal(await page.locator('[data-dpt-code-suffix]').count(),0);assert.deepEqual(errors,[]);
+      } finally {await context.close()}
+    });
+    await test('code IDE colors follow syntax depth, themes and status without changing source text',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',calls:6,nested:true});
+      try {
+        await page.emulateMedia({reducedMotion:'reduce'});
+        await page.evaluate(()=>{
+          const parent=document.querySelector('[data-chat-call-id="g0-1"]'),sub=document.createElement('div');sub.dataset.subcalls='';
+          sub.append(document.querySelector('[data-chat-call-id="g0-2"]'));parent.append(sub);
+          document.querySelector('[data-chat-call-id="g0-3"] [data-disclosure-row]').innerHTML='<span><span>Read</span><button type="button"><span>demo.js</span></button></span>';
+          const think=document.createElement('div');think.dataset.chatFlowKind='reasoning';think.dataset.chatAnchorKey='ide-comment';
+          think.innerHTML='<div data-variant="think"><div data-disclosure-row>思考 · 检查依赖</div></div>';document.querySelector('[data-step-process-content]').prepend(think);
+        });await page.evaluate(()=>frames(15));
+        const sourceText=await page.locator('[data-step-process-content]').textContent();
+        const colors=()=>page.evaluate(()=>{
+          const title=id=>document.querySelector('[data-chat-call-id="'+id+'"] [data-dpt-code-suffix]');
+          const pair=id=>getComputedStyle(title(id),'::after').color;
+          const close=id=>getComputedStyle(document.querySelector('[data-chat-call-id="'+id+'"] > [data-dpt-code-scope]'),'::after').color;
+          return {pairs:[pair('g0-0'),pair('g0-1'),pair('g0-2')],ends:[close('g0-0'),close('g0-1')],
+            fn:getComputedStyle(title('g0-0')).color,file:getComputedStyle(title('g0-3').querySelector('button')).color,
+            comment:getComputedStyle(document.querySelector('[data-variant="think"] [data-disclosure-row]')).color};
+        });
+        const light=await colors();assert.deepEqual(light.pairs,['rgb(4, 49, 250)','rgb(49, 147, 49)','rgb(123, 56, 20)']);
+        assert.deepEqual(light.ends,light.pairs.slice(0,2));assert.equal(light.fn,'rgb(187, 128, 9)');assert.equal(light.file,'rgb(163, 21, 21)');assert.equal(light.comment,'rgb(0, 128, 0)');
+        await page.evaluate(()=>{api.change({errorColorLight:'#b40000'});document.querySelector('[data-chat-call-id="g0-0"] > [data-state]').dataset.state='error'});await page.evaluate(()=>frames(10));
+        const error=await colors();assert.equal(error.fn,'rgb(180, 0, 0)');assert.deepEqual(error.pairs,light.pairs);assert.deepEqual(error.ends,light.ends);
+        await page.evaluate(()=>document.querySelector('[data-chat-call-id="g0-0"] > [data-state]').dataset.state='completed');await page.evaluate(()=>frames(8));
+        await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'code-ide-light.png')});
+        await page.evaluate(()=>{document.documentElement.dataset.dsDarkTheme='';document.body.style.background='#1e1e1e';document.body.style.color='#d4d4d4';document.documentElement.style.setProperty('--dsw-alias-bg-base','#1e1e1e')});await page.evaluate(()=>frames(8));
+        const dark=await colors();assert.deepEqual(dark.pairs,['rgb(230, 203, 149)','rgb(218, 112, 214)','rgb(23, 159, 255)']);
+        assert.deepEqual(dark.ends,dark.pairs.slice(0,2));assert.equal(dark.fn,'rgb(255, 219, 148)');assert.equal(dark.file,'rgb(206, 145, 120)');assert.equal(dark.comment,'rgb(106, 153, 85)');
+        const header=page.locator('[data-chat-call-id="g0-0"] > [data-state] > [data-disclosure-row]');await header.hover();
+        assert.deepEqual((await colors()).pairs,dark.pairs,'matching highlight keeps the pair hue');
+        await page.mouse.move(1000,750);await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'code-ide-dark.png')});
+        assert.equal(await page.locator('[data-step-process-content]').textContent(),sourceText);
+        await page.evaluate(()=>api.change({treeStyle:'quiet',...api.STYLE_PRESETS.quiet}));await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('[data-dpt-code-level]').count(),0,'depth annotations clean up on style switch');
+        assert.deepEqual(errors,[]);
+      } finally {await context.close()}
+    });
     await test('botanical scroll optimization is opt-in, persistent, reversible, and has a stylesheet fallback',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'botanical',calls:30,nested:true,cap:260});
       try {
@@ -305,6 +557,64 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         await page.getByRole('radio',{name:/安静线条/}).click();await page.evaluate(()=>frames(8));
         assert.equal(Number(await width.inputValue()),1.5,'quiet intensity remains unchanged');
         await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('code colors update chat and both previews, persist and reset independently',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',calls:3,nested:true});
+      try {
+        await page.emulateMedia({reducedMotion:'reduce'});
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='code-colors-settings';mount.style.cssText='position:fixed;left:500px;top:0;width:590px;height:750px;overflow:auto';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(12));
+        await page.getByRole('radio',{name:/代码块/}).click();await page.getByLabel('代码形态').selectOption('function');
+        await page.getByText('浅色代码颜色',{exact:true}).click();await page.getByText('深色代码颜色',{exact:true}).click();
+        await page.getByLabel('浅色函数和工具颜色值').fill('#2468AC');
+        await page.getByLabel('浅色字符串和文件颜色选择').fill('#9a3210');
+        await page.getByLabel('深色函数和工具颜色值').fill('#AABBCC');
+        await page.getByLabel('深色一级括号颜色选择').fill('#77dd99');
+        await page.getByLabel('预览主题').selectOption('light');await page.evaluate(()=>frames(12));
+        const preview=page.locator('.dpt-preview-stage');
+        const color=(selector)=>page.locator(selector).first().evaluate(el=>getComputedStyle(el).color);
+        assert.equal(await color('.dpt-preview-stage .dpt-function-header [data-token="function"]'),'rgb(36, 104, 172)');
+        assert.equal(await color('.dpt-preview-stage .dpt-function-header [data-token="string"]'),'rgb(154, 50, 16)');
+        await page.getByLabel('代码形态').selectOption('braces');await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('#flow [data-dpt-code-suffix]').first().evaluate(el=>getComputedStyle(el).color),'rgb(36, 104, 172)');
+        await page.getByLabel('代码形态').selectOption('function');await page.evaluate(()=>frames(8));
+        await page.getByLabel('预览主题').selectOption('dark');await page.evaluate(()=>frames(8));
+        assert.equal(await color('.dpt-preview-stage .dpt-function-header [data-token="function"]'),'rgb(170, 187, 204)');
+        assert.equal(await color('.dpt-preview-stage .dpt-function-header [data-token="pair"]'),'rgb(119, 221, 153)');
+        await page.getByLabel('代码形态').selectOption('braces');await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('#flow [data-dpt-code-suffix]').first().evaluate(el=>getComputedStyle(el).color),'rgb(36, 104, 172)','preview does not alter chat theme');
+        await page.evaluate(()=>document.documentElement.setAttribute('data-ds-dark-theme',''));await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('#flow [data-dpt-code-suffix]').first().evaluate(el=>getComputedStyle(el).color),'rgb(170, 187, 204)');
+        await page.getByLabel('代码形态').selectOption('function');await page.getByLabel('预览主题').selectOption('current');await page.evaluate(()=>frames(8));
+        assert.equal(await color('.dpt-preview-stage .dpt-function-header [data-token="function"]'),'rgb(170, 187, 204)','current preview follows the host theme');
+        await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}');return s.codeLightFunction==='#2468ac'&&s.codeLightString==='#9a3210'&&s.codeDarkFunction==='#aabbcc'&&s.codeDarkPair1==='#77dd99'});
+        await page.reload();await page.evaluate(setup);
+        await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});await page.addScriptTag({content:tested});
+        await page.evaluate(()=>{
+          window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)});window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');document.body.append(mount);window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(10));
+        await page.getByText('浅色代码颜色',{exact:true}).click();await page.getByText('深色代码颜色',{exact:true}).click();
+        assert.equal(await page.getByLabel('浅色函数和工具颜色值').inputValue(),'#2468AC');assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#AABBCC');
+        const input=page.getByLabel('浅色函数和工具颜色值');await input.fill('#NOPE');await input.blur();assert.equal(await input.inputValue(),'#2468AC');
+        await page.getByRole('button',{name:'恢复浅色代码颜色'}).click();await page.evaluate(()=>frames(8));
+        assert.equal(await input.inputValue(),'#BB8009');assert.equal(await page.getByLabel('浅色字符串和文件颜色值').inputValue(),'#A31515');
+        assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#AABBCC');
+        await page.getByRole('button',{name:'恢复深色代码颜色'}).click();await page.evaluate(()=>frames(8));
+        assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#FFDB94');
+        await page.getByLabel('深色函数和工具颜色值').fill('#AABBCC');
+        await page.getByRole('radio',{name:/安静线条/}).click();await page.getByRole('radio',{name:/代码块/}).click();
+        await page.getByText('深色代码颜色',{exact:true}).click();assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#AABBCC');
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});
+        assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--dpt-code-dark-function')),'');
+        assert.deepEqual(errors,[]);return {};
       }finally{await context.close()}
     });
     await test('state colors remain independent across themes, styles, preview and reload',async()=>{
@@ -646,11 +956,19 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
           const mount=document.createElement('div');mount.id='settings-cards';mount.style.cssText='position:absolute;left:0;top:0;width:900px';document.body.append(mount);
           window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
         });await page.evaluate(()=>frames(12));
-        for(const name of ['经典曲线','植物手稿','安静线条']){
+        for(const name of ['经典曲线','植物手稿','安静线条','代码块']){
           const card=page.getByRole('radio',{name:new RegExp(name)});await card.click();
+          await page.evaluate(()=>frames(8));
           assert.equal(await card.getAttribute('aria-checked'),'true');
-          assert.equal(await card.locator('svg text').count(),3);
-          assert.ok(await card.locator('svg .dpt-edge').count()>0);
+          if(name==='代码块'){
+            await page.getByRole('combobox',{name:'代码形态'}).selectOption('function');await page.evaluate(()=>frames(8));
+            assert.equal(await card.locator('svg text').count(),5);assert.ok(await page.locator('.dpt-preview-stage .dpt-function-header').count()>0);
+            for(const theme of ['light','dark']){
+              await page.getByRole('combobox',{name:'预览主题'}).selectOption(theme);await page.evaluate(()=>frames(8));
+              await page.locator('.dpt-preview-stage').screenshot({path:path.join(out,`code-preview-${theme}.png`)});
+            }
+            await page.getByRole('combobox',{name:'预览主题'}).selectOption('current');
+          }else{assert.equal(await card.locator('svg text').count(),3);assert.ok(await card.locator('svg .dpt-edge').count()>0)}
         }
         await page.getByRole('radio',{name:/植物手稿/}).click();await page.evaluate(()=>frames(8));
         await page.locator('.dpt-cards').screenshot({path:path.join(out,'style-cards-light.png')});
