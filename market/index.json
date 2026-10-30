@@ -53,9 +53,20 @@
         ]
       },
       "dist-tags": {
-        "latest": "0.8.0"
+        "latest": "0.8.2"
       },
       "versions": [
+        {
+          "version": "0.8.2",
+          "publishTimestamp": 1793344657,
+          "source": {
+            "type": "npm",
+            "registry": "https://registry.npmjs.org"
+          },
+          "engines": {
+            "dsh": "0.2.1-rc.2 || 0.2.1-rc.5"
+          }
+        },
         {
           "version": "0.8.0",
           "publishTimestamp": 1793101114,
