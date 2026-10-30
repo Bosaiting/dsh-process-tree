@@ -87,6 +87,8 @@ The fourth style now defaults to Python-like task functions: an outer `def task_
 
 The view borrows the UI's already-loaded current Chat projection and matches native row identities. It shows two arguments inline; ellipsis buttons disclose additional or long values. File arguments delegate to the retained native file action, and native result disclosure remains available. Missing records, incomplete arguments and special interactive summaries fall back conservatively instead of guessing parameters. Syntax colours remain independent of execution status. Data subscriptions are released when the view is inactive.
 
+Long histories convert progressively, prioritizing calls near the viewport; unconverted rows retain their native summaries. The minimap fills in as conversion progresses, while counts use the loaded structured records.
+
 Choose **Trailing braces** under Code layout to retain `() {`, normal-flow closing rows, subtle scope guides and pair matching. Existing styles and visual preferences remain intact; the new `codeLayout` field defaults to `function`.
 
 ![Optional trailing braces](docs/images/code.png)

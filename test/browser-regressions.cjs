@@ -89,6 +89,49 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
 (async()=>{
   const browser=await chromium.launch({headless:true,...(process.env.DSH_CHROMIUM_EXECUTABLE?{executablePath:process.env.DSH_CHROMIUM_EXECUTABLE}:{})});
   try{
+    await test('long function conversion yields, follows live updates and cancels cleanly',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:500,nested:false,cap:300});
+      try {
+        await page.evaluate(()=>{
+          const observable=value=>({value,listeners:new Set(),getSnapshot(){return this.value},subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},publish(v){this.value=v;for(const f of this.listeners)f()}});
+          window.longNodes=new Map();
+          for(let i=0;i<500;i++)longNodes.set('g0-'+i,{kind:'tool-call',data:{root:{callId:'g0-'+i,kind:'tool-result',isError:false,time:2000,callTime:1000,call:{name:'read',argsRaw:JSON.stringify({path:'file-'+i+'.js',content:'content '.repeat(20)})},subCalls:[]}}});
+          window.longChat=observable({nodes:longNodes});
+          const current=observable({key:'long-session',hooks:{chat:longChat}});
+          api.setCodeSource(api.createCodeSource(current,{list:{getSnapshot:()=>({byId:{'long-session':{title:'Long'}}})}}));
+        });
+        await page.waitForFunction(()=>document.querySelectorAll('.dpt-code-expression').length>0);
+        const first=await page.locator('.dpt-code-expression').count();
+        assert.ok(first<500,'expected progressive conversion, got '+first);
+        assert.ok(await page.locator('.dpt-map-mark').count()>0,'the minimap should remain useful during conversion');
+        await page.evaluate(()=>{
+          const node=longNodes.get('g0-450'),block=node.data.root;
+          longNodes.set('g0-450',{kind:'tool-call',data:{root:{...block,isError:true,content:[{type:'text',text:'Live failure'}],call:{...block.call,argsRaw:'{"path":"updated.js"}'}}}});
+          longChat.publish({nodes:new Map(longNodes)});
+        });
+        await page.waitForFunction(()=>document.querySelector('[data-chat-call-id="g0-450"] [data-dpt-function-failed]'),null,{timeout:5000});
+        assert.match(await page.locator('[data-chat-call-id="g0-450"] .dpt-code-expression').innerText(),/updated\.js/);
+        await page.locator('.dpt-failure-count').click();
+        await page.waitForSelector('.dpt-failure-item');
+        assert.match(await page.locator('.dpt-failure-item').innerText(),/Live failure/);
+        await page.locator('.dpt-failure-count').click();
+        await page.evaluate(()=>{document.querySelector('[data-step-process-body]').scrollTop=7000});
+        await page.evaluate(()=>frames(4));
+        const visible=await page.evaluate(()=>{const clip=document.querySelector('[data-step-process-body]').getBoundingClientRect();return [...document.querySelectorAll('[data-disclosure-row]')].filter(e=>{const r=e.getBoundingClientRect();return r.bottom>clip.top&&r.top<clip.bottom}).map(e=>!!e.querySelector('.dpt-code-expression'))});
+        assert.ok(visible.some(Boolean),'visible rows should be prioritized');
+        await page.waitForFunction(()=>document.querySelectorAll('.dpt-code-expression').length===500,null,{timeout:15000});
+        await page.evaluate(()=>{window.unchanged=document.querySelector('[data-chat-call-id="g0-10"] .dpt-code-expression');const b=longNodes.get('g0-450').data.root;longNodes.set('g0-450',{kind:'tool-call',data:{root:{...b,isError:false}}});longChat.publish({nodes:new Map(longNodes)})});
+        await page.waitForFunction(()=>!document.querySelector('[data-chat-call-id="g0-450"] [data-dpt-function-failed]'));
+        assert.equal(await page.evaluate(()=>unchanged===document.querySelector('[data-chat-call-id="g0-10"] .dpt-code-expression')),true);
+        await page.evaluate(()=>{api.change({treeStyle:'quiet',...api.STYLE_PRESETS.quiet})});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-code-expression').count(),0);
+        await page.evaluate(()=>{api.change({treeStyle:'code',codeLayout:'function',...api.STYLE_PRESETS.code})});
+        await page.waitForFunction(()=>{const n=document.querySelectorAll('.dpt-code-expression').length;return n>0&&n<500});
+        await page.evaluate(()=>{api.change({treeStyle:'quiet',...api.STYLE_PRESETS.quiet})});await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('.dpt-code-expression').count(),0,'cancelled batches must not restore stale decorations');
+        assert.deepEqual(errors,[]);return {first};
+      }finally{await context.close()}
+    });
     await test('function code uses genuine calls, folds full arguments, preserves native actions and releases sources',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:3,nested:true});
       try{
@@ -292,6 +335,10 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         await child.locator('.dpt-scope-toggle').first().click();await page.evaluate(()=>frames(8));
         assert.equal(await child.locator('.dpt-scope-failures').first().innerText(),'含 1 个失败');
         await root.locator('.dpt-scope-toggle').first().click();await page.evaluate(()=>frames(8));
+        assert.equal(await root.locator('.dpt-scope-failures').first().innerText(),'含 3 个失败');
+        await page.evaluate(()=>{failureRoot={...failureRoot,subCalls:failureRoot.subCalls.map(b=>b.callId==='missing'?{...b,isError:false}:b)};chat.publish({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:failureRoot}}]])})});await page.evaluate(()=>frames(8));
+        assert.equal(await root.locator('.dpt-scope-failures').first().innerText(),'含 2 个失败','unmounted child changes update recorded ancestors');
+        await page.evaluate(()=>{failureRoot={...failureRoot,subCalls:failureRoot.subCalls.map(b=>b.callId==='missing'?{...b,isError:true}:b)};chat.publish({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:failureRoot}}]])})});await page.evaluate(()=>frames(8));
         assert.equal(await root.locator('.dpt-scope-failures').first().innerText(),'含 3 个失败');
         assert.equal(await page.evaluate(()=>rootFolds),0);
         await page.locator('.dpt-failure-count').click();await page.evaluate(()=>frames(8));

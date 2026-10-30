@@ -1061,7 +1061,7 @@ window.__ModuleLoader__.load({
   function createCodeSource(current, sessions) {
     let stopCurrent = null, stopChat = null, face = null, chat = null
     const invalidate = () => {
-      for (const view of watchedViews.values()) if (!view.isPreview && !view.suspended && !view.stopped) view.schedule(DIRTY_LAYOUT)
+      for (const view of watchedViews.values()) if (!view.isPreview && !view.suspended && !view.stopped) view.schedule(DIRTY_CODE_DATA)
     }
     const refresh = () => {
       face = current.getSnapshot()
@@ -1679,6 +1679,8 @@ window.__ModuleLoader__.load({
   const DIRTY_STATE = 8
   const DIRTY_STRUCTURE = 16
   const DIRTY_WINDOW = 32
+  const DIRTY_CODE_DATA = 64
+  const DIRTY_CODE_INTERACTION = 128
   const frameViews = new Set()
   const settingsViews = new Set()
   let settingsFrame = 0
@@ -2562,7 +2564,7 @@ window.__ModuleLoader__.load({
       this.rowTargets = targets
       this.structureDirty = false
       this.watchEmptyRows(emptyRows)
-      this.syncCodeDecorations()
+      this.syncCodeDecorations(DIRTY_STRUCTURE)
     }
 
     clearCodeDecorations(retainLayout = false) {
@@ -2576,6 +2578,9 @@ window.__ModuleLoader__.load({
       if (this.functionKey) this.content.removeEventListener('keydown', this.functionKey, true)
       this.functionClick = null
       this.functionKey = null
+      if (this.functionBatch?.frame) cancelAnimationFrame(this.functionBatch.frame)
+      this.functionBatch = null
+      this.functionPriority = null
       if (retainLayout) return
       for (const record of this.functionRows?.values() || []) this.releaseFunctionRow(record)
       this.functionRows?.clear()
@@ -2587,12 +2592,15 @@ window.__ModuleLoader__.load({
       this.functionFailureList = null
       this.functionFailures = null
       this.functionBlocks = null
+      this.functionVersions = null
+      this.functionVersionKey = null
       this.functionFailureSignature = null
       this.functionBar?.remove()
       this.functionNav?.remove()
       this.functionBar = null
       this.functionNav = null
       this.functionNavRows = null
+      this.functionNavigationAt = 0
       this.functionMapSignature = null
       for (const sub of this.content.querySelectorAll('[data-dpt-function-folded]')) sub.removeAttribute('data-dpt-function-folded')
       this.functionHeader = null
@@ -2610,16 +2618,43 @@ window.__ModuleLoader__.load({
       record.label.removeAttribute('data-dpt-function-label')
     }
 
-    syncFunctionDecorations() {
+    fillFunctionArguments(record, panel) {
+      if (!panel || panel.dataset.dptFilled) return
+      const call = record.panelCall
+      if (!call) return
+      const raw = call.valid ? JSON.stringify(call.args, null, 2) : call.raw
+      panel.textContent = raw.length > 12000 ? raw.slice(0, 12000) + '\n…（参数较长，完整内容见原始调用详情）' : raw
+      panel.dataset.dptFilled = ''
+    }
+
+    syncFunctionDecorations(dirty = DIRTY_LAYOUT) {
+      const interruptedBatch = this.functionBatch
+      if (interruptedBatch && !(dirty & (DIRTY_CODE_DATA | DIRTY_CODE_INTERACTION | DIRTY_STRUCTURE))) {
+        interruptedBatch.needsLayout = true
+        return
+      }
+      if (interruptedBatch?.frame) cancelAnimationFrame(interruptedBatch.frame)
+      this.functionBatch = null
       codeSource?.sync()
       attr(this.content, 'data-dpt-code-layout', 'function')
       const source = this.functionPreview || codeSource?.read() || {}
-      const calls = new Map()
+      const calls = new Map(), projectionParents = new Map()
       let ownsContext = !!source.calls
-      const visit = block => {
-        if (!block || !block.callId || calls.has(block.callId)) return
-        calls.set(block.callId, block)
-        for (const child of block.subCalls || []) visit(child)
+      const visit = root => {
+        const pending = [root]
+        while (pending.length) {
+          const block = pending.pop()
+          if (!block || !block.callId || calls.has(block.callId)) continue
+          calls.set(block.callId, block)
+          const children = Array.isArray(block.subCalls) ? block.subCalls : []
+          for (let index = children.length - 1; index >= 0; index--) {
+            const child = children[index]
+            if (!child?.callId) continue
+            if (!projectionParents.has(child.callId)) projectionParents.set(child.callId, new Set())
+            projectionParents.get(child.callId).add(block.callId)
+            pending.push(child)
+          }
+        }
       }
       for (const entry of this.roots) {
         const node = source.nodes?.get(entry.el.dataset.chatFlowKey || entry.key)
@@ -2629,6 +2664,31 @@ window.__ModuleLoader__.load({
       if (source.calls) for (const [id, block] of source.calls) calls.set(id, block)
       this.functionBlocks = calls
       const hostStates = new Map(this.structure.filter(item => item.callId).map(item => [item.callId, stateOf(item.call)]))
+      const dataOnly = !!(dirty & (DIRTY_CODE_DATA | DIRTY_CODE_INTERACTION)) && !(dirty & DIRTY_STRUCTURE) &&
+        (!(dirty & DIRTY_LAYOUT) || !!interruptedBatch) && this.functionVersionKey === source.key && !!this.functionVersions
+      const nextVersions = new Map(), changed = new Set()
+      for (const [id, block] of calls) {
+        if (!block || typeof block !== 'object') continue
+        const call = 'kind' in block ? block.call : block
+        const fields = [call?.name, call?.argsRaw, block.kind, block.phase, block.isError, block.time, block.callTime,
+          block.error?.name, block.error?.code, block.error?.message, hostStates.get(id),
+          (block.subCalls || []).map(child => child?.callId || '').join('\0'),
+          Array.isArray(block.content) ? block.content.find(part => part?.type === 'text' && typeof part.text === 'string' && part.text.trim())?.text : undefined]
+        const old = this.functionVersions?.get(id)
+        if (!old || fields.some((value, index) => value !== old[index])) changed.add(id)
+        nextVersions.set(id, fields)
+      }
+      if (this.functionVersions) for (const id of this.functionVersions.keys()) if (!nextVersions.has(id)) changed.add(id)
+      // A folded native scope can omit child DOM while its projection changes.
+      // Propagate changed outcomes through recorded parents, not just DOM parents.
+      const changedQueue = [...changed]
+      for (let index = 0; index < changedQueue.length; index++) {
+        for (const parent of projectionParents.get(changedQueue[index]) || []) {
+          if (!changed.has(parent)) { changed.add(parent); changedQueue.push(parent) }
+        }
+      }
+      this.functionVersions = nextVersions
+      this.functionVersionKey = source.key
       const turn = Number(this.group?.dataset.chatTurn) || 1
       const contextKey = ownsContext ? source.key : null
       if (!this.functionIdentity || this.functionIdentity.key !== contextKey) this.functionIdentity = {
@@ -2695,7 +2755,7 @@ window.__ModuleLoader__.load({
           } else this.functionStats.textContent = stats
           this.functionStatsText = stats
         }
-        if (failures.length) {
+        if (failures.length && this.functionFailuresOpen) {
           if (!this.functionFailureList) {
             this.functionFailureList = codeElement('div', 'dpt-failure-list')
             this.functionFailureList.setAttribute('aria-label', '已加载失败调用')
@@ -2729,37 +2789,50 @@ window.__ModuleLoader__.load({
           }
         } else {
           this.functionFailureList?.remove(); this.functionFailureList = null; this.functionFailureSignature = null
-          this.functionFailuresOpen = false
+          if (!failures.length) this.functionFailuresOpen = false
         }
       } else {
         this.functionStats?.remove(); this.functionStats = null; this.functionStatsText = null
         this.functionFailureList?.remove(); this.functionFailureList = null; this.functionFailureSignature = null; this.functionFailures = null
       }
-      const previous = this.functionRows || new Map(), next = new Map(), decorated = new Set()
-      const previousNative = this.functionNativeStates || new Map(), nextNative = new Map()
+      const previous = this.functionRows || new Map(), next = new Map(previous), decorated = dataOnly ? interruptedBatch?.decorated || new Set() : new Set()
+      const previousNative = this.functionNativeStates || new Map(), nextNative = new Map(previousNative)
+      this.functionRows = next
+      this.functionNativeStates = nextNative
       const box = this.content.getBoundingClientRect(), scale = this.content.offsetWidth > 0 ? box.width / this.content.offsetWidth : 1
       // Native rows keep their own icons/disclosure. Align every line number to
       // one gutter, even when nested rows have different native leading widths.
       const contentStyle = getComputedStyle(this.content)
       const gutterX = box.left + (parseFloat(contentStyle.paddingLeft) + parseFloat(contentStyle.borderLeftWidth) - 28) * scale
-      for (const entry of this.structure) {
-        if (!entry.header) continue
+      const measureEntry = entry => {
+        const header = entry.header
+        if (!header) return null
+        const sub = entry.call && directSubcalls(entry.call)
+        const label = entry.kind === 'think' ? codeTitle(header) : null
+        const first = label?.firstElementChild, last = label?.lastElementChild
+        return { left: header.getBoundingClientRect().left, width: header.clientWidth,
+          fontSize: parseFloat(getComputedStyle(header).fontSize) || 13, sub,
+          subVisible: !!sub && !sub.closest('[hidden]') && (sub.checkVisibility?.() ?? true),
+          captionVisible: !!(first && last && first !== last && !first.querySelector('svg') && last.textContent.trim() && (last.checkVisibility?.() ?? true)) }
+      }
+      const processEntry = (entry, measure) => {
+        if (!entry.header || !measure) return
         const header = entry.header
         decorated.add(header)
         attr(header, 'data-dpt-function-line', '')
-        const numberX = coord((gutterX - header.getBoundingClientRect().left) / (scale || 1)) + 'px'
+        const numberX = coord((gutterX - measure.left) / (scale || 1)) + 'px'
         if (header.style.getPropertyValue('--dpt-code-number-x') !== numberX) header.style.setProperty('--dpt-code-number-x', numberX)
         if (entry.kind === 'think') {
           attr(header, 'data-dpt-function-comment', '')
           const label = codeTitle(header)
           if (label !== header) { attr(label, 'data-dpt-function-comment-label', ''); decorated.add(label) }
           const first = label.firstElementChild, last = label.lastElementChild
-          if (first && last && first !== last && !first.querySelector('svg') && last.textContent.trim() && (last.checkVisibility?.() ?? true)) {
+          if (measure.captionVisible) {
             attr(first, 'data-dpt-function-caption', ''); decorated.add(first)
           }
-          continue
+          return
         }
-        const sub = entry.call && directSubcalls(entry.call)
+        const sub = measure.sub
         if (sub) { attr(sub, 'data-dpt-function-scope', ''); decorated.add(sub) }
         const block = calls.get(entry.callId)
         const outcome = codeOutcome(block, stateOf(entry.call))
@@ -2777,12 +2850,13 @@ window.__ModuleLoader__.load({
           if (folded) attr(sub, 'data-dpt-function-folded', '')
           else sub.removeAttribute('data-dpt-function-folded')
         }
-        const collapsed = scope && (folded || !!sub && (!!sub.closest('[hidden]') || !(sub.checkVisibility?.() ?? true)))
+        const collapsed = scope && (folded || !!sub && !measure.subVisible)
         const label = codeTitle(header)
         const showNativeOutcome = () => {
-          if (!['error', 'stopped', 'unknown'].includes(outcome)) return
+          if (!['error', 'stopped', 'unknown'].includes(outcome)) { nextNative.get(header)?.remove(); nextNative.delete(header); return }
           let status = previousNative.get(header)
-          if (!status) { status = codeElement('span', 'dpt-code-status'); status.setAttribute('role', 'status'); header.append(status) }
+          if (!status) { status = codeElement('span', 'dpt-code-status'); status.setAttribute('role', 'status') }
+          if (status.parentElement !== header) header.append(status)
           attr(status, 'data-state', outcome)
           const text = codeOutcomeLabel(outcome)
           if (status.textContent !== text) status.textContent = text
@@ -2790,21 +2864,34 @@ window.__ModuleLoader__.load({
         }
         // Custom rows without structured records or a safe text seat keep
         // their native summary; never reverse-engineer arguments from labels.
-        if (!call || label === header) { showNativeOutcome(); continue }
+        if (!call || label === header) {
+          const old = next.get(header); if (old) this.releaseFunctionRow(old)
+          next.delete(header)
+          showNativeOutcome(); return
+        }
         let record = previous.get(header)
         if (record && record.label !== label) { this.releaseFunctionRow(record); record = null }
         const links = [...label.querySelectorAll('button:not([data-dpt-owned]), a:not([data-dpt-owned])')]
-        const single = codeExpression(call, false, scope, collapsed)
-        const fullCount = call.valid ? Object.keys(call.args).length : 0
-        const singleText = single.tokens.map(item => item.value).join('')
+        const formatKey = call.name + '\0' + call.raw + '\0' + scope + '\0' + collapsed
+        const cached = record?.formatKey === formatKey ? record.formatCache : null
+        const single = cached?.single || codeExpression(call, false, scope, collapsed)
+        const fullCount = cached?.fullCount ?? (call.valid ? Object.keys(call.args).length : 0)
+        const singleText = cached?.singleText ?? single.tokens.map(item => item.value).join('')
         // Use the actual row width and font; reserve room for native icons and status.
-        const available = Math.max(80, header.clientWidth - 100)
-        const fontSize = parseFloat(getComputedStyle(header).fontSize) || 13
+        const available = Math.max(80, measure.width - 100)
+        const fontSize = measure.fontSize
         const multiline = call.valid && fullCount > 0 &&
           (singleText.length > 72 || call.raw.length > 100 || singleText.length * fontSize * .62 > available)
-        const syntax = multiline ? codeExpression(call, true, scope, collapsed) : single
-        if (links.some(el => !syntax.tokens.some(item => codeTokenLink(item, el))) || label.querySelector('input, select, textarea, [role="button"]')) { showNativeOutcome(); continue }
+        const syntax = multiline ? cached?.multiline || codeExpression(call, true, scope, collapsed) : single
+        if (links.some(el => !syntax.tokens.some(item => codeTokenLink(item, el))) || label.querySelector('input, select, textarea, [role="button"]')) {
+          if (record) this.releaseFunctionRow(record)
+          next.delete(header)
+          showNativeOutcome(); return
+        }
+        nextNative.get(header)?.remove(); nextNative.delete(header)
         if (!record) record = { label, links, header }
+        record.formatKey = formatKey
+        record.formatCache = { single, singleText, fullCount, multiline: multiline ? syntax : cached?.multiline }
         record.callId = entry.callId
         record.callName = call.name
         record.scope = scope
@@ -2844,8 +2931,8 @@ window.__ModuleLoader__.load({
             more.setAttribute('aria-expanded', String(!!panelOpen))
             more.setAttribute('aria-label', panelOpen ? '收起完整参数' : '展开完整参数')
             panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', call.name + ' 完整参数')
-            const raw = call.valid ? JSON.stringify(call.args, null, 2) : call.raw
-            panel.textContent = raw.length > 12000 ? raw.slice(0, 12000) + '\n…（参数较长，完整内容见原始调用详情）' : raw
+            record.panelCall = call
+            if (panelOpen) this.fillFunctionArguments(record, panel)
             more.setAttribute('aria-controls', panel.id)
             entry.call.insertBefore(panel, sub?.parentElement === entry.call ? sub : null)
             record.panel = panel
@@ -2889,15 +2976,72 @@ window.__ModuleLoader__.load({
         } else { record.error?.remove(); record.error = null }
         next.set(header, record)
       }
-      for (const [header, record] of previous) if (!next.has(header)) this.releaseFunctionRow(record)
-      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-scope], [data-dpt-function-comment], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed], [data-dpt-function-outcome]')) {
-        if (el === this.functionHeader || decorated.has(el)) continue
-        for (const key of ['line', 'scope', 'comment', 'comment-label', 'caption', 'failed', 'outcome']) el.removeAttribute('data-dpt-function-' + key)
-        el.style.removeProperty('--dpt-code-number-x')
+      let entries = this.structure.slice()
+      const priority = new Set(this.functionPriority || [])
+      this.functionPriority = null
+      if (dataOnly) {
+        const dirtyEntries = new Set([...(interruptedBatch?.pending || []), ...priority])
+        for (const entry of this.structure) if (changed.has(entry.callId)) {
+          for (let parent = entry; parent; parent = parent.parent) { dirtyEntries.add(parent); priority.add(parent) }
+        }
+        entries = entries.filter(entry => dirtyEntries.has(entry))
       }
-      this.functionRows = next
-      for (const [header, status] of previousNative) if (!nextNative.has(header)) status.remove()
-      this.functionNativeStates = nextNative
+      const pending = new Set(entries)
+      const large = entries.length > 80
+      let cursor = 0
+      const batch = { frame: 0, pending, decorated, full: !dataOnly || !!interruptedBatch?.full,
+        needsLayout: !!interruptedBatch?.needsLayout || dataOnly && !!(dirty & DIRTY_LAYOUT) }
+      const finish = () => {
+        if (this.functionBatch !== batch && large) return
+        if (batch.full) {
+          for (const [header, record] of next) if (!decorated.has(header)) { this.releaseFunctionRow(record); next.delete(header) }
+          for (const [header, status] of nextNative) if (!decorated.has(header)) { status.remove(); nextNative.delete(header) }
+          for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-scope], [data-dpt-function-comment], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed], [data-dpt-function-outcome]')) {
+            if (el === this.functionHeader || decorated.has(el)) continue
+            for (const key of ['line', 'scope', 'comment', 'comment-label', 'caption', 'failed', 'outcome']) el.removeAttribute('data-dpt-function-' + key)
+            el.style.removeProperty('--dpt-code-number-x')
+          }
+        }
+        if (large || interruptedBatch) {
+          this.functionBatch = null
+          // Refresh navigation once the final batch has been applied.
+          this.functionNavigationDirty = true
+          this.schedule(batch.needsLayout ? DIRTY_LAYOUT : DIRTY_WINDOW)
+        }
+      }
+      const runBatch = () => {
+        if (large && (this.functionBatch !== batch || this.stopped || this.suspended || !isFunctionCode())) return
+        const started = performance.now()
+        const chosen = []
+        const choose = entry => { if (pending.delete(entry)) chosen.push(entry) }
+        // The observer's current window changes as the user scrolls. Pick it
+        // again for every batch before continuing in recorded display order.
+        if (large) {
+          const visible = new Set(priority)
+          for (const entry of [...this.headerWindow, ...this.blockWindow]) {
+            for (let current = entry; current; current = current.parent) visible.add(current)
+          }
+          for (const entry of visible) {
+            if (pending.has(entry)) choose(entry)
+            if (chosen.length >= 24 || chosen.length && performance.now() - started >= 7) break
+          }
+        }
+        while (cursor < entries.length && (!large || chosen.length < 24 && (!chosen.length || performance.now() - started < 7))) choose(entries[cursor++])
+        // Read all geometry before mutating any row. Interleaving these reads
+        // with writes makes the browser repeatedly lay out the entire history.
+        const measured = chosen.map(entry => [entry, measureEntry(entry)])
+        for (const [entry, measure] of measured) processEntry(entry, measure)
+        if (!pending.size) finish()
+        else {
+          if (performance.now() - (this.functionNavigationAt || 0) >= 250) {
+            this.functionNavigationDirty = true
+            this.schedule(DIRTY_WINDOW)
+          }
+          batch.frame = requestAnimationFrame(runBatch)
+        }
+      }
+      if (large) this.functionBatch = batch
+      runBatch()
       if (!this.functionClick) {
         this.functionClick = event => {
           const button = event.target.closest?.('.dpt-code-more, .dpt-code-link, .dpt-scope-toggle, .dpt-code-error, .dpt-map-mark, .dpt-failure-count, .dpt-failure-item, .dpt-scope-failures')
@@ -2907,7 +3051,7 @@ window.__ModuleLoader__.load({
             this.functionFailuresOpen = !this.functionFailuresOpen
             if (this.functionFailureList) this.functionFailureList.hidden = !this.functionFailuresOpen
             attr(button, 'aria-expanded', String(this.functionFailuresOpen))
-            this.schedule(DIRTY_LAYOUT)
+            this.schedule(DIRTY_CODE_INTERACTION)
             return
           }
           if (button.matches('.dpt-failure-item')) {
@@ -2915,19 +3059,25 @@ window.__ModuleLoader__.load({
             const id = button.dataset.callId
             const entry = this.structure.find(item => item.callId === id)
             if (!entry) return
-            for (let parent = entry.parent; parent; parent = parent.parent) this.functionFolded?.delete(parent.callId)
+            this.functionPriority = new Set([entry])
+            for (let parent = entry.parent; parent; parent = parent.parent) {
+              this.functionFolded?.delete(parent.callId)
+              this.functionPriority.add(parent)
+            }
             this.schedule(DIRTY_LAYOUT | DIRTY_STRUCTURE)
-            requestAnimationFrame(() => {
-              if (this.stopped || this.suspended) return
+            const navigate = () => {
+              if (this.stopped || this.suspended || !isFunctionCode()) return
               const target = this.structure.find(item => item.callId === id)?.header
               if (target?.isConnected && (target.checkVisibility?.() ?? true)) {
                 target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' })
                 target.focus?.({ preventScroll: true })
-              } else {
+              } else if (this.functionBatch) requestAnimationFrame(navigate)
+              else {
                 const message = this.functionFailureList?.querySelector('.dpt-failure-feedback')
                 if (message) message.textContent = '该调用当前无法定位，请在原生过程里展开后重试。'
               }
-            })
+            }
+            requestAnimationFrame(navigate)
             return
           }
           if (button.matches('.dpt-map-mark')) {
@@ -2944,12 +3094,15 @@ window.__ModuleLoader__.load({
           else if (button.classList.contains('dpt-scope-toggle') || button.classList.contains('dpt-scope-failures')) {
             if (button.classList.contains('dpt-scope-failures') || this.functionFolded.has(record.callId)) this.functionFolded.delete(record.callId)
             else this.functionFolded.add(record.callId)
-            this.schedule(DIRTY_LAYOUT)
+            const entry = this.structure.find(item => item.callId === record.callId)
+            if (entry) this.functionPriority = new Set([entry])
+            this.schedule(DIRTY_CODE_INTERACTION)
           } else if (button.classList.contains('dpt-code-error')) {
             if (header.getAttribute('aria-expanded') === 'false') header.click()
             else header.focus()
           } else if (record.panel) {
             record.panel.hidden = !record.panel.hidden
+            if (!record.panel.hidden) this.fillFunctionArguments(record, record.panel)
             button.setAttribute('aria-expanded', String(!record.panel.hidden))
             button.setAttribute('aria-label', record.panel.hidden ? '展开完整参数' : '收起完整参数')
             this.schedule(DIRTY_LAYOUT)
@@ -2965,9 +3118,12 @@ window.__ModuleLoader__.load({
 
     updateFunctionNavigation(rect, scale, refresh) {
       if (!this.functionNav || !this.functionIdentity) return
-      if (refresh || !this.functionNavRows) {
+      const partial = !!this.functionBatch && !!this.functionBlocks?.size
+      const rebuild = (refresh || !this.functionNavRows) && (!partial || performance.now() - (this.functionNavigationAt || 0) >= 250 || !this.functionNavRows)
+      if (rebuild) {
         const rows = []
         for (const entry of this.structure) {
+          if (partial && !this.functionBatch.decorated.has(entry.header)) continue
           if (!entry.call || !entry.header || !entry.header.isConnected ||
               entry.header.closest('[hidden], [data-dpt-function-folded]') || !(entry.header.checkVisibility?.() ?? true)) continue
           const box = entry.header.getBoundingClientRect()
@@ -2978,8 +3134,9 @@ window.__ModuleLoader__.load({
         }
         rows.sort((a, b) => a.top - b.top)
         this.functionNavRows = rows
+        this.functionNavigationAt = performance.now()
       }
-      const rows = this.functionNavRows
+      const rows = this.functionNavRows || []
       let top = 0, bottom = window.innerHeight
       for (const parent of this.clipParents || []) {
         const box = parent.getBoundingClientRect()
@@ -2994,7 +3151,7 @@ window.__ModuleLoader__.load({
       const visibleTop = Math.max(0, (Math.max(top, this.functionNav.getBoundingClientRect().bottom) - rect.top) / scale)
       const visibleBottom = Math.max(visibleTop, (Math.min(bottom, rect.bottom) - rect.top) / scale)
       const height = Math.max(1, this.content.offsetHeight)
-      if (refresh || !this.functionMapSignature) {
+      if (rebuild || !this.functionMapSignature) {
         const slots = Math.min(120, rows.length)
         const selected = new Map()
         // Bin by real vertical position and favor errors/running calls in crowded bins.
@@ -3047,9 +3204,9 @@ window.__ModuleLoader__.load({
       this.codeLayoutPresent = false
     }
 
-    syncCodeDecorations() {
+    syncCodeDecorations(dirty = DIRTY_LAYOUT) {
       if (!isCode()) { this.clearCodeDecorations(); return }
-      if (isFunctionCode()) { this.clearBraceDecorations(); this.syncFunctionDecorations(); return }
+      if (isFunctionCode()) { this.clearBraceDecorations(); this.syncFunctionDecorations(dirty); return }
       this.clearFunctionDecorations()
       codeSource?.sync()
       this.codeLayoutPresent = true
@@ -3797,15 +3954,15 @@ window.__ModuleLoader__.load({
         this.dirty |= DIRTY_LAYOUT
         return { hidden: true }
       }
-      const needsLayout = !this.model || !!(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE | DIRTY_WINDOW))
+      const needsLayout = !this.model || !!(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE | DIRTY_WINDOW | DIRTY_CODE_DATA | DIRTY_CODE_INTERACTION))
       const update = {
         dirty, changed: new Map(), keys: new Set(this.appearanceKeys),
         oldNodes: needsLayout && this.model ? new Map(this.model.nodes.map((node) => [node.key, node])) : new Map(),
       }
       if (needsLayout) {
         if (this.structureDirty) this.rebuildStructure()
-        else if (isCode() && dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE)) this.syncCodeDecorations()
-        let onlyWindow = !!this.model && !(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE))
+        else if (isCode() && dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE | DIRTY_CODE_DATA | DIRTY_CODE_INTERACTION)) this.syncCodeDecorations(dirty)
+        let onlyWindow = !!this.model && !(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE | DIRTY_CODE_DATA | DIRTY_CODE_INTERACTION))
         if (!onlyWindow) for (const entry of this.structure) entry.layout = null
         const rect = this.content.getBoundingClientRect()
         const cssWidth = this.content.offsetWidth
@@ -3819,7 +3976,10 @@ window.__ModuleLoader__.load({
         if (update.box.width < 1 || update.box.height < 1) return { hidden: true }
         this.measuring = { rect: { left: rect.left, top: rect.top + update.crownSpace * scale }, scale }
         update.band = this.readWindow(this.measuring.rect, scale, update.box.height)
-        if (isFunctionCode()) this.updateFunctionNavigation(rect, scale, !!(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE)))
+        if (isFunctionCode()) {
+          this.updateFunctionNavigation(rect, scale, !!(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE | DIRTY_CODE_DATA | DIRTY_CODE_INTERACTION)) || this.functionNavigationDirty)
+          this.functionNavigationDirty = false
+        }
         const sameBand = this.paintedWindowBand && update.band.top === this.paintedWindowBand.top && update.band.bottom === this.paintedWindowBand.bottom
         const sameSize = this.paintedFullBox && Math.abs(this.paintedFullBox.width - update.fullBox.width) < 0.01 && Math.abs(this.paintedFullBox.height - update.fullBox.height) < 0.01
         const sameCrownSpace = this.paintedCrownSpace === update.crownSpace

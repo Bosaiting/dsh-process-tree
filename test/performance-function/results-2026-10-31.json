@@ -1,0 +1,208 @@
+{
+  "date": "2026-10-31",
+  "environment": {
+    "os": "macOS 26.4 arm64",
+    "node": "v25.5.0",
+    "playwright": "1.63.0",
+    "viewport": "1100x800 headless Chromium"
+  },
+  "scope": "Synthetic host-shaped DOM and projection; no model calls, real session data or native desktop FPS.",
+  "baselineCommit": "091847e",
+  "baselineSha256": "2a7e716a4b66db389a5b0e1094e28326b7a3702977a0785e7d812eef7c20ee71",
+  "candidateSha256": "c87a9cf1c298d14976005ef699bc92b7158f491e49637f75c6878daefff5c548",
+  "note": "1000-call baseline and candidate alternate across three runs. 5000-call values are one sample each, taken in separate sequential blocks; use cautiously. The benchmark counts DOM expressions each frame and its own overhead is included.",
+  "samples": [
+    {
+      "name": "1000-final-baseline-1.json",
+      "rows": 1000,
+      "first": 468.90000000596046,
+      "all": 468.90000000596046,
+      "frames": 1,
+      "maxGap": 468.90000000596046,
+      "longTasks": [
+        472
+      ],
+      "syncCalls": 4,
+      "initialSync": [
+        445.80000000447035,
+        15.299999997019768,
+        15.100000001490116
+      ],
+      "updateSync": [
+        14.899999998509884
+      ],
+      "updateObserved": true,
+      "settledAt": 571.1000000014901
+    },
+    {
+      "name": "1000-final-candidate-1.json",
+      "rows": 1000,
+      "first": 36.70000000298023,
+      "all": 748.1000000014901,
+      "frames": 44,
+      "maxGap": 36.70000000298023,
+      "longTasks": [],
+      "syncCalls": 9,
+      "initialSync": [
+        16.69999999552965,
+        3.1999999955296516,
+        0,
+        0,
+        0,
+        1.5
+      ],
+      "updateSync": [
+        2.8000000044703484,
+        0,
+        0
+      ],
+      "updateObserved": true,
+      "settledAt": 848.8000000044703
+    },
+    {
+      "name": "1000-final-baseline-2.json",
+      "rows": 1000,
+      "first": 495,
+      "all": 495,
+      "frames": 1,
+      "maxGap": 495,
+      "longTasks": [
+        499
+      ],
+      "syncCalls": 4,
+      "initialSync": [
+        470.1000000014901,
+        16.200000002980232,
+        14.899999998509884
+      ],
+      "updateSync": [
+        15
+      ],
+      "updateObserved": true,
+      "settledAt": 596.8000000044703
+    },
+    {
+      "name": "1000-final-candidate-2.json",
+      "rows": 1000,
+      "first": 39.100000001490116,
+      "all": 744.3000000044703,
+      "frames": 44,
+      "maxGap": 39.100000001490116,
+      "longTasks": [],
+      "syncCalls": 9,
+      "initialSync": [
+        17,
+        4.200000002980232,
+        0,
+        0,
+        0,
+        1.6000000014901161
+      ],
+      "updateSync": [
+        2.399999998509884,
+        0,
+        0
+      ],
+      "updateObserved": true,
+      "settledAt": 844.6000000014901
+    },
+    {
+      "name": "1000-final-baseline-3.json",
+      "rows": 1000,
+      "first": 471.79999999701977,
+      "all": 471.79999999701977,
+      "frames": 1,
+      "maxGap": 471.79999999701977,
+      "longTasks": [
+        476
+      ],
+      "syncCalls": 4,
+      "initialSync": [
+        447.70000000298023,
+        15.299999997019768,
+        14.5
+      ],
+      "updateSync": [
+        14.799999997019768
+      ],
+      "updateObserved": true,
+      "settledAt": 573.3999999985099
+    },
+    {
+      "name": "1000-final-candidate-3.json",
+      "rows": 1000,
+      "first": 37.600000001490116,
+      "all": 768.1000000014901,
+      "frames": 45,
+      "maxGap": 37.600000001490116,
+      "longTasks": [],
+      "syncCalls": 8,
+      "initialSync": [
+        17.299999997019768,
+        3.3000000044703484,
+        0,
+        0,
+        1.7000000029802322
+      ],
+      "updateSync": [
+        2.7999999970197678,
+        0,
+        0.09999999403953552
+      ],
+      "updateObserved": true,
+      "settledAt": 868.8999999985099
+    },
+    {
+      "name": "5000-baseline.json",
+      "rows": 5000,
+      "first": 12936.39999999851,
+      "all": 12936.39999999851,
+      "frames": 1,
+      "maxGap": 12936.39999999851,
+      "longTasks": [
+        12956,
+        160,
+        174,
+        118
+      ],
+      "syncCalls": 3,
+      "initialSync": [
+        12830.80000000447
+      ],
+      "updateSync": [
+        88.29999999701977,
+        74
+      ],
+      "updateObserved": true,
+      "settledAt": 13105
+    },
+    {
+      "name": "5000-final-candidate.json",
+      "rows": 5000,
+      "first": 94.20000000298023,
+      "all": 4560.80000000447,
+      "frames": 211,
+      "maxGap": 94.20000000298023,
+      "longTasks": [
+        99,
+        66,
+        75
+      ],
+      "syncCalls": 8,
+      "initialSync": [
+        25.80000000447035,
+        10,
+        0,
+        0,
+        0,
+        6.200000002980232
+      ],
+      "updateSync": [
+        11.600000001490116,
+        0
+      ],
+      "updateObserved": true,
+      "settledAt": 4663.70000000298
+    }
+  ]
+}
