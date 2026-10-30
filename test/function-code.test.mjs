@@ -80,3 +80,33 @@ test('scoped tool calls preserve the recorded name and parameters', () => {
   const special = api.codeCall({name:'mcp.tool-name',argsRaw:'{"dry-run":true}'})
   assert.equal(text(api.codeExpression(special, false, true)), 'def tools["mcp.tool-name"](**{"dry-run": True}):')
 })
+
+
+test('error summary uses only recorded failure data and remains bounded', () => {
+  const failure = {kind:'tool-result',isError:true,content:[{type:'text',text:'Permission denied\nprivate details'}]}
+  assert.equal(api.codeError(failure), 'Permission denied')
+  assert.equal(api.codeError({...failure,isError:false}), '')
+  assert.equal(api.codeError({...failure,error:{code:'interrupted'}}), '')
+  assert.equal(api.codeError({...failure,content:[],error:{name:'IOError',code:'EACCES'}}), 'IOError · EACCES')
+  assert.equal(api.codeError({...failure,content:[],error:undefined}), '')
+  assert.equal(api.codeError({...failure,content:[{type:'text',text:'x'.repeat(180)}]}).length, 140)
+  assert.equal(api.codeError({...failure,content:[{type:'text',text:'bad\u202efile'}]}), 'bad file')
+})
+
+
+test('failure summaries preserve provenance and exclude interruptions', () => {
+  const block = {kind:'tool-result',isError:true,content:[{type:'text',text:'Output before traceback\nMore detail'}]}
+  assert.equal(api.codeErrorInfo(block).label, '结果摘要')
+  assert.equal(api.codeErrorInfo(block).text, 'Output before traceback')
+  assert.equal(api.codeErrorInfo({...block,error:{name:'IOError',code:'EACCES'}}).label, '错误类型')
+  assert.equal(api.codeErrorInfo({...block,error:{name:'IOError',message:'Permission denied'}}).text, 'Permission denied')
+  assert.equal(api.codeErrorInfo({...block,error:{code:'interrupted'}}), null)
+})
+
+test('folded scope failure counts use distinct recorded descendants', () => {
+  const failed = id => ({callId:id,kind:'tool-result',isError:true,subCalls:[]})
+  const stopped = {callId:'stopped',kind:'tool-result',isError:true,error:{code:'interrupted'}}
+  const parent = {callId:'root',kind:'tool-result',isError:false,subCalls:[{...failed('child'),subCalls:[failed('grandchild')]},failed('child'),stopped]}
+  assert.equal(api.codeDescendantFailures(parent),2)
+  assert.equal(api.codeDescendantFailures({callId:'root',subCalls:[{...failed('root')}]}),0)
+})

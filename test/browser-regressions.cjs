@@ -100,7 +100,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
           window.opens=0;window.folds=0;
           header.querySelector('button').addEventListener('click',e=>{e.stopPropagation();opens++});
           header.addEventListener('click',()=>{folds++;header.setAttribute('aria-expanded',String(header.getAttribute('aria-expanded')!=='true'))});
-          window.rootBlock={callId:'g0-0',kind:'tool-result',time:2800,callTime:1000,isError:true,call:{name:'read',argsRaw:JSON.stringify({path:'package.json',offset:2,limit:30})},subCalls:[
+          window.rootBlock={callId:'g0-0',kind:'tool-result',time:2800,callTime:1000,isError:true,content:[{type:'text',text:'Permission denied\nprivate details'}],call:{name:'read',argsRaw:JSON.stringify({path:'package.json',offset:2,limit:30})},subCalls:[
             {callId:'g0-1',phase:'start',name:'bash',argsRaw:JSON.stringify({command:'npm test'}),subCalls:[]},
             {callId:'g0-2',phase:'preparing',name:'write',argsRaw:'{"path":"unfinished',subCalls:[]},
           ]};
@@ -110,10 +110,37 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
           api.setCodeSource(codeBridge);
         });await page.evaluate(()=>frames(8));
         assert.equal(await page.locator('.dpt-function-header').innerText(),'def 检查项目(workspace="./demo"):');
+        assert.equal(await page.locator('.dpt-function-tab').innerText(),'检查项目.py');
+        assert.equal(await page.locator('.dpt-function-readonly').innerText(),'执行记录 · 只读');
+        assert.equal(await page.locator('.dpt-code-error').innerText(),'↳ 结果摘要：Permission denied');
+        assert.equal(await page.locator('.dpt-code-error').count(),1);
         assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().innerText(),'def read(path="package.json", offset=2, limit=30):');
         assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 3 · 已记录失败 1 · 未结束 2');
         assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-duration').first().innerText(),'1.8 s');
         assert.equal(await page.locator('[data-chat-call-id="g0-1"] .dpt-code-duration').count(),0);
+        const scopeToggle=page.locator('[data-chat-call-id="g0-0"] .dpt-scope-toggle').first();
+        await scopeToggle.click();await page.evaluate(()=>frames(8));
+        assert.equal(await scopeToggle.getAttribute('aria-expanded'),'false');
+        assert.equal(await page.locator('[data-chat-call-id="g0-1"]').isVisible(),false);
+        assert.equal(await page.evaluate(()=>folds),0);
+        assert.ok((await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().innerText()).includes('): …'));
+        await scopeToggle.focus();await page.keyboard.press('Enter');await page.evaluate(()=>frames(8));
+        assert.equal(await scopeToggle.getAttribute('aria-expanded'),'true');
+        assert.equal(await page.locator('[data-chat-call-id="g0-1"]').isVisible(),true);
+        assert.equal(await page.evaluate(()=>folds),0);
+        const subGuide=page.locator('[data-chat-call-id="g0-0"] > [data-subcalls]');
+        await page.mouse.move(1050,20);
+        const idleGuide=await subGuide.evaluate(el=>getComputedStyle(el,'::before').borderLeftColor);
+        await page.locator('[data-chat-call-id="g0-1"] [data-disclosure-row]').hover();
+        const activeGuide=await subGuide.evaluate(el=>getComputedStyle(el,'::before').borderLeftColor);
+        assert.notEqual(activeGuide,idleGuide);
+        const parens=page.locator('[data-chat-call-id="g0-1"] .dpt-code-token[data-token="pair"]').first();
+        const beforePair=await parens.evaluate(el=>getComputedStyle(el).outlineStyle);
+        await parens.hover();assert.notEqual(await parens.evaluate(el=>getComputedStyle(el).outlineStyle),beforePair);
+        await page.locator('.dpt-code-error').click();assert.equal(await page.evaluate(()=>folds),1);
+        await page.locator('.dpt-code-error').click();assert.equal(await page.evaluate(()=>folds),1);
+        await page.evaluate(()=>{folds=0;document.querySelector('[data-chat-call-id="g0-0"] [data-disclosure-row]').setAttribute('aria-expanded','false')});
+
         await page.evaluate(()=>{document.querySelector('[data-chat-flow]').style.width='240px'});await page.evaluate(()=>frames(12));
         assert.equal(await page.locator('[data-chat-call-id="g0-0"] .dpt-code-expression').first().getAttribute('data-multiline'),'');
         await page.evaluate(()=>{document.querySelector('[data-chat-flow]').style.width='760px'});await page.evaluate(()=>frames(12));
@@ -163,7 +190,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.equal(await page.locator('.dpt-function-header').count(),1);
         assert.equal(await page.locator('.dpt-code-expression').count(),3);
         await page.evaluate(()=>{api.change({treeStyle:'quiet',...api.STYLE_PRESETS.quiet})});await page.evaluate(()=>frames(8));
-        assert.equal(await page.locator('[data-dpt-code-layout],.dpt-code-expression,.dpt-code-arguments,[data-dpt-function-line]').count(),0);
+        assert.equal(await page.locator('[data-dpt-code-layout],.dpt-code-expression,.dpt-code-arguments,[data-dpt-function-line],.dpt-scope-toggle,.dpt-code-error,.dpt-function-bar,[data-dpt-function-folded]').count(),0);
         assert.equal(await page.evaluate(()=>chat.listeners.size+current.listeners.size),0);
         assert.deepEqual(errors,[]);return {writes,gutter};
       }finally{await context.close()}
@@ -188,6 +215,11 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         }); await page.evaluate(()=>frames(10));
         assert.ok((await expr.innerText()).startsWith('def code('));assert.ok((await expr.innerText()).includes('):'));
         assert.equal(await more.getAttribute('aria-expanded'),'true');assert.equal(await root.locator('.dpt-code-arguments').first().isVisible(),true);
+        const toggle=root.locator('.dpt-scope-toggle').first();await toggle.click();await page.evaluate(()=>frames(8));
+        assert.equal(await more.getAttribute('aria-expanded'),'true');assert.equal(await root.locator('.dpt-code-arguments').first().isVisible(),true);
+        assert.equal(await root.locator('[data-chat-call-id="child"]').isVisible(),false);
+        await toggle.click();await page.evaluate(()=>frames(8));
+        assert.equal(await root.locator('[data-chat-call-id="child"]').isVisible(),true);
         assert.equal(await root.locator('[data-chat-call-id="child"] .dpt-code-expression').innerText(),'read(path="a.txt")');
         assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 2 · 已记录失败 0 · 未结束 2');
         await page.evaluate(()=>{document.querySelector('[data-subcalls]').hidden=true});await page.evaluate(()=>frames(10));
@@ -196,9 +228,113 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.ok(!(await expr.innerText()).includes('): …'));
         assert.equal(await more.getAttribute('aria-expanded'),'true');
         await page.evaluate(()=>{document.querySelector('[data-subcalls]').remove()});await page.evaluate(()=>frames(10));
-        assert.ok((await expr.innerText()).includes('): …'));
+        assert.ok(!(await expr.innerText()).includes('): …')); // Missing DOM is not proof of a fold.
+        assert.equal(await root.locator('.dpt-scope-toggle').count(),0);
         assert.deepEqual(errors,[]);return {};
       } finally {await context.close()}
+    });
+    await test('failure list reveals folded ancestors and preserves native results',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:3,nested:true,cap:230});
+      try {
+        await page.evaluate(()=>{
+          const outer=document.querySelector('[data-chat-call-id="g0-0"] [data-subcalls]'),child=outer.querySelector('[data-chat-call-id="g0-1"]'),leaf=outer.querySelector('[data-chat-call-id="g0-2"]'),inner=document.createElement('div');
+          inner.dataset.subcalls='';inner.append(leaf);child.append(inner);
+          child.querySelector('[data-state]').dataset.state='error';leaf.querySelector('[data-state]').dataset.state='error';
+          const root=document.querySelector('[data-chat-call-id="g0-0"] [data-disclosure-row]');root.setAttribute('aria-expanded','false');root.setAttribute('role','button');
+          window.rootFolds=0;root.addEventListener('click',()=>rootFolds++);
+          const failed=(id,name,subCalls=[])=>({callId:id,kind:'tool-result',isError:true,call:{name,argsRaw:'{}'},content:[{type:'text',text:'Output, not necessarily cause\nmore'}],subCalls});
+          window.failureRoot={callId:'g0-0',kind:'tool-result',isError:false,call:{name:'code',argsRaw:'{}'},subCalls:[failed('g0-1','nested_code',[failed('g0-2','write')]),failed('missing','unloaded'),{callId:'stop',kind:'tool-result',isError:true,error:{code:'interrupted'},call:{name:'stop',argsRaw:'{}'},subCalls:[]}]};
+          window.observable=value=>({value,listeners:new Set(),getSnapshot(){return this.value},subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},publish(value){this.value=value;for(const fn of this.listeners)fn()}});
+          window.chat=observable({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:failureRoot}}]])});
+          const current=observable({key:'failure-session',hooks:{chat}});api.setCodeSource(api.createCodeSource(current,{list:{getSnapshot:()=>({byId:{'failure-session':{title:'故障测试'}}})}}));
+          for(const view of instances){view.structureDirty=true;view.schedule(17)}
+        });await page.evaluate(()=>frames(12));
+        const root=page.locator('[data-chat-call-id="g0-0"]'),child=page.locator('[data-chat-call-id="g0-1"]'),leaf=page.locator('[data-chat-call-id="g0-2"]');
+        assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 5 · 已记录失败 3 · 已中断 1');
+        assert.equal(await root.locator('[data-disclosure-row]').first().getAttribute('data-dpt-function-failed'),null);
+        assert.notEqual(await child.locator('[data-disclosure-row]').first().getAttribute('data-dpt-function-failed'),null);
+        assert.ok((await leaf.locator('.dpt-code-error').innerText()).includes('结果摘要：Output, not necessarily cause'));
+        await child.locator('.dpt-scope-toggle').first().click();await page.evaluate(()=>frames(8));
+        assert.equal(await child.locator('.dpt-scope-failures').first().innerText(),'含 1 个失败');
+        await root.locator('.dpt-scope-toggle').first().click();await page.evaluate(()=>frames(8));
+        assert.equal(await root.locator('.dpt-scope-failures').first().innerText(),'含 3 个失败');
+        assert.equal(await page.evaluate(()=>rootFolds),0);
+        await page.locator('.dpt-failure-count').click();await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-failure-list').isVisible(),true);
+        await page.locator('[data-step-process-content]').screenshot({path:path.join(out,'failure-list.png')});
+        assert.equal(await page.locator('.dpt-failure-item').count(),3);
+        assert.equal(await page.locator('.dpt-failure-item').filter({hasText:'unloaded'}).isDisabled(),true);
+        await page.locator('.dpt-failure-item').filter({hasText:'write'}).click();await page.evaluate(()=>frames(12));
+        assert.equal(await child.locator('.dpt-scope-toggle').first().getAttribute('aria-expanded'),'true');
+        assert.equal(await root.locator('.dpt-scope-toggle').first().getAttribute('aria-expanded'),'true');
+        assert.equal(await leaf.isVisible(),true);
+        assert.equal(await page.evaluate(()=>rootFolds),0);
+        await root.locator('.dpt-scope-toggle').first().click();await page.evaluate(()=>frames(8));
+        await root.locator('.dpt-scope-failures').first().click();await page.evaluate(()=>frames(8));
+        assert.equal(await root.locator('.dpt-scope-toggle').first().getAttribute('aria-expanded'),'true');
+        await page.evaluate(()=>{failureRoot={...failureRoot,subCalls:[]};chat.publish({nodes:new Map([['g0-0',{kind:'tool-call',data:{root:failureRoot}}]])})});await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('.dpt-failure-count,.dpt-failure-list').count(),0);
+        assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('function navigation tracks nested scopes and navigates the real visible calls',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:26,nested:true,cap:190});
+      try {
+        await page.evaluate(()=>{
+          const outer=document.querySelector('[data-chat-call-id="g0-0"] [data-subcalls]');
+          const branch=outer.querySelector('[data-chat-call-id="g0-8"]'), inner=document.createElement('div');inner.dataset.subcalls='';branch.append(inner);
+          for(let i=9;i<=15;i++)inner.append(outer.querySelector('[data-chat-call-id="g0-'+i+'"]'));
+          const children=[];for(let i=1;i<26;i++)if(i<9||i>15)children.push({callId:'g0-'+i,name:i===8?'code_8':'call_'+i,argsRaw:'{}',subCalls:i===8?Array.from({length:7},(_,j)=>({callId:'g0-'+(j+9),name:'call_'+(j+9),argsRaw:'{}',subCalls:[]})):[]});
+          const reasoning=document.createElement('div');reasoning.dataset.chatFlowKind='reasoning';reasoning.dataset.chatAnchorKey='after-scope';reasoning.style.height='300px';reasoning.innerHTML='<div data-variant="think"><div data-disclosure-row><span>完成后总结</span></div></div>';document.querySelector('[data-step-process-content]').append(reasoning);
+          const root={callId:'g0-0',name:'code_0',argsRaw:'{}',subCalls:children};
+          api.setCodeSource({sync(){},read(){return {key:'test',context:{title:'调试任务'},nodes:new Map([['g0-0',{kind:'tool-call',data:{root}}]])}}});
+          for(const view of instances){view.structureDirty=true;view.schedule(17)}
+        });await page.evaluate(()=>frames(12));
+        const scroller=page.locator('[data-step-process-body]'), nav=page.locator('.dpt-minimap-anchor'), map=page.locator('.dpt-minimap');
+        assert.equal(await nav.count(),1);assert.ok(await map.locator('.dpt-map-mark').count()>10);
+        assert.equal(await page.locator('.dpt-function-crumbs,.dpt-nav-link').count(),0);
+        await page.evaluate(()=>{document.querySelector('[data-chat-call-id="g0-20"] [data-state]').dataset.state='error'});await page.evaluate(()=>frames(8));
+        assert.equal(await map.getByRole('button',{name:'跳到调用 call_20，错误'}).getAttribute('data-state'),'error');
+        await page.evaluate(()=>{const s=document.querySelector('[data-step-process-body]'),target=document.querySelector('[data-chat-call-id="g0-11"] [data-disclosure-row]');s.scrollTop+=target.getBoundingClientRect().top-s.getBoundingClientRect().top-55});
+        await page.evaluate(()=>frames(12));
+        const boxes=await page.evaluate(()=>({nav:document.querySelector('.dpt-minimap-anchor').getBoundingClientRect().top,scroller:document.querySelector('[data-step-process-body]').getBoundingClientRect().top}));
+        assert.ok(Math.abs(boxes.nav-boxes.scroller)<2,JSON.stringify(boxes));
+        assert.equal(await page.locator('.dpt-function-pinned,.dpt-function-crumbs').count(),0);
+        const lastMark=map.locator('.dpt-map-mark').last();
+        const targetId=await page.evaluate(index=>[...instances][0].functionNavRows[index].entry.callId,Number(await lastMark.getAttribute('data-nav-index')));
+        await lastMark.click();await page.evaluate(()=>frames(12));
+        const dest=await page.locator(`[data-chat-call-id="${targetId}"] [data-disclosure-row]`).boundingBox();
+        const sb=await scroller.boundingBox();assert.ok(dest.y>=sb.y&&dest.y<sb.y+sb.height,JSON.stringify({dest,sb}));
+        await page.evaluate(()=>{const s=document.querySelector('[data-step-process-body]');s.scrollTop=s.scrollHeight});await page.evaluate(()=>frames(12));
+        assert.equal(await page.locator('.dpt-function-crumbs').count(),0);
+        await page.evaluate(()=>{document.querySelector('[data-step-process-body]').scrollTop=0});await page.evaluate(()=>frames(10));
+        await page.locator('[data-chat-call-id="g0-0"] .dpt-scope-toggle').first().click();await page.evaluate(()=>frames(12));
+        assert.equal(await map.locator('.dpt-map-mark').count(),1);
+        assert.equal(await page.locator('.dpt-function-crumbs').count(),0);
+        await page.locator('[data-chat-call-id="g0-0"] .dpt-scope-toggle').first().click();await page.evaluate(()=>frames(12));
+        assert.ok(await map.locator('.dpt-map-mark').count()>10);
+        await page.locator('[data-step-process-body]').screenshot({path:path.join(out,'navigation.png')});
+        await page.evaluate(()=>{document.querySelector('[data-chat-flow]').style.marginTop='500px';document.body.style.minHeight='1400px'});await page.evaluate(()=>frames(8));
+        await page.evaluate(()=>{document.querySelector('[data-step-process-body]').scrollTop=220;window.scrollTo(0,575)});await page.evaluate(()=>frames(12));
+        const clipped=await page.evaluate(()=>({nav:document.querySelector('.dpt-minimap-anchor').getBoundingClientRect().top,scroll:document.querySelector('[data-step-process-body]').getBoundingClientRect().top}));
+        assert.ok(clipped.scroll<0 && clipped.nav>=-1 && clipped.nav<4,JSON.stringify(clipped));
+        await page.evaluate(()=>api.change({treeStyle:'quiet',...api.STYLE_PRESETS.quiet}));await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('.dpt-minimap-anchor,.dpt-minimap').count(),0);
+        assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
+    await test('function minimap bounds long histories and survives viewport scrolling',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:220,nested:false,cap:220});
+      try {
+        const map=page.locator('.dpt-minimap'), count=await map.locator('.dpt-map-mark').count();
+        assert.ok(count>1 && count<=120,'marker count '+count);
+        const before=await page.locator('.dpt-map-viewport').evaluate(e=>e.style.top);
+        await page.evaluate(()=>{document.querySelector('[data-step-process-body]').scrollTop=2500});await page.evaluate(()=>frames(15));
+        const after=await page.locator('.dpt-map-viewport').evaluate(e=>e.style.top);
+        assert.notEqual(after,before);
+        assert.ok((await map.boundingBox()).height>0);
+        assert.deepEqual(errors,[]);return {count};
+      }finally{await context.close()}
     });
     await test('function code preserves native summaries when structured data is absent or belongs to another session',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:false});
@@ -578,6 +714,13 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         await page.getByLabel('深色一级括号颜色选择').fill('#77dd99');
         await page.getByLabel('预览主题').selectOption('light');await page.evaluate(()=>frames(12));
         const preview=page.locator('.dpt-preview-stage');
+        await preview.scrollIntoViewIfNeeded();await page.evaluate(()=>frames(8));
+        assert.equal(await preview.locator('.dpt-function-stats').innerText(),'已加载调用 4 · 已记录失败 0');
+        await page.getByLabel('预览状态').selectOption('error');await preview.scrollIntoViewIfNeeded();await page.evaluate(()=>frames(12));
+        assert.ok((await preview.locator('.dpt-code-error').innerText()).includes('示例：无法写入结果文件'));
+        assert.equal(await preview.locator('.dpt-function-stats').innerText(),'已加载调用 4 · 已记录失败 1');
+        await page.getByLabel('预览状态').selectOption('completed');await page.evaluate(()=>frames(8));
+        assert.equal(await preview.locator('.dpt-code-error').count(),0);
         const color=(selector)=>page.locator(selector).first().evaluate(el=>getComputedStyle(el).color);
         assert.equal(await color('.dpt-preview-stage .dpt-function-header [data-token="function"]'),'rgb(36, 104, 172)');
         assert.equal(await color('.dpt-preview-stage .dpt-function-header [data-token="string"]'),'rgb(154, 50, 16)');

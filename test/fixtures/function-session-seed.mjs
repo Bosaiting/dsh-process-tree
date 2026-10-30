@@ -30,7 +30,7 @@ export async function apply(ctx) {
         { parentCallId: 'function-child-2', subCallId: 'function-grandchild', name: 'write', arguments: { path: 'summary.txt', content: 'ready' } },
       ]) {
         append('tool/ptc-dispatch-start', { turn: 1, step, rootCallId: callId, ...data })
-        append('tool/ptc-dispatch', { turn: 1, step, rootCallId: callId, ...data, content: [{ type: 'text', text: 'Synthetic child result.' }], isError: false })
+        append('tool/ptc-dispatch', { turn: 1, step, rootCallId: callId, ...data, content: [{ type: 'text', text: data.subCallId === 'function-grandchild' ? 'Synthetic nested failure.' : 'Synthetic child result.' }], isError: data.subCallId === 'function-grandchild' })
       }
     }
     append('tool/result', { turn: 1, step, message: { ...message('user', [{ type: 'text', text: `Synthetic output ${step}.` }], { kind: 'tool', callId }), isError: step === 2 } }, true)

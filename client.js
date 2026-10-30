@@ -864,7 +864,7 @@ window.__ModuleLoader__.load({
   --dpt-code-indent: clamp(20px, var(--dsh-tool-indent, 28px), 36px);
   --dpt-code-gutter: 34px;
   counter-reset: dpt-line;
-  padding: 10px 12px 12px var(--dpt-code-gutter);
+  padding: 10px 42px 12px var(--dpt-code-gutter);
   border: .5px solid var(--dsw-alias-border-l2, #8883);
   border-radius: 8px;
   background: color-mix(in srgb, var(--dsw-alias-markdown-code-block, #888) 6%, transparent);
@@ -880,12 +880,61 @@ window.__ModuleLoader__.load({
   border-left: clamp(.75px, var(--dpt-code-line-width, 1px), 1.3px) solid color-mix(in srgb, var(--dpt-code-text) calc(var(--dpt-ink-mix, 38%) * .4), transparent);
   pointer-events: none;
 }
+.dpt-function-bar {
+  display: flex; align-items: stretch; gap: 8px; min-width: 0; height: 32px;
+  margin: -10px -42px 9px calc(-1 * var(--dpt-code-gutter));
+  padding: 0 10px 0 12px; border-bottom: 1px solid var(--dsw-alias-border-l2, #8883);
+  background: color-mix(in srgb, var(--dpt-code-text) 3%, transparent);
+  border-radius: 8px 8px 0 0; font: 400 11px/31px var(--dpt-code-font);
+}
+.dpt-function-tab { min-width: 0; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--dpt-code-text); border-bottom: 1px solid var(--dpt-code-keyword); }
+.dpt-function-tab::before { content: '◇'; color: var(--dpt-code-keyword); margin-right: 7px; }
+.dpt-function-readonly { margin-left: auto; white-space: nowrap; color: var(--dsw-alias-label-tertiary, #888); }
+
+.dpt-minimap-anchor {
+  position: sticky; top: 0; z-index: 8; height: 0; flex: 0 0 0;
+  margin: 0 -42px -3px calc(-1 * var(--dpt-code-gutter)); min-width: 0; pointer-events: none;
+}
+.dpt-map-mark:focus-visible { outline: 1px solid var(--dpt-code-keyword); outline-offset: 1px; }
+.dpt-minimap {
+  position: absolute; top: 4px; right: 5px; width: 30px; height: min(150px, 32vh); pointer-events: auto;
+  border-left: 1px solid var(--dsw-alias-border-l2, #8883); background: var(--dsw-alias-bg-base, #fff);
+  border-radius: 2px; overflow: hidden;
+}
+.dpt-map-viewport { position: absolute; left: 2px; right: 1px; pointer-events: none;
+  background: color-mix(in srgb, var(--dpt-code-text) 8%, transparent); border: 1px solid color-mix(in srgb, var(--dpt-code-text) 12%, transparent); }
+.dpt-map-mark { position: absolute; left: 5px; width: 19px; height: 5px; min-height: 5px;
+  padding: 0; border: 0; border-radius: 1px; background: color-mix(in srgb, var(--dpt-code-text) 33%, transparent); cursor: pointer; }
+.dpt-map-mark[data-state="error"] { background: var(--dpt-state-error); }
+.dpt-map-mark[data-state="running"], .dpt-map-mark[data-state="preparing"] { background: var(--dpt-state-running); }
+.dpt-map-mark[data-state="stopped"] { background: var(--dsw-alias-state-warn-primary, #a87932); }
+.dpt-map-mark:hover { height: 7px; filter: brightness(1.2); z-index: 2; }
+.dpt-host[data-dpt-code-layout="function"] [data-dpt-function-line] { scroll-margin-top: 8px; }
 .dpt-function-header {
   min-width: 0; position: relative; margin-bottom: 4px;
   font: 400 var(--dpt-code-size)/26px var(--dpt-code-font);
   white-space: nowrap; color: var(--dpt-code-text);
 }
 .dpt-function-stats { margin: 0 0 3px; font: 400 11px/18px var(--dpt-code-font); color: var(--dsw-alias-label-tertiary, #888); }
+.dpt-failure-count, .dpt-scope-failures { appearance: none; padding: 0 3px; border: 0; border-radius: 3px;
+  font: inherit; color: var(--dpt-state-error); background: color-mix(in srgb, var(--dpt-state-error) 9%, transparent); cursor: pointer; }
+.dpt-failure-count:hover, .dpt-scope-failures:hover { background: color-mix(in srgb, var(--dpt-state-error) 17%, transparent); }
+.dpt-failure-count:focus-visible, .dpt-scope-failures:focus-visible, .dpt-failure-item:focus-visible { outline: 1px solid var(--dpt-code-keyword); outline-offset: 2px; }
+.dpt-scope-failures { flex: none; margin-left: 8px; white-space: nowrap; font: 400 11px/20px var(--dpt-code-font); }
+.dpt-failure-list { margin: 0 0 6px; padding: 5px 7px; max-height: 180px; overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--dpt-state-error) 24%, transparent); border-radius: 5px;
+  background: color-mix(in srgb, var(--dpt-state-error) 4%, var(--dsw-alias-bg-base, #fff)); font: 400 11px/19px var(--dpt-code-font); }
+.dpt-failure-list[hidden] { display: none !important; }
+.dpt-failure-list-title { padding: 1px 4px 4px; color: var(--dsw-alias-label-tertiary, #888); }
+.dpt-failure-item { display: flex; gap: 7px; width: 100%; min-width: 0; padding: 3px 4px; border: 0; border-radius: 3px;
+  text-align: left; font: inherit; background: none; color: var(--dpt-code-text); cursor: pointer; }
+.dpt-failure-item:hover:not(:disabled) { background: color-mix(in srgb, var(--dpt-code-text) 7%, transparent); }
+.dpt-failure-item:disabled { opacity: .55; cursor: not-allowed; }
+.dpt-failure-item::before { content: '×'; flex: none; color: var(--dpt-state-error); }
+.dpt-failure-item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dpt-failure-feedback { padding: 2px 4px; color: var(--dsw-alias-label-tertiary, #888); }
+
 .dpt-function-heading { display: block; overflow: hidden; }
 .dpt-function-heading-body { display: inline-block; vertical-align: bottom; max-width: calc(100% - 3ch); overflow: hidden; text-overflow: ellipsis; }
 [data-dpt-function-line] { counter-increment: dpt-line; }
@@ -896,6 +945,9 @@ window.__ModuleLoader__.load({
   font: 400 11px/26px var(--dpt-code-font);
   color: color-mix(in srgb, var(--dpt-code-text) 40%, transparent);
 }
+[data-dpt-function-failed]::before { color: var(--dpt-state-error) !important; }
+[data-dpt-function-failed]::after { content: '×' / ''; position: absolute; left: calc(var(--dpt-code-number-x, -28px) + 20px); top: 0;
+  width: 10px; color: var(--dpt-state-error); font: 600 12px/26px var(--dpt-code-font); pointer-events: none; }
 .dpt-host[data-dpt-code-layout="function"] [data-disclosure-row],
 .dpt-host[data-dpt-code-layout="function"] [data-sample] {
   position: relative; min-height: max(24px, calc(26px + var(--dsh-row-leading, 0px)));
@@ -906,11 +958,33 @@ window.__ModuleLoader__.load({
   margin: 2px 0 3px; padding-top: 2px; padding-left: var(--dpt-code-indent) !important;
   gap: 3px !important; position: relative;
 }
+.dpt-host[data-dpt-code-layout="function"] [data-dpt-function-folded] { display: none !important; }
 [data-dpt-function-scope]::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: 6px;
   border-left: clamp(.75px, var(--dpt-code-line-width, 1px), 1.3px) solid color-mix(in srgb, var(--dpt-code-text) calc(var(--dpt-ink-mix, 38%) * .4), transparent);
   pointer-events: none;
 }
+.dpt-host[data-dpt-code-layout="function"] [data-dpt-function-line]:is(:hover, :focus-visible, :focus-within) {
+  background: color-mix(in srgb, var(--dpt-code-text) 5%, transparent); border-radius: 3px;
+}
+[data-dpt-function-scope]:is(:has([data-dpt-function-line]:hover), :focus-within)::before {
+  border-left-color: color-mix(in srgb, var(--dpt-code-keyword) 65%, transparent);
+}
+.dpt-code-expression:has([data-token="pair"]:hover) [data-token="pair"] {
+  background: color-mix(in srgb, var(--dpt-code-pair1) 14%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--dpt-code-pair1) 42%, transparent); border-radius: 2px;
+}
+.dpt-scope-toggle { position: absolute; left: calc(var(--dpt-code-number-x, -28px) + 32px); top: 4px;
+  z-index: 2; width: 16px; height: 18px; padding: 0; border: 0; border-radius: 3px;
+  appearance: none; background: transparent; color: var(--dsw-alias-label-tertiary, #888);
+  font: 400 14px/18px var(--dpt-code-font); cursor: pointer; }
+.dpt-scope-toggle:hover { color: var(--dpt-code-text); background: color-mix(in srgb, var(--dpt-code-text) 9%, transparent); }
+.dpt-scope-toggle:focus-visible, .dpt-code-error:focus-visible { outline: 1px solid var(--dpt-code-keyword); outline-offset: 1px; }
+.dpt-code-error { display: block; margin: 0 0 3px 20px; padding: 1px 6px; max-width: calc(100% - 20px);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;
+  appearance: none; border: 0; border-left: 2px solid var(--dpt-state-error); border-radius: 2px;
+  background: color-mix(in srgb, var(--dpt-state-error) 7%, transparent); color: var(--dpt-state-error);
+  font: 400 11px/20px var(--dpt-code-font); cursor: pointer; }
 [data-dpt-function-label] { font-size: 0 !important; line-height: 0; min-width: 0; max-width: 100%; flex: 1; gap: 0 !important; }
 [data-dpt-function-label] > :not([data-dpt-owned]) { display: none !important; }
 .dpt-code-expression {
@@ -964,7 +1038,7 @@ window.__ModuleLoader__.load({
 [data-dpt-function-line][data-expandable="true"]:is([data-dpt-function-comment], :has([data-dpt-function-label])) > span:first-child > svg { opacity: .55 !important; }
 .dpt-host[data-dpt-code-layout="function"] [data-variant="think"] p { color: var(--dpt-code-comment); font-family: var(--dpt-code-font); }
 @media (max-width: 480px) {
-  .dpt-host[data-dpt-code-layout="function"] { --dpt-code-gutter: 26px; padding-right: 6px; }
+  .dpt-host[data-dpt-code-layout="function"] { --dpt-code-gutter: 26px; padding-right: 40px; }
   .dpt-code-status { padding-left: 5px; font-size: 10px; }
 }
 `
@@ -1085,12 +1159,40 @@ window.__ModuleLoader__.load({
     if (ms < 60000) return (ms / 1000).toFixed(1) + ' s'
     return Math.floor(ms / 60000) + ' min ' + Math.round((ms % 60000) / 1000) + ' s'
   }
+  function codeFailed(block) {
+    return block?.kind === 'tool-result' && block.isError === true && block.error?.code !== 'interrupted'
+  }
+  function codeErrorInfo(block) {
+    if (!codeFailed(block)) return null
+    const message = typeof block.error?.message === 'string' ? block.error.message : ''
+    const structured = [block.error?.name, block.error?.code].filter(value => typeof value === 'string' && value.trim()).join(' · ')
+    const output = Array.isArray(block.content) ? block.content.find(part => part?.type === 'text' && typeof part.text === 'string' && part.text.trim())?.text : ''
+    const value = message.trim() ? message : structured || output || ''
+    const line = value.split(/\r?\n/).find(item => item.trim()) || ''
+    const clean = line.replace(/[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim()
+    if (!clean) return null
+    return { label: message.trim() ? '错误信息' : structured ? '错误类型' : '结果摘要', text: clean.length > 140 ? clean.slice(0, 139) + '…' : clean }
+  }
+  function codeError(block) { return codeErrorInfo(block)?.text || '' }
+  function codeDescendantFailures(block) {
+    const pending = [...(Array.isArray(block?.subCalls) ? block.subCalls : [])], seen = new Set(block?.callId ? [block.callId] : []), visited = new WeakSet()
+    let total = 0
+    while (pending.length) {
+      const child = pending.pop()
+      if (!child || typeof child !== 'object' || visited.has(child)) continue
+      visited.add(child)
+      if (child.callId && !seen.has(child.callId)) { seen.add(child.callId); if (codeFailed(child)) total++ }
+      if (Array.isArray(child.subCalls)) pending.push(...child.subCalls)
+    }
+    return total
+  }
+
   function codeStats(calls) {
     let failures = 0, stopped = 0, pending = 0
     for (const block of calls.values()) {
       if (block?.kind !== 'tool-result') pending++
       else if (block.error?.code === 'interrupted') stopped++
-      else if (block.isError === true) failures++
+      else if (codeFailed(block)) failures++
     }
     return '已加载调用 ' + calls.size + ' · 已记录失败 ' + failures +
       (stopped ? ' · 已中断 ' + stopped : '') + (pending ? ' · 未结束 ' + pending : '')
@@ -2346,7 +2448,7 @@ window.__ModuleLoader__.load({
         if (record.type === 'attributes' && record.attributeName === 'data-state') {
           if (this.inViewport && !document.hidden) {
             this.stateTargets.add(record.target)
-            dirty |= DIRTY_STATE
+            dirty |= DIRTY_STATE | (isFunctionCode() ? DIRTY_LAYOUT : 0)
           } else dirty |= DIRTY_LAYOUT
         } else if (structureMutation(record)) {
           dirty |= DIRTY_LAYOUT | DIRTY_STRUCTURE
@@ -2451,18 +2553,29 @@ window.__ModuleLoader__.load({
       this.functionRows?.clear()
       this.functionHeader?.remove()
       this.functionStats?.remove()
+      this.functionFailureList?.remove()
+      this.functionFailureList = null
+      this.functionFailures = null
+      this.functionFailureSignature = null
+      this.functionBar?.remove()
+      this.functionNav?.remove()
+      this.functionBar = null
+      this.functionNav = null
+      this.functionNavRows = null
+      this.functionMapSignature = null
+      for (const sub of this.content.querySelectorAll('[data-dpt-function-folded]')) sub.removeAttribute('data-dpt-function-folded')
       this.functionHeader = null
       this.functionStats = null
       this.functionIdentity = null
-      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-comment], [data-dpt-function-scope], [data-dpt-function-comment-label], [data-dpt-function-caption]')) {
-        for (const key of ['line', 'comment', 'scope', 'comment-label', 'caption']) el.removeAttribute('data-dpt-function-' + key)
+      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-comment], [data-dpt-function-scope], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed]')) {
+        for (const key of ['line', 'comment', 'scope', 'comment-label', 'caption', 'failed']) el.removeAttribute('data-dpt-function-' + key)
         el.style.removeProperty('--dpt-code-number-x')
       }
       this.content.removeAttribute('data-dpt-code-layout')
     }
 
     releaseFunctionRow(record) {
-      record.expression?.remove(); record.panel?.remove(); record.status?.remove(); record.duration?.remove()
+      record.expression?.remove(); record.panel?.remove(); record.status?.remove(); record.duration?.remove(); record.scopeToggle?.remove(); record.scopeFailures?.remove(); record.error?.remove()
       record.label.removeAttribute('data-dpt-function-label')
     }
 
@@ -2495,6 +2608,26 @@ window.__ModuleLoader__.load({
         this.functionHeader.setAttribute('data-dpt-function-line', '')
         this.content.prepend(this.functionHeader)
       }
+      if (!this.functionBar) {
+        this.functionBar = codeElement('div', 'dpt-function-bar')
+        this.functionTab = codeElement('span', 'dpt-function-tab')
+        const readonly = codeElement('span', 'dpt-function-readonly')
+        readonly.textContent = '执行记录 · 只读'
+        readonly.title = '执行记录按展示顺序排列，子调用可能并行；函数作用域是示意'
+        this.functionBar.append(this.functionTab, readonly)
+        this.content.insertBefore(this.functionBar, this.content.firstChild)
+      }
+      if (!this.functionNav) {
+        this.functionNav = codeElement('div', 'dpt-minimap-anchor')
+        this.functionMap = codeElement('div', 'dpt-minimap')
+        this.functionMap.setAttribute('role', 'group'); this.functionMap.setAttribute('aria-label', '调用迷你地图')
+        this.functionViewport = codeElement('div', 'dpt-map-viewport')
+        this.functionMap.append(this.functionViewport)
+        this.functionNav.append(this.functionMap)
+        this.content.insertBefore(this.functionNav, this.functionHeader)
+      }
+      const tabName = this.functionIdentity.name + '.py'
+      if (this.functionTab.textContent !== tabName) { this.functionTab.textContent = tabName; this.functionTab.title = '虚拟标签：' + tabName }
       if (this.functionHeadingSignature !== headingSignature || !this.functionHeader.childNodes.length) {
         const heading = codeElement('span', 'dpt-function-heading')
         const body = codeElement('span', 'dpt-function-heading-body')
@@ -2515,9 +2648,60 @@ window.__ModuleLoader__.load({
           this.functionStats = codeElement('div', 'dpt-function-stats')
           this.content.insertBefore(this.functionStats, this.functionHeader)
         }
-        const stats = codeStats(calls)
-        if (this.functionStats.textContent !== stats) this.functionStats.textContent = stats
-      } else { this.functionStats?.remove(); this.functionStats = null }
+        const stats = codeStats(calls), failures = [...calls.values()].filter(codeFailed)
+        this.functionFailures = new Map(failures.map(block => [block.callId, block]))
+        if (this.functionStatsText !== stats || this.functionStats.textContent !== stats) {
+          this.functionStats.replaceChildren()
+          const match = stats.match(/已记录失败 \d+/)
+          if (match && failures.length) {
+            this.functionStats.append(document.createTextNode(stats.slice(0, match.index)))
+            const button = codeElement('button', 'dpt-failure-count'); button.type = 'button'; button.textContent = match[0]
+            button.setAttribute('aria-label', '查看失败调用（' + failures.length + '）')
+            button.setAttribute('aria-expanded', String(!!this.functionFailuresOpen))
+            this.functionStats.append(button, document.createTextNode(stats.slice(match.index + match[0].length)))
+          } else this.functionStats.textContent = stats
+          this.functionStatsText = stats
+        }
+        if (failures.length) {
+          if (!this.functionFailureList) {
+            this.functionFailureList = codeElement('div', 'dpt-failure-list')
+            this.functionFailureList.setAttribute('aria-label', '已加载失败调用')
+            this.content.insertBefore(this.functionFailureList, this.functionHeader)
+          }
+          this.functionFailureList.hidden = !this.functionFailuresOpen
+          const entryByCall = new Map(this.structure.filter(item => item.callId).map(item => [item.callId, item]))
+          const entries = failures.map(block => {
+            const entry = entryByCall.get(block.callId)
+            const exists = !!entry?.header?.isConnected && !entry.header.closest('[hidden]')
+            const call = codeCall(block), info = codeErrorInfo(block)
+            const path = call?.valid ? ['path', 'file_path', 'filename', 'file', 'target_file'].map(key => call.args[key]).find(value => typeof value === 'string' && value) : ''
+            const file = path ? codeString(path.length > 90 ? path.slice(0, 89) + '…' : path) : ''
+            return { id: block.callId, name: call?.name || '工具调用', file, info, exists }
+          })
+          const signature = JSON.stringify(entries)
+          if (this.functionFailureSignature !== signature) {
+            const fragment = document.createDocumentFragment()
+            const title = codeElement('div', 'dpt-failure-list-title'); title.textContent = '已加载失败调用 · 点击定位'; fragment.append(title)
+            for (const item of entries) {
+              const button = codeElement('button', 'dpt-failure-item'); button.type = 'button'; button.dataset.callId = item.id
+              button.disabled = !item.exists
+              button.title = item.exists ? '展开需要的作用域并定位' : '当前界面未显示该调用，暂时无法定位'
+              const label = codeElement('span', 'dpt-failure-item-label')
+              label.textContent = item.name + (item.file ? ' · ' + item.file : '') + (item.info ? ' · ' + item.info.label + '：' + item.info.text : '') + (item.exists ? '' : ' · 暂不可定位')
+              button.append(label); fragment.append(button)
+            }
+            const feedback = codeElement('div', 'dpt-failure-feedback'); feedback.setAttribute('role', 'status'); fragment.append(feedback)
+            this.functionFailureList.replaceChildren(fragment)
+            this.functionFailureSignature = signature
+          }
+        } else {
+          this.functionFailureList?.remove(); this.functionFailureList = null; this.functionFailureSignature = null
+          this.functionFailuresOpen = false
+        }
+      } else {
+        this.functionStats?.remove(); this.functionStats = null; this.functionStatsText = null
+        this.functionFailureList?.remove(); this.functionFailureList = null; this.functionFailureSignature = null; this.functionFailures = null
+      }
       const previous = this.functionRows || new Map(), next = new Map(), decorated = new Set()
       const box = this.content.getBoundingClientRect(), scale = this.content.offsetWidth > 0 ? box.width / this.content.offsetWidth : 1
       // Native rows keep their own icons/disclosure. Align every line number to
@@ -2544,11 +2728,20 @@ window.__ModuleLoader__.load({
         const sub = entry.call && directSubcalls(entry.call)
         if (sub) { attr(sub, 'data-dpt-function-scope', ''); decorated.add(sub) }
         const block = calls.get(entry.callId)
+        const failed = codeFailed(block) || !block && stateOf(entry.call) === 'error'
+        if (failed) attr(header, 'data-dpt-function-failed', '')
+        else header.removeAttribute('data-dpt-function-failed')
         const call = codeCall(block)
         // A scope is shown only when the matched projection records children.
         // A folded native row may temporarily remove its child DOM entirely.
         const scope = Array.isArray(block?.subCalls) && block.subCalls.some(child => child?.callId)
-        const collapsed = scope && (!sub || sub.closest('[hidden]') || !(sub.checkVisibility?.() ?? true))
+        this.functionFolded ||= new Set()
+        const folded = scope && this.functionFolded.has(entry.callId)
+        if (sub) {
+          if (folded) attr(sub, 'data-dpt-function-folded', '')
+          else sub.removeAttribute('data-dpt-function-folded')
+        }
+        const collapsed = scope && (folded || !!sub && (!!sub.closest('[hidden]') || !(sub.checkVisibility?.() ?? true)))
         const label = codeTitle(header)
         // Custom rows without structured records or a safe text seat keep
         // their native summary; never reverse-engineer arguments from labels.
@@ -2567,6 +2760,21 @@ window.__ModuleLoader__.load({
         const syntax = multiline ? codeExpression(call, true, scope, collapsed) : single
         if (links.some(el => !syntax.tokens.some(item => codeTokenLink(item, el))) || label.querySelector('input, select, textarea, [role="button"]')) continue
         if (!record) record = { label, links, header }
+        record.callId = entry.callId
+        record.callName = call.name
+        record.scope = scope
+        if (scope && sub) {
+          if (!record.scopeToggle) {
+            record.scopeToggle = codeElement('button', 'dpt-scope-toggle')
+            record.scopeToggle.type = 'button'
+            header.append(record.scopeToggle)
+          }
+          attr(record.scopeToggle, 'aria-expanded', String(!folded))
+          attr(record.scopeToggle, 'aria-label', (folded ? '展开' : '折叠') + '子调用')
+          record.scopeToggle.title = folded ? '展开子调用' : '折叠子调用'
+          const glyph = folded ? '▸' : '▾'
+          if (record.scopeToggle.textContent !== glyph) record.scopeToggle.textContent = glyph
+        } else { record.scopeToggle?.remove(); record.scopeToggle = null }
         const signature = call.name + '\0' + call.raw + '\0' + multiline + '\0' + scope + '\0' + collapsed
         const linksChanged = links.length !== record.links.length || links.some((el, i) => el !== record.links[i])
         if (signature !== record.signature || record.expression?.parentElement !== label || linksChanged) {
@@ -2609,24 +2817,87 @@ window.__ModuleLoader__.load({
           if (!record.duration) { record.duration = codeElement('span', 'dpt-code-duration'); header.append(record.duration) }
           if (record.duration.textContent !== duration) record.duration.textContent = duration
         } else { record.duration?.remove(); record.duration = null }
+        const nestedFailures = folded ? codeDescendantFailures(block) : 0
+        if (nestedFailures) {
+          if (!record.scopeFailures) {
+            record.scopeFailures = codeElement('button', 'dpt-scope-failures'); record.scopeFailures.type = 'button'
+            header.append(record.scopeFailures)
+          }
+          const label = '含 ' + nestedFailures + ' 个失败'
+          if (record.scopeFailures.textContent !== label) record.scopeFailures.textContent = label
+          attr(record.scopeFailures, 'aria-label', '展开含有 ' + nestedFailures + ' 个已记录失败子调用的作用域')
+        } else { record.scopeFailures?.remove(); record.scopeFailures = null }
+        const error = codeErrorInfo(block)
+        if (error) {
+          if (!record.error) {
+            record.error = codeElement('button', 'dpt-code-error')
+            record.error.type = 'button'
+            record.error.title = '查看原始工具结果'
+          }
+          const text = '↳ ' + error.label + '：' + error.text
+          if (record.error.textContent !== text) record.error.textContent = text
+          if (record.error.previousElementSibling !== header) header.insertAdjacentElement('afterend', record.error)
+        } else { record.error?.remove(); record.error = null }
         next.set(header, record)
       }
       for (const [header, record] of previous) if (!next.has(header)) this.releaseFunctionRow(record)
-      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-scope], [data-dpt-function-comment], [data-dpt-function-comment-label], [data-dpt-function-caption]')) {
+      for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-scope], [data-dpt-function-comment], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed]')) {
         if (el === this.functionHeader || decorated.has(el)) continue
-        for (const key of ['line', 'scope', 'comment', 'comment-label', 'caption']) el.removeAttribute('data-dpt-function-' + key)
+        for (const key of ['line', 'scope', 'comment', 'comment-label', 'caption', 'failed']) el.removeAttribute('data-dpt-function-' + key)
         el.style.removeProperty('--dpt-code-number-x')
       }
       this.functionRows = next
       if (!this.functionClick) {
         this.functionClick = event => {
-          const button = event.target.closest?.('.dpt-code-more, .dpt-code-link')
+          const button = event.target.closest?.('.dpt-code-more, .dpt-code-link, .dpt-scope-toggle, .dpt-code-error, .dpt-map-mark, .dpt-failure-count, .dpt-failure-item, .dpt-scope-failures')
           if (!button || !this.content.contains(button)) return
-          const record = this.functionRows.get(button.closest('[data-disclosure-row], [data-sample]'))
+          if (button.matches('.dpt-failure-count')) {
+            event.stopPropagation(); event.preventDefault()
+            this.functionFailuresOpen = !this.functionFailuresOpen
+            if (this.functionFailureList) this.functionFailureList.hidden = !this.functionFailuresOpen
+            attr(button, 'aria-expanded', String(this.functionFailuresOpen))
+            this.schedule(DIRTY_LAYOUT)
+            return
+          }
+          if (button.matches('.dpt-failure-item')) {
+            event.stopPropagation(); event.preventDefault()
+            const id = button.dataset.callId
+            const entry = this.structure.find(item => item.callId === id)
+            if (!entry) return
+            for (let parent = entry.parent; parent; parent = parent.parent) this.functionFolded?.delete(parent.callId)
+            this.schedule(DIRTY_LAYOUT | DIRTY_STRUCTURE)
+            requestAnimationFrame(() => {
+              if (this.stopped || this.suspended) return
+              const target = this.structure.find(item => item.callId === id)?.header
+              if (target?.isConnected && (target.checkVisibility?.() ?? true)) {
+                target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' })
+                target.focus?.({ preventScroll: true })
+              } else {
+                const message = this.functionFailureList?.querySelector('.dpt-failure-feedback')
+                if (message) message.textContent = '该调用当前无法定位，请在原生过程里展开后重试。'
+              }
+            })
+            return
+          }
+          if (button.matches('.dpt-map-mark')) {
+            event.stopPropagation(); event.preventDefault()
+            const target = this.functionNavRows?.[Number(button.dataset.navIndex)]?.entry.header
+            if (target?.isConnected && (target.checkVisibility?.() ?? true)) target.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' })
+            return
+          }
+          const header = button.closest('[data-disclosure-row], [data-sample]') || (button.classList.contains('dpt-code-error') ? button.previousElementSibling : null)
+          const record = this.functionRows.get(header)
           if (!record) return
           event.stopPropagation(); event.preventDefault()
           if (button.classList.contains('dpt-code-link')) record.links[Number(button.dataset.dptLink)]?.click()
-          else if (record.panel) {
+          else if (button.classList.contains('dpt-scope-toggle') || button.classList.contains('dpt-scope-failures')) {
+            if (button.classList.contains('dpt-scope-failures') || this.functionFolded.has(record.callId)) this.functionFolded.delete(record.callId)
+            else this.functionFolded.add(record.callId)
+            this.schedule(DIRTY_LAYOUT)
+          } else if (button.classList.contains('dpt-code-error')) {
+            if (header.getAttribute('aria-expanded') === 'false') header.click()
+            else header.focus()
+          } else if (record.panel) {
             record.panel.hidden = !record.panel.hidden
             button.setAttribute('aria-expanded', String(!record.panel.hidden))
             button.setAttribute('aria-label', record.panel.hidden ? '展开完整参数' : '收起完整参数')
@@ -2634,11 +2905,73 @@ window.__ModuleLoader__.load({
           }
         }
         this.functionKey = event => {
-          if ((event.key === 'Enter' || event.key === ' ') && event.target.closest?.('.dpt-code-more, .dpt-code-link')) event.stopPropagation()
+          if ((event.key === 'Enter' || event.key === ' ') && event.target.closest?.('.dpt-code-more, .dpt-code-link, .dpt-scope-toggle, .dpt-code-error, .dpt-map-mark, .dpt-failure-count, .dpt-failure-item, .dpt-scope-failures')) event.stopPropagation()
         }
         this.content.addEventListener('click', this.functionClick, true)
         this.content.addEventListener('keydown', this.functionKey, true)
       }
+    }
+
+    updateFunctionNavigation(rect, scale, refresh) {
+      if (!this.functionNav || !this.functionIdentity) return
+      if (refresh || !this.functionNavRows) {
+        const rows = []
+        for (const entry of this.structure) {
+          if (!entry.call || !entry.header || !entry.header.isConnected ||
+              entry.header.closest('[hidden], [data-dpt-function-folded]') || !(entry.header.checkVisibility?.() ?? true)) continue
+          const box = entry.header.getBoundingClientRect()
+          if (box.width <= 0 || box.height <= 0) continue
+          const record = this.functionRows?.get(entry.header)
+          rows.push({ entry, top: (box.top - rect.top) / scale, name: record?.callName || '工具调用',
+            scope: !!record?.scope, state: stateOf(entry.call || entry.el) })
+        }
+        rows.sort((a, b) => a.top - b.top)
+        this.functionNavRows = rows
+      }
+      const rows = this.functionNavRows
+      let top = 0, bottom = window.innerHeight
+      for (const parent of this.clipParents || []) {
+        const box = parent.getBoundingClientRect()
+        top = Math.max(top, box.top); bottom = Math.min(bottom, box.bottom)
+      }
+      // Sticky is anchored to the nearest scrolling clip. If an outer
+      // container clips that clip, offset it so the header stays in view.
+      const nearest = (this.clipParents || []).find(parent => getComputedStyle(parent).overflowY !== 'clip')
+      const anchorTop = nearest ? nearest.getBoundingClientRect().top : 0
+      const stickyTop = Math.max(0, (top - anchorTop) / scale).toFixed(2) + 'px'
+      if (this.functionNav.style.top !== stickyTop) this.functionNav.style.top = stickyTop
+      const visibleTop = Math.max(0, (Math.max(top, this.functionNav.getBoundingClientRect().bottom) - rect.top) / scale)
+      const visibleBottom = Math.max(visibleTop, (Math.min(bottom, rect.bottom) - rect.top) / scale)
+      const height = Math.max(1, this.content.offsetHeight)
+      if (refresh || !this.functionMapSignature) {
+        const slots = Math.min(120, rows.length)
+        const selected = new Map()
+        // Bin by real vertical position and favor errors/running calls in crowded bins.
+        for (let index = 0; index < rows.length; index++) {
+          const row = rows[index]
+          const slot = Math.min(slots - 1, Math.floor(row.top / height * slots))
+          const weight = row.state === 'error' ? 3 : isLive(row.state) ? 2 : row.state === 'stopped' ? 1 : 0
+          if (!selected.has(slot) || selected.get(slot).weight < weight) selected.set(slot, { row, index, weight })
+        }
+        const marks = [...selected.values()]
+        const mapSig = height.toFixed(1) + '\0' + marks.map(x => [x.index, x.row.top.toFixed(1), x.row.name, x.row.state].join(':')).join('|')
+        if (mapSig !== this.functionMapSignature) {
+          const fragment = document.createDocumentFragment(); fragment.append(this.functionViewport)
+          for (const { row, index } of marks) {
+            const mark = codeElement('button', 'dpt-map-mark'); mark.type = 'button'; mark.dataset.navIndex = String(index)
+            mark.dataset.state = row.state; mark.style.top = Math.min(97, Math.max(0, row.top / height * 100)).toFixed(2) + '%'
+            const label = '跳到调用 ' + row.name + (row.state === 'error' ? '，错误' : isLive(row.state) ? '，运行中' : '')
+            mark.title = label; mark.setAttribute('aria-label', label); fragment.append(mark)
+          }
+          this.functionMap.replaceChildren(fragment)
+          this.functionMapSignature = mapSig
+        }
+      }
+      const start = Math.max(0, Math.min(100, visibleTop / height * 100))
+      const end = Math.max(start, Math.min(100, visibleBottom / height * 100))
+      const thumbTop = start.toFixed(2) + '%', thumbHeight = Math.max(3, end - start).toFixed(2) + '%'
+      if (this.functionViewport.style.top !== thumbTop) this.functionViewport.style.top = thumbTop
+      if (this.functionViewport.style.height !== thumbHeight) this.functionViewport.style.height = thumbHeight
     }
 
     clearBraceDecorations(retainLayout = false) {
@@ -3435,6 +3768,7 @@ window.__ModuleLoader__.load({
         if (update.box.width < 1 || update.box.height < 1) return { hidden: true }
         this.measuring = { rect: { left: rect.left, top: rect.top + update.crownSpace * scale }, scale }
         update.band = this.readWindow(this.measuring.rect, scale, update.box.height)
+        if (isFunctionCode()) this.updateFunctionNavigation(rect, scale, !!(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE)))
         const sameBand = this.paintedWindowBand && update.band.top === this.paintedWindowBand.top && update.band.bottom === this.paintedWindowBand.bottom
         const sameSize = this.paintedFullBox && Math.abs(this.paintedFullBox.width - update.fullBox.width) < 0.01 && Math.abs(this.paintedFullBox.height - update.fullBox.height) < 0.01
         const sameCrownSpace = this.paintedCrownSpace === update.crownSpace
@@ -3457,6 +3791,10 @@ window.__ModuleLoader__.load({
         this.suppressBirths = false
         update.layout = true
       } else {
+        if (isFunctionCode() && this.functionNav) {
+          const rect = this.content.getBoundingClientRect()
+          this.updateFunctionNavigation(rect, this.content.offsetWidth ? rect.width / this.content.offsetWidth : 1, true)
+        }
         for (const target of this.stateTargets) {
           const call = target.closest('[data-chat-call-id]')
           const node = call ? this.nodeByCall.get(call.dataset.chatCallId) :
@@ -3980,7 +4318,7 @@ window.__ModuleLoader__.load({
   if (typeof window[TEST_HOOK] === 'function') {
     window[TEST_HOOK]({
        DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX, topBranchStartY,
-       codeFunctionName, codeCall, codeExpression, codeValue, codeString, codeDuration, codeStats, createCodeSource,
+       codeFunctionName, codeCall, codeExpression, codeValue, codeString, codeDuration, codeError, codeErrorInfo, codeFailed, codeDescendantFailures, codeStats, createCodeSource,
        setCodeSource: source => { codeSource = source; codeSource?.sync() },
       INTENSITIES, intensityPatch, matchesIntensity, matchesLegacyIntensity,
       setSettings: (next) => { SETTINGS = next },
@@ -4125,9 +4463,21 @@ window.__ModuleLoader__.load({
           const view = viewRef.current
           if (!view) return
           for (const el of view.content.querySelectorAll('[data-chat-call-id]')) {
+            const id = el.dataset.chatCallId
+            const stateName = id === 'preview-write' ? previewState :
+              previewState === 'running' && id !== 'preview-check' ? 'running' : 'completed'
             const state = el.querySelector(':scope > [data-state]')
-            if (state) state.dataset.state = el.dataset.chatCallId === 'preview-write' ? previewState :
-              previewState === 'running' && el.dataset.chatCallId !== 'preview-check' ? 'running' : 'completed'
+            if (state) state.dataset.state = stateName
+            const block = view.functionPreview?.calls.get(id)
+            if (!block) continue
+            const call = block.call || { name: block.name, argsRaw: block.argsRaw }
+            const children = block.subCalls || []
+            view.functionPreview.calls.set(id, stateName === 'running'
+              ? { callId: id, ...call, subCalls: children }
+              : { callId: id, kind: 'tool-result', call, subCalls: children,
+                isError: stateName === 'error' || stateName === 'stopped',
+                ...(stateName === 'stopped' ? { error: { code: 'interrupted' } } : {}),
+                content: stateName === 'error' ? [{ type: 'text', text: '示例：无法写入结果文件' }] : [] })
           }
           view.schedule()
         }, [previewState])
