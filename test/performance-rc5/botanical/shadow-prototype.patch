@@ -1,0 +1,94 @@
+--- a/client.js
++++ b/client.js
+@@ -1671,6 +1671,19 @@
+     }
+     return d
+   }
++  // Experimental: one shared sheet for isolated drawing roots.
++  let isolatedTreeSheet = null
++  function installIsolatedTreeStyles(root) {
++    if (typeof CSSStyleSheet === 'function' && 'adoptedStyleSheets' in root && CSSStyleSheet.prototype.replaceSync) {
++      if (!isolatedTreeSheet) { isolatedTreeSheet = new CSSStyleSheet(); isolatedTreeSheet.replaceSync(CSS) }
++      root.adoptedStyleSheets = [isolatedTreeSheet]
++    } else {
++      const style = document.createElement('style')
++      style.textContent = CSS
++      root.append(style)
++    }
++  }
++
+   class TreeView {
+     constructor(content) {
+       this.content = content
+@@ -1679,6 +1692,7 @@
+       this.vineKey = this.group?.dataset.chatGroupKey ||
+         content.querySelector('[data-chat-anchor-key]')?.dataset.chatAnchorKey || PLUGIN_ID
+       this.svg = null
++      this.treeShadowHost = null
+       this.edgeGroup = null
+       this.dotGroup = null
+       this.edgeEls = new Map()
+@@ -2116,7 +2130,9 @@
+       if (!this.suspended) unwatchView(this)
+       settingsViews.delete(this)
+       this.finishGrowth()
+-      if (this.svg) this.svg.remove()
++      if (this.treeShadowHost) this.treeShadowHost.remove()
++      else if (this.svg) this.svg.remove()
++      this.treeShadowHost = null
+       this.content.classList.remove('dpt-host')
+       this.destroyCrown()
+       delete this.content.dataset.dptBotanical
+@@ -2153,7 +2169,9 @@
+       unwatchView(this)
+       this.finishGrowth()
+       this.destroyCrown(true)
+-      this.svg?.remove()
++      if (this.treeShadowHost) this.treeShadowHost.remove()
++      else this.svg?.remove()
++      this.treeShadowHost = null
+       this.svg = this.rootWoodGradient = this.haloGradient = this.haloGroup = null
+       this.edgeGroup = this.dotGroup = this.defs = this.leafGroup = null
+       this.clipParents = null
+@@ -2233,7 +2251,21 @@
+       this.haloEls.clear()
+       this.rootWoodGradient = this.haloGradient = this.haloGroup = null
+       this.syncMaterials()
+-      this.content.prepend(svg)
++      if (SETTINGS.botanicalStyle && !this.isPreview) {
++        const host = document.createElement('div')
++        host.setAttribute('aria-hidden', 'true')
++        host.setAttribute('data-dsh-claude-quiet', '')
++        host.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:0'
++        const shadow = host.attachShadow({ mode: 'open' })
++        installIsolatedTreeStyles(shadow)
++        const wrapper = document.createElement('div')
++        wrapper.dataset.dptBotanical = 'on'
++        wrapper.dataset.dptStyle = 'botanical'
++        wrapper.append(svg)
++        shadow.append(wrapper)
++        this.treeShadowHost = host
++        this.content.prepend(host)
++      } else this.content.prepend(svg)
+       return svg
+     }
+ 
+@@ -2281,7 +2313,17 @@
+     }
+ 
+     applySettings() {
+-      const dirty = settingsChanges(this.appliedSettings, SETTINGS)
++      let dirty = settingsChanges(this.appliedSettings, SETTINGS)
++      const shadowWanted = SETTINGS.botanicalStyle && !this.isPreview
++      if (!this.suspended && this.svg && !!this.treeShadowHost !== shadowWanted) {
++        this.finishGrowth()
++        if (this.treeShadowHost) this.treeShadowHost.remove()
++        else this.svg.remove()
++        this.treeShadowHost = null
++        this.svg = null
++        this.ensureLayer()
++        dirty |= DIRTY_LAYOUT | DIRTY_SHAPE
++      }
+       if (['treeStyle','botanicalStyle','canopyEnabled','canopyScale'].some((key) => this.appliedSettings[key] !== SETTINGS[key])) this.syncCrown()
+       if (!this.suspended && this.svg) this.syncMaterials()
+       if (SETTINGS.botanicalStyle && !this.suspended &&

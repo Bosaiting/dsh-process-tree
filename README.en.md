@@ -38,7 +38,7 @@ The state image was captured from a dedicated Desktop demo. The style and compar
 
 ## Install
 
-The currently verified host is **DSH 0.2.1-rc.2**. Other versions are unverified.
+Version 0.8.2 declares **DSH 0.2.1-rc.2 and 0.2.1-rc.5**. rc.5 passed isolated Web-host checks and a macOS Desktop spot check; Windows, Linux and other Desktop configurations remain unverified. The earlier npm 0.8.0 release declares rc.2 only; check the compatibility of the selected version or use the pinned GitHub installation below. See [compatibility](docs/COMPATIBILITY.md).
 
 ### Install through Discover
 
@@ -50,35 +50,31 @@ The currently verified host is **DSH 0.2.1-rc.2**. Other versions are unverified
 https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
 ```
 
-Search for `dsh-process-tree` or **Process Tree**. Check that the installation targets **`dsh-process-tree@0.8.0`** from **`https://registry.npmjs.org`**, confirm, and restart when prompted. An installed card opens the existing plugin. Sources belong to the current profile and must be added by each user.
+Search for `dsh-process-tree` or **Process Tree**. Check the **`dsh-process-tree`** version, its DSH compatibility and the **`https://registry.npmjs.org`** source, confirm, and restart when prompted. An installed card opens the existing plugin. Sources belong to the current profile and must be added by each user.
 
 This is an independent community index maintained by the project owner. See the [Discover guide](docs/DISCOVER.md) for troubleshooting and maintenance.
 
 ### Command-line or offline installation
 
-Install the pinned version from [npm](https://www.npmjs.com/package/dsh-process-tree):
+Check the declared DSH compatibility before installing the latest version from [npm](https://www.npmjs.com/package/dsh-process-tree):
 
 ```sh
-dsh plugin --profile web add dsh-process-tree@0.8.0
+npm view dsh-process-tree version engines
+dsh plugin --profile web add dsh-process-tree@latest
 ```
 
-Alternatively, install the pinned version from GitHub:
+Install the rc.5-compatible pinned version from GitHub:
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.1"
-```
-
-You can also download `dsh-process-tree-0.8.1.tgz` from the [GitHub Release](https://github.com/Bosaiting/dsh-process-tree/releases/tag/v0.8.1) and install it locally:
-
-```sh
-dsh plugin --profile web add ./dsh-process-tree-0.8.1.tgz
+dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.2"
 ```
 
 Alternatively, download the npm package and install it locally:
 
 ```sh
-npm pack dsh-process-tree@0.8.0
-dsh plugin --profile web add ./dsh-process-tree-0.8.0.tgz
+npm pack dsh-process-tree@latest
+# Replace the filename with the one printed by npm pack
+dsh plugin --profile web add ./dsh-process-tree-VERSION.tgz
 ```
 
 Restart the corresponding DSH instance. Use Desktop's plugin manager for its managed configuration. The Desktop-bundled CLI also handled its `desktop` profile in the verified macOS build; a separately installed CLI may differ. No install-time build is required. Claude Style is optional. Disable overlapping indentation or process-connector plugins, including `dsh-tool-indent`, to avoid competing spacing and CSS variables.
@@ -90,6 +86,8 @@ Open **Settings → Plugins → 过程树**. Classic is the default: flowing tap
 Classic's subtle, standard, and vivid presets use line widths of 3.10, 3.80, and 4.64 px respectively; botanical uses 3.20, 4.60, and 6.28 px. Saved line widths remain unchanged; choose an intensity again to apply its new preset.
 
 Everything else (transitions, line width, texture, leaves, dots, indentation, summary dimming, leading, growth speed) lives under a collapsed **Advanced** section. Changing line width or dots there marks intensity as custom; picking a level restores it. Botanical controls appear in that style. The settings preview shares the chat renderer and can switch both state and light/dark appearance. Quiet uses state colors on dots; botanical retains its wood-colored running branches while the node and glow use the running color. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
+
+Botanical Advanced settings include an opt-in **植物滚动优化** (botanical scrolling optimization), off by default. It can reduce browser style recalculation while scrolling long processes. When enabled, other plugins or custom CSS that directly query or alter the internal root graphics may no longer work; turn it off to restore the previous access. The settings preview is unaffected.
 
 ## Data and permissions
 

@@ -38,7 +38,7 @@
 
 ## 安装
 
-当前明确支持 **DSH 0.2.1-rc.2**；其他版本尚未验证。
+0.8.2 声明支持 **DSH 0.2.1-rc.2 和 0.2.1-rc.5**。rc.5 已通过隔离 Web 宿主测试及 macOS 桌面版抽查；Windows、Linux 和其他桌面配置尚未验证。早期 npm 0.8.0 仅声明支持 rc.2；请核对所选版本的兼容范围，或使用下方 GitHub 固定版本。详见[兼容性记录](docs/COMPATIBILITY.md)。
 
 ### 通过 Discover 安装
 
@@ -50,35 +50,31 @@
 https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
 ```
 
-搜索 `dsh-process-tree` 或“过程树”，核对安装目标为 **`dsh-process-tree@0.8.0`**、来源为 **`https://registry.npmjs.org`**，确认安装并按提示重启。已安装时可直接打开现有插件。索引源按 profile 保存，其他用户需要各自添加。
+搜索 `dsh-process-tree` 或“过程树”，核对包名 **`dsh-process-tree`**、版本的 DSH 兼容范围和来源 **`https://registry.npmjs.org`**，确认安装并按提示重启。已安装时可直接打开现有插件。索引源按 profile 保存，其他用户需要各自添加。
 
 这是项目维护者提供的独立社区索引。详细操作、加载排查和版本维护见 [Discover 安装说明](docs/DISCOVER.md)。
 
 ### 命令行或离线安装
 
-从 [npm](https://www.npmjs.com/package/dsh-process-tree) 安装固定版本：
+从 [npm](https://www.npmjs.com/package/dsh-process-tree) 安装最新版本前，请确认其声明的 DSH 兼容范围：
 
 ```sh
-dsh plugin --profile web add dsh-process-tree@0.8.0
+npm view dsh-process-tree version engines
+dsh plugin --profile web add dsh-process-tree@latest
 ```
 
-也可以从 GitHub 安装固定版本：
+从 GitHub 安装兼容 rc.5 的固定版本：
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.1"
-```
-
-也可以从 [GitHub Release](https://github.com/Bosaiting/dsh-process-tree/releases/tag/v0.8.1) 下载 `dsh-process-tree-0.8.1.tgz` 后本地安装：
-
-```sh
-dsh plugin --profile web add ./dsh-process-tree-0.8.1.tgz
+dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.2"
 ```
 
 也可以先下载 npm 包，再从本地安装：
 
 ```sh
-npm pack dsh-process-tree@0.8.0
-dsh plugin --profile web add ./dsh-process-tree-0.8.0.tgz
+npm pack dsh-process-tree@latest
+# 将文件名替换为 npm pack 实际输出的名称
+dsh plugin --profile web add ./dsh-process-tree-版本.tgz
 ```
 
 安装后重新启动对应的 DSH 实例。桌面版通过其插件管理入口安装到桌面配置；已验证的 macOS 版本也可由桌面程序自带的 CLI 管理 `desktop` profile，单独安装的 CLI 行为可能不同。不要直接修改桌面安装目录。该插件不需要安装时构建或构建脚本许可。
@@ -98,6 +94,8 @@ dsh plugin --profile web add ./dsh-process-tree-0.8.0.tgz
 | 安静线条 `quiet`，低调模式 | 1.5 px 等宽线，直主干，圆角分支，各层级一致的圆点 |
 
 其余细项（分支过渡、线宽、纹理、叶片、圆点、缩进、摘要浓度、行距、生长速度等）收在默认折叠的 **高级设置** 中；在高级设置里改动线宽或圆点后，强度显示为自定义，重新选择一档即可恢复。植物风格下另有树冠设置。设置预览与聊天区使用同一渲染器，可切换预览状态和浅色、深色主题。安静线条以节点显示状态色；植物手稿的运行分支保持木色，节点及微光使用运行色。
+
+植物手稿的高级设置中可选择开启 **植物滚动优化**，该选项默认关闭。开启后可减少长过程滚动时的浏览器样式重算；其他插件或自定义 CSS 若直接查询或修改树根内部元素，可能无法继续生效。关闭选项即可恢复原有访问方式，设置预览不受影响。
 
 减少动态效果会停止生长和状态微动效。远离视口的历史过程释放绘制资源并保留布局占位；滚回时重新创建。首次安装及缺少有效风格字段的早期设置使用经典曲线，保留行外观和树冠偏好；已保存的有效风格选择不变。
 

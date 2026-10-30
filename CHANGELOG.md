@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.8.2
+
+- Add an opt-in botanical scrolling optimization that isolates the root graphics from rc.5 host selector invalidation. The default stays off to preserve direct DOM and custom CSS access; the settings preview is unchanged.
+- Check isolated-mode style fallbacks, settings persistence, theme compatibility and synthetic scrolling performance.
+
+- Round the viewport window outward and reuse a committed window while its visible row set, size, scale and crown space are unchanged. This reduces repeated SVG updates during scrolling without shrinking the existing overscan.
+- Preserve dirty state and committed measurements on rendering errors so a later notification can recover; cover scrolling boundaries, zoom, nested scroll containers and recovery.
+- Add isolated rc.5 layout/style traces, causal probes and equal-speed performance comparison tools.
+
+- Observe initially empty process rows until they gain content, so a node is created even when the host updates an existing text node without changing row size.
+- Add isolated rc.5 streaming and empty-row regression coverage.
+
+
+- Declare DSH 0.2.1-rc.5 alongside rc.2 after isolated rc.5 Web-host verification.
+- Recognize the host's `ok` tool state as completed, so classic-style leaves appear for successful tool steps.
+- Exercise rc.5 reasoning metadata and state transitions in the real-host fixture. State transitions are simulated DOM changes, not live model or tool executions.
+
 ## 0.8.1
 
 - Refresh the README screenshots with richer nested branches and remove the animated preview.

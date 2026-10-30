@@ -1,6 +1,6 @@
 # Compatibility / 兼容性
 
-Current version: 0.8.1. Host version declarations are limited to verified releases.
+Version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5; other releases are not declared compatible. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2.
 
 ## Test levels / 验证层次
 
@@ -8,6 +8,143 @@ Current version: 0.8.1. Host version declarations are limited to verified releas
 - Browser: real Chromium, ResizeObserver, IntersectionObserver, SVG and React on synthetic host-shaped markup. This verifies renderer behavior and cleanup, without model requests or private data.
 - Host: exact packed plugin loaded by a separate real DSH Web host with a new DSH_HOME, with and without an unchanged upstream theme. Real-host settings and activation checks are recorded separately from synthetic transcript checks.
 - Native Desktop: separate acceptance; a Web result does not establish Desktop scrolling performance.
+
+## 0.8.2 rc.2 final Web regression / rc.2 最终版 Web 回归
+
+The final runtime (client SHA-256 `8ee4deda8c0b3968285a07a81dbf5a5f3e631d8bed14937414b0160e609ac79c`) was installed into a clean, isolated official DSH 0.2.1-rc.2 Web profile on macOS arm64. The real-host synthetic session passed 17 regular checks and nine botanical optimization opt-in checks without model requests. The first run exposed a test assumption: rc.2 shows the signature in a collapsed reasoning row, while its expanded row shows the body. The revised host test retains the expanded-body assertion and checks the filtered collapsed title when explicitly requested. Results and the initial failure are recorded in `docs/verification/rc2-final-regression.json`. This is not native Desktop, Windows, Linux, sustained generation or performance validation.
+
+## 0.8.2 native Desktop spot check / 桌面版抽查
+
+The final runtime (client SHA-256 `8ee4deda8c0b3968285a07a81dbf5a5f3e631d8bed14937414b0160e609ac79c`) was installed on macOS arm64 in the DSH 0.2.1-rc.5 Desktop profile with an existing customized Claude Style. After enabling the opt-in and temporarily selecting botanical style, an existing short acceptance session displayed its crown, branches and six nodes; three top-level nodes matched their rows with zero measured center offset, and manual scrolling retained alignment. The prior settings were restored except for the requested opt-in. This was not a clean-profile Desktop benchmark or a sustained live-model test; Windows, Linux and other Desktop configurations remain unverified.
+
+## 0.8.2 botanical opt-in scrolling optimization / 植物滚动优化
+
+With 200 synthetic calls in rc.5 Web, invalidation traces associated botanical
+SVG child changes with host `:has()` style recalculation. Single-run diagnostic
+interventions that hid the canopy or all artwork did not meaningfully reduce
+long intervals; blocking SVG child mutations or removing host selectors did.
+Those interventions change the interface and were not shipped. A general SVG
+reuse pool improved measurements but changed compositing order in overlapping
+branches; a pool restricted to preserving order showed no convincing speedup.
+Neither pool is included.
+
+The new botanical Advanced setting is **off by default**, including for old
+preferences. When enabled it puts the chat root graphics inside an open Shadow
+DOM so their internal mutations no longer trigger the host's ancestor selectors.
+This retains geometry and paint order but ordinary `document.querySelector` and
+external CSS cannot directly reach those internal elements. Other plugins or
+custom CSS depending on direct access may be incompatible while it is enabled;
+turning it off restores the previous DOM. The settings preview remains outside
+the isolated drawing layer. A static hidden marker avoids the host `:empty`
+selector shifting the first row; a `<style>` fallback handles blocked
+constructable stylesheets. Other themes and native desktop sessions are not
+covered by these tests.
+
+Final three-round, 3-second, 200-call elapsed-time comparisons in headless
+Chromium on rc.5 Web measured intervals above 25 ms as follows: at 800 CSS px/s,
+baseline 17/526 (3.23%), candidate disabled 32/511 (6.26%), candidate enabled
+0/543; at 6000 px/s, baseline 179/363 (49.31%), disabled 165/377 (43.77%),
+enabled 1/537 (0.19%). The enabled fast case had one 116.6 ms interval of
+unknown origin, retained in the raw data. The same fixture content height
+(18,489 px), 200 calls, matching visible anchors, and 500 px final scroll
+position were verified in each run. These are synthetic stress signals, not
+native Desktop FPS, real-user latency, or a guarantee of no long frames. An
+earlier batch may overlap startup of other hosts and is retained separately;
+the numbers above come from the subsequent controlled repeat.
+
+The candidate passed 30 unit and 25 Chromium tests, the normal rc.5 host suite
+17/17 with and without stock Claude Style 0.19.1, the opt-in host suite 9/9 in
+both configurations and the opt-in synthetic stream 5/5. A theme fold test
+initially failed because the test did not await the asynchronous aria-expanded
+transition; the failure is retained, and the corrected check still verifies
+matching anchors after fold/restore. Raw sanitized data and reproduction scripts
+are in the source checkout under `docs/verification/rc5-botanical-*.json`,
+`test/performance-rc5/botanical/`, and `test/botanical-host/`. Raw traces and
+host logs may contain temporary access tokens and must not be shared.
+
+## 0.8.2 rc.5 scrolling investigation / 滚动性能跟踪
+
+In a 200-call synthetic rc.5 Web session, Chromium traces under rapid scrolling
+showed substantially more document-wide layout/style recalculation with the
+plugin. Paint was not the main difference in this fixture. Invalidation traces
+associated SVG child insertions/removals with several host `:has()` selectors.
+Two single-run diagnostic interventions—removing five relevant host CSS rules,
+and freezing SVG child insertions/removals (206 blocked)—each reduced intervals
+above 25 ms from 87/89 to 0/89 under the same heavy tracing. Both interventions
+alter interface behavior and are diagnostic evidence, not fixes; trace event
+and CDP metrics can overlap and must not be added together.
+
+The candidate rounds the existing window outward to 256px boundaries and reuses
+a committed window only when the visible row set, full size, crown space and
+scale are unchanged. The original 320px overscan is never reduced. This avoids
+many redundant SVG changes but leaves host selectors untouched. A commit
+failure preserves dirty state and does not promote an incomplete window snapshot.
+
+In two paired synthetic elapsed-time speed comparisons of the final candidate
+against the prior source, fast scrolling (6,000 CSS px/s, 3 seconds) produced
+these proportions of requestAnimationFrame intervals above 25 ms: classic
+134/229 (58.5%) to 46/311 (14.8%); quiet 93/267 (34.8%) to 14/348 (4.0%);
+botanical 169/190 (88.9%) to 132/229 (57.6%). At 800 px/s, classic was 7/355
+to 3/359 and botanical 59/285 to 42/319. One ordinary-speed quiet baseline
+sample had an unexplained 1.63-second interval; it is retained and should not be
+interpreted as an ordinary frame. These samples are headless Chromium Web-host
+stress probes, not native Desktop FPS or input latency. Botanical still has
+substantial long-frame cost. Alignment after rapid jumps was checked after the
+observers settled; first-frame completeness was not established.
+
+Raw redacted measurements, including the anomalous sample, are in the source
+checkout at `docs/verification/rc5-layout-trace-results.json`. Source-only
+reproduction instructions are in `test/performance-rc5/README-speed.md` and
+`test/performance-rc5/trace/README-trace.md`. Never publish raw Chromium trace
+files or host logs: they may contain temporary access tokens.
+
+## 0.8.2 rc.5 empty-row and performance checks / 空行与性能检查
+
+An empty process row can be indexed as empty and later gain text through a
+character-data update without a size change. In synthetic DOM this left its
+matching dot missing in an earlier local 0.8.2 candidate. The change observes only initially skipped empty
+rows, stops observing each when it becomes usable, and disconnects on suspend
+and stop. Tests cover text-node updates, insertion, removal, offscreen cleanup,
+and resume. In the rc.5 Web host a synthetic DOM row reproduces this edge case;
+separately, five controlled synthetic stream phases exercised the real rc.5 host
+renderer. In that stream, a signature-only row had no dot, and the visible
+reasoning obtained its own matching dot. The earlier local 0.8.2 candidate passed that stream
+scenario, so this is not evidence that ordinary rc.5 streaming triggers the bug.
+
+That earlier empty-row candidate passed 29 unit tests, 20 Chromium checks and 17 real rc.5
+Web-host checks, both without an added theme and with unchanged Claude Style
+0.19.1. The five synthetic stream phases also passed with the final candidate.
+No model was called. Native Desktop, Windows and real sustained model sessions
+were not tested by these checks.
+
+Performance was measured with headless Chromium and synthetic sessions. In a
+200-call rc.5 Web fixture, a fixed 11,000-pixel out-and-back sweep over 90 frames
+had p95 about 33.4 ms with the plugin enabled; the plugin-off comparison was
+16.7 ms in one run. This is a fast stress test, not a native Desktop FPS result.
+A 128-edge cache reduced synthetic curve generation by about 4% while retaining
+up to 128 detached edges; a 16-edge candidate produced no convincing improvement
+in three sequential rc.5 host runs and retained additional DOM objects. Neither
+candidate is included. Timed plugin JavaScript stages alone did not explain the
+host long frames; layout and paint remain unmeasured, so the bottleneck and a
+reliable smoothness improvement remain open. The source checkout contains raw results in `docs/verification/rc5-performance-results.json`
+and reproduction instructions in `test/performance-rc5/README-perf.md`.
+
+To reproduce the controlled stream check, make a fresh empty directory, create
+`.dpt-disposable-test` inside it, and set `DSH_STREAM_TEST_DIR` to that directory
+and `DSH_HOME` to its `home` child. Install the packed candidate into this
+profile and start rc.5 with `--patch ./test/fixtures/stream-fixture.patch.yml`
+on a loopback port. Set `DSH_TEST_HOST_LOG` to the host log inside that same
+directory and run `node test/host-stream-regression.cjs`. Never share the log;
+it contains a temporary access token. The stream fixture refuses the normal
+user DSH home and does not run an agent or invoke a model.
+
+## Earlier 0.8.2 compatibility candidate / 早期兼容候选版
+
+On macOS arm64, the Desktop-bundled **DSH 0.2.1-rc.5** CLI ran separate disposable Web profiles. The unchanged 0.8.1 package was rejected by the version gate. A packed 0.8.2 candidate, with `engines.dsh` set to `0.2.1-rc.2 || 0.2.1-rc.5`, installed without an exemption. The renderer adds recognition of the host's `ok` completion state.
+
+The actual rc.5 Web host passed 16 checks both without a theme and with unmodified npm Claude Style 0.19.1. These cover the host-rendered synthetic transcript and alignment, rc.5 reasoning metadata filtering and folding, completed-tool leaves, simulated running/error/stopped DOM state changes, scrolling, process folding, three styles and settings preview, reduced motion, both color schemes, settled overlay writes, and live disable/re-enable cleanup. An initial state test selected a row outside the theme's clipped viewport and timed out; selecting a visible row resolved the test setup. A further host check exposed that successful calls use state `ok`, which the renderer did not recognize as completed; that check failed before the fix. The candidate adds `ok` to the finished list. All 29 unit and 19 Chromium checks also passed. See [recorded results](verification/0.8.2.json).
+
+In that earlier check no model or tool was run. Nested calls were tested in the synthetic browser fixture, not the rc.5 host fixture; state transitions in the host were injected into its rendered DOM. At that point rc.5 native Desktop, Windows/Linux and sustained generation or performance were not tested. The user's existing customized Claude Style is distinct from the stock theme tested here. This evidence supports the explicit rc.5 compatibility declaration, not a blanket claim for intermediate or future releases.
 
 ## 0.8.1 documentation update / 文档更新
 
@@ -156,6 +293,7 @@ export DSH_TEST_HOST_LOG="$PWD/.release-checks/host/server.log"
 export DSH_TEST_PROFILE_PATCH="$PWD/.release-checks/host/home/profiles/web/cordis.patch.yml"
 npm run test:host
 # Also set DSH_EXPECT_THEME=1 for the profile with stock Claude Style.
+# For DSH 0.2.1-rc.5, also set DSH_EXPECT_FILTERED_REASONING=1.
 ```
 
 `DSH_TEST_HOST_URL` can supply the printed loopback URL instead of the log.

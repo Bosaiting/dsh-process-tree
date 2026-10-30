@@ -44,6 +44,14 @@ test('an emblem-sized canopy preference is kept', () => {
   assert.equal(api.normalize({ treeStyle: 'botanical', canopyScale: 0.05 }).canopyScale, 0.15)
 })
 
+test('botanical scrolling optimization defaults off and preserves only explicit boolean preferences', () => {
+  assert.equal(api.normalize({}).botanicalScrollOptimization, false)
+  assert.equal(api.normalize({ treeStyle: 'botanical' }).botanicalScrollOptimization, false)
+  assert.equal(api.normalize({ treeStyle: 'botanical', botanicalScrollOptimization: true }).botanicalScrollOptimization, true)
+  assert.equal(api.normalize({ treeStyle: 'classic', botanicalScrollOptimization: true }).botanicalScrollOptimization, true)
+  assert.equal(api.normalize({ treeStyle: 'botanical', botanicalScrollOptimization: 'true' }).botanicalScrollOptimization, false)
+})
+
 test('an explicit botanical style keeps its own values', () => {
   const settings = api.normalize({ ...LEGACY_BOTANICAL, treeStyle: 'botanical' })
 

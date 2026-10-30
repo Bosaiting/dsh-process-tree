@@ -1,0 +1,655 @@
+{
+  "scope": "Final candidate; macOS rc.5 Web host; synthetic session records and synthetic stream; no model requests or native Desktop acceptance.",
+  "unitTests": {
+    "total": 29,
+    "passed": 29
+  },
+  "browser": {
+    "mode": "Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.",
+    "cases": [
+      {
+        "name": "empty rows gain nodes on text insertion or character data without stream rescans",
+        "pass": true
+      },
+      {
+        "name": "classic intensity controls apply the wider presets and preserve saved custom widths",
+        "pass": true
+      },
+      {
+        "name": "botanical intensity controls apply the narrower presets and preserve saved widths",
+        "pass": true
+      },
+      {
+        "name": "state colors remain independent across themes, styles, preview and reload",
+        "pass": true
+      },
+      {
+        "name": "last top-level fork joins the trunk smoothly without changing other rows",
+        "pass": true,
+        "samples": [
+          {
+            "fusion": 0.3,
+            "trunkStart": 11.131,
+            "trunkEnd": 8.027,
+            "branchStart": 8.027,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 0,
+            "trunkStart": 11.131,
+            "trunkEnd": 6.735,
+            "branchStart": 6.735,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 0.15,
+            "trunkStart": 11.131,
+            "trunkEnd": 7.381,
+            "branchStart": 7.381,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 0.7,
+            "trunkStart": 11.131,
+            "trunkEnd": 9.749,
+            "branchStart": 9.749,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          },
+          {
+            "fusion": 1,
+            "trunkStart": 11.131,
+            "trunkEnd": 11.041,
+            "branchStart": 11.041,
+            "earlierEnd": 11.795,
+            "earlierSource": 11.794637111837446,
+            "dotRadius": 8.904578943223893
+          }
+        ],
+        "terminal": {
+          "trunkStart": 11.131,
+          "trunkEnd": 8.027,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        },
+        "continuing": {
+          "trunkStart": 11.131,
+          "trunkEnd": 11.041,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        },
+        "hidden": {
+          "trunkStart": 11.131,
+          "trunkEnd": 8.027,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        },
+        "cssHidden": {
+          "trunkStart": 11.131,
+          "trunkEnd": 8.027,
+          "branchStart": 8.027,
+          "earlierEnd": 11.795,
+          "earlierSource": 11.794637111837446,
+          "dotRadius": 8.904578943223893
+        }
+      },
+      {
+        "name": "viewport windows do not make intermediate top-level forks terminal",
+        "pass": true,
+        "early": {
+          "last": "g0-7",
+          "total": 120,
+          "hasPaths": true,
+          "end": 10.454,
+          "source": 10.454131470043983
+        },
+        "late": {
+          "present": true,
+          "end": 6.107,
+          "start": 6.107
+        }
+      },
+      {
+        "name": "nested stem tapers smoothly into its last fork at every fusion level",
+        "pass": true,
+        "samples": [
+          {
+            "fusion": 0,
+            "start": 4.88,
+            "end": 2.884,
+            "forkStart": 2.884,
+            "span": 32
+          },
+          {
+            "fusion": 0.15,
+            "start": 4.88,
+            "end": 3.161,
+            "forkStart": 3.161,
+            "span": 32
+          },
+          {
+            "fusion": 0.3,
+            "start": 4.88,
+            "end": 3.437,
+            "forkStart": 3.437,
+            "span": 32
+          },
+          {
+            "fusion": 0.7,
+            "start": 4.88,
+            "end": 4.175,
+            "forkStart": 4.175,
+            "span": 32
+          },
+          {
+            "fusion": 1,
+            "start": 4.88,
+            "end": 4.728,
+            "forkStart": 4.728,
+            "span": 32
+          }
+        ]
+      },
+      {
+        "name": "same-size text, quiet decoration and incremental state",
+        "pass": true,
+        "samples": {
+          "text": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "quiet": {
+            "stats": {},
+            "rectReads": 0
+          },
+          "state": {
+            "stats": {
+              "readUpdate": 1,
+              "commitUpdate": 1
+            },
+            "rectReads": 0
+          }
+        }
+      },
+      {
+        "name": "quiet fast path, bounded paint and style switches",
+        "pass": true,
+        "initial": {
+          "dots": 28,
+          "halos": 0,
+          "materials": 0,
+          "edges": 29,
+          "strokes": 29,
+          "outlineCalls": 0,
+          "pathChars": 1579
+        }
+      },
+      {
+        "name": "row-size changes with unchanged group size, font, leading and zoom",
+        "pass": true,
+        "before": {
+          "height": 384,
+          "y": 134
+        },
+        "after": {
+          "height": 384,
+          "y": 154
+        }
+      },
+      {
+        "name": "outer and capped inner scrolling preserve visible nodes",
+        "pass": true,
+        "records": [
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 19,
+            "dots": 28,
+            "nodes": 28,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.25,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0.6,
+            "visible": 21,
+            "dots": 37,
+            "nodes": 40,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 1,
+            "visible": 19,
+            "dots": 27,
+            "nodes": 29,
+            "motions": 0
+          },
+          {
+            "cap": 0,
+            "fraction": 0,
+            "visible": 19,
+            "dots": 28,
+            "nodes": 28,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.25,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0.6,
+            "visible": 9,
+            "dots": 9,
+            "nodes": 10,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 1,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 9,
+            "motions": 0
+          },
+          {
+            "cap": 260,
+            "fraction": 0,
+            "visible": 8,
+            "dots": 8,
+            "nodes": 8,
+            "motions": 0
+          }
+        ]
+      },
+      {
+        "name": "growth, reduced motion and fold restoration",
+        "pass": true,
+        "running": 1
+      },
+      {
+        "name": "far history sleeps without changing height and restores without growth",
+        "pass": true,
+        "before": 249,
+        "away": {
+          "awake": 9,
+          "sleeping": 15,
+          "firstSleeping": true,
+          "height": 249,
+          "retained": false
+        }
+      },
+      {
+        "name": "new turns do not rescan or remeasure folded historical groups",
+        "pass": true,
+        "work": {
+          "fullScans": 0,
+          "oldRects": 0
+        }
+      },
+      {
+        "name": "crown ignores unrelated mutations and settings coalesce per frame",
+        "pass": true,
+        "unrelated": {
+          "rectReads": 0
+        },
+        "settings": {
+          "applySettings": 1,
+          "paintCrown": 1,
+          "syncCrownLibraries": 1,
+          "positionCrowns": 2,
+          "readUpdate": 1,
+          "collect": 1,
+          "buildModel": 1,
+          "geometryOf": 11,
+          "branchBody": 11,
+          "commitUpdate": 1
+        }
+      },
+      {
+        "name": "classic growth masks finish and offscreen calls stay static",
+        "pass": true
+      },
+      {
+        "name": "style cards render miniature conversations and remain selectable",
+        "pass": true
+      },
+      {
+        "name": "botanical soil follows the crown and its setting applies to chat and preview",
+        "pass": true
+      },
+      {
+        "name": "botanical settings preview crown follows sticky panel and inner scrolling",
+        "pass": true,
+        "samples": [
+          {
+            "scroll": 0,
+            "delta": 0,
+            "headerTop": 180.96875
+          },
+          {
+            "scroll": 60,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 150,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 250,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 100,
+            "delta": 0,
+            "headerTop": 122.578125
+          },
+          {
+            "scroll": 0,
+            "delta": 0,
+            "headerTop": 180.96875
+          }
+        ]
+      },
+      {
+        "name": "real React settings, shadow preview growth and shared-resource teardown",
+        "pass": true,
+        "remaining": {
+          "views": 1,
+          "rows": 16,
+          "clips": 1,
+          "crowns": 1,
+          "libraries": 1,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        },
+        "final": {
+          "views": 0,
+          "rows": 0,
+          "clips": 0,
+          "crowns": 0,
+          "libraries": 0,
+          "settingsFrame": 0,
+          "frameHandle": 0,
+          "crownPositionFrame": 0
+        }
+      }
+    ]
+  },
+  "host": {
+    "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+    "checks": [
+      {
+        "name": "native transcript and anchors",
+        "pass": true,
+        "boot": [
+          "dsh-process-tree"
+        ],
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "reasoning row fold and host-specific metadata handling",
+        "pass": true,
+        "filteredReasoning": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "synthetic empty reasoning row gains its matching dot",
+        "pass": true
+      },
+      {
+        "name": "completed host tool displays classic leaf",
+        "pass": true
+      },
+      {
+        "name": "host DOM state transitions running error stopped and restore",
+        "pass": true
+      },
+      {
+        "name": "native scrolling viewport",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "native process fold and restore",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settings style botanical",
+        "pass": true,
+        "crowns": 1
+      },
+      {
+        "name": "settings style classic",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "settings style quiet",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "reduced motion",
+        "pass": true
+      },
+      {
+        "name": "chat remains aligned after settings",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "dark theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "light theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settled overlay writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "live host disable cleans DOM and root variables",
+        "pass": true
+      },
+      {
+        "name": "live host re-enable creates one instance",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      }
+    ],
+    "errors": []
+  },
+  "hostWithStockTheme": {
+    "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+    "checks": [
+      {
+        "name": "native transcript and anchors",
+        "pass": true,
+        "boot": [
+          "dsh-process-tree",
+          "dsh-claude-style"
+        ],
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "reasoning row fold and host-specific metadata handling",
+        "pass": true,
+        "filteredReasoning": true,
+        "measured": 8,
+        "errors": [],
+        "dots": 11
+      },
+      {
+        "name": "synthetic empty reasoning row gains its matching dot",
+        "pass": true
+      },
+      {
+        "name": "completed host tool displays classic leaf",
+        "pass": true
+      },
+      {
+        "name": "host DOM state transitions running error stopped and restore",
+        "pass": true
+      },
+      {
+        "name": "native scrolling viewport",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "native process fold and restore",
+        "pass": true,
+        "measured": 8,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settings style botanical",
+        "pass": true,
+        "crowns": 1
+      },
+      {
+        "name": "settings style classic",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "settings style quiet",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "reduced motion",
+        "pass": true
+      },
+      {
+        "name": "chat remains aligned after settings",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "dark theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "light theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settled overlay writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "live host disable cleans DOM and root variables",
+        "pass": true
+      },
+      {
+        "name": "live host re-enable creates one instance",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      }
+    ],
+    "errors": []
+  },
+  "syntheticStream": {
+    "scope": "rc.5 real Web host with directly dispatched synthetic stream frames; no model requests or native Desktop claim",
+    "checks": [
+      {
+        "name": "empty reasoning block produces no host row",
+        "pass": true
+      },
+      {
+        "name": "signature-only row remains empty and filtered",
+        "pass": true
+      },
+      {
+        "name": "visible streaming reasoning has its own matching dot",
+        "pass": true
+      },
+      {
+        "name": "subsequent reasoning delta preserves exactly one matching dot",
+        "pass": true
+      },
+      {
+        "name": "stream settles as a durable reasoning message",
+        "pass": true
+      }
+    ],
+    "errors": []
+  }
+}

@@ -1,0 +1,78 @@
+--- a/client.js
++++ b/client.js
+@@ -1669,6 +1669,9 @@
+       this.dotGroup = null
+       this.edgeEls = new Map()
+       this.edgeRecords = new Map()
++      // Keep a small number of recently culled edge elements detached so
++      // reversing scroll can reuse exact geometry and wood details.
++      this.edgeResidency = new Map()
+       this.motions = new Map()
+       // Include hidden DOM calls so unfolding an existing branch never grows it again.
+       this.knownCalls = new Set()
+@@ -2067,6 +2070,7 @@
+       delete this.content.dataset.dptStyle
+       this.edgeEls.clear()
+       this.edgeRecords.clear()
++      this.edgeResidency.clear()
+       this.dotEls.clear()
+       this.haloEls.clear()
+       this.leafEls.clear()
+@@ -2097,6 +2101,7 @@
+       this.svg?.remove()
+       this.svg = this.rootWoodGradient = this.haloGradient = this.haloGroup = null
+       this.edgeGroup = this.dotGroup = this.defs = this.leafGroup = null
++      this.edgeResidency.clear()
+       this.clipParents = null
+       for (const name of ['edgeEls','edgeRecords','dotEls','haloEls','leafEls','nodeStates',
+         'nodeByCall','nodeByElement','edgesByNode','stateTargets','births','structureByElement']) this[name].clear()
+@@ -2653,7 +2658,7 @@
+         const points = edge.curve.flat()
+         if (Math.max(...points.map((p) => p.y)) < band.top || Math.min(...points.map((p) => p.y)) > band.bottom) continue
+         const node = update.nodeMap.get(edge.toKey)
+-        const record = this.svg?.isConnected ? this.edgeRecords.get(edge.key) : null
++        const record = this.svg?.isConnected ? this.edgeRecords.get(edge.key) || this.edgeResidency.get(edge.key) : null
+         const geometry = record?.centerD === edge.d && record.stroke === stroke ? record.geometry : stroke ? strokeGeometry(edge.curve) : geometryOf(edge.curve)
+         let widthAt
+         if (edge.type === 'trunk') {
+@@ -2708,7 +2713,12 @@
+         if (record.shade) { record.shade.remove(); record.shade = null }
+         return
+       }
+-      if (!plan.body) return
++      // A cached edge may return in a different style with the same outline.
++      // Ensure its wood shading exists, and update opacity even without a new body.
++      if (!plan.body && record.shade) {
++        record.shade.style.opacity = String(SETTINGS.rootDetail)
++        return
++      }
+       if (!record.shade) {
+         const group = document.createElementNS(NS, 'g')
+         group.classList.add('dpt-root-shade')
+@@ -2723,6 +2733,16 @@
+     }
+ 
+     createEdge(edge, node, fragment) {
++      const saved = this.edgeResidency.get(edge.key)
++      if (saved) {
++        this.edgeResidency.delete(edge.key)
++        if (saved.clip) this.defs.append(saved.clip)
++        if (saved.flowClip) this.defs.append(saved.flowClip)
++        fragment.append(saved.bodyGroup)
++        this.edgeEls.set(edge.key, saved.path)
++        this.edgeRecords.set(edge.key, saved)
++        return saved
++      }
+       const bodyGroup = document.createElementNS(NS, 'g')
+       const path = document.createElementNS(NS, 'path')
+       path.classList.add('dpt-edge')
+@@ -2744,6 +2764,9 @@
+       record.bodyGroup.remove()
+       this.edgeRecords.delete(key)
+       this.edgeEls.delete(key)
++      this.edgeResidency.delete(key)
++      this.edgeResidency.set(key, record)
++      if (this.edgeResidency.size > 16) this.edgeResidency.delete(this.edgeResidency.keys().next().value)
+     }
+ 
+     paintNodeState(node) {

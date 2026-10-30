@@ -35,6 +35,8 @@ window.__ModuleLoader__.load({
   const DOT_FOLLOW_MIN_WIDTH = 3
   const THINK_DOT_RADIUS = 2.4
   const ROW_OVERSCAN = 320
+  // Round outward so an unchanged tile can be reused during small scrolls.
+  const WINDOW_TILE = 256
   const QUIET_SELECTOR = '[data-dsh-claude-quiet], .dpt-layer'
   const STRUCTURE_SELECTOR = '[data-chat-flow-kind], [data-chat-call-id], [data-subcalls], [data-disclosure-row], [data-sample], [data-variant="think"]'
   const STORAGE_KEY = 'dsh.process-tree.v1'
@@ -141,6 +143,7 @@ window.__ModuleLoader__.load({
     treeStyle: 'classic',
     intensity: 'standard',
     botanicalStyle: false,
+    botanicalScrollOptimization: false,
     canopyEnabled: true,
     soilEnabled: true,
     canopyScale: CANOPY_SCALE,
@@ -203,6 +206,7 @@ window.__ModuleLoader__.load({
       intensity: Object.hasOwn(INTENSITIES, source.intensity) ? source.intensity : defaults.intensity,
       // Derived; kept in storage so older plugin builds still read a value.
       botanicalStyle: source.treeStyle === 'botanical',
+      botanicalScrollOptimization: typeof source.botanicalScrollOptimization === 'boolean' ? source.botanicalScrollOptimization : defaults.botanicalScrollOptimization,
       canopyEnabled: typeof source.canopyEnabled === 'boolean' ? source.canopyEnabled : defaults.canopyEnabled,
       soilEnabled: typeof source.soilEnabled === 'boolean' ? source.soilEnabled : defaults.soilEnabled,
       // Old full-size crowns become the emblem; emblem sizes stay editable.
@@ -1050,7 +1054,7 @@ window.__ModuleLoader__.load({
 
   let layerId = 0
   const isLive = (state) => state === 'running' || state === 'preparing'
-  const FINISHED_STATES = ['completed', 'success', 'succeeded', 'done']
+  const FINISHED_STATES = ['completed', 'success', 'succeeded', 'done', 'ok']
   const isFinished = (state) => FINISHED_STATES.includes(state)
   const smoothStep = (t) => t * t * (3 - 2 * t)
   // Share of the width lost along the trunk, a stem, and across each fork.
@@ -1185,17 +1189,26 @@ window.__ModuleLoader__.load({
       try {
         const update = view.readUpdate()
         if (update) updates.push([view, update])
-      } catch (error) { console.error('[dsh-process-tree] measure failed', error) }
+      } catch (error) {
+        view.dirty |= DIRTY_LAYOUT
+        console.error('[dsh-process-tree] measure failed', error)
+      }
     }
     for (const [view, update] of updates) {
       try { view.computeUpdate(update) } catch (error) {
         update.failed = true
+        view.dirty |= update.dirty | DIRTY_LAYOUT
+        if (update.dirty & DIRTY_STRUCTURE) view.structureDirty = true
         console.error('[dsh-process-tree] geometry failed', error)
       }
     }
     for (const [view, update] of updates) {
       if (update.failed || view.stopped) continue
-      try { view.commitUpdate(update) } catch (error) { console.error('[dsh-process-tree] paint failed', error) }
+      try { view.commitUpdate(update) } catch (error) {
+        view.dirty |= update.dirty | DIRTY_LAYOUT
+        if (update.dirty & DIRTY_STRUCTURE) view.structureDirty = true
+        console.error('[dsh-process-tree] paint failed', error)
+      }
     }
   }
 
@@ -1308,7 +1321,10 @@ window.__ModuleLoader__.load({
           const had = set.has(owner.node)
           if (entry.isIntersecting) set.add(owner.node)
           else set.delete(owner.node)
-          if (had !== entry.isIntersecting) owner.view.schedule(DIRTY_WINDOW)
+          if (had !== entry.isIntersecting) {
+            owner.view.windowRevision++
+            owner.view.schedule(DIRTY_WINDOW)
+          }
         }
       }, { rootMargin: ROW_OVERSCAN + 'px 0px' })
       sharedVisibility = new IntersectionObserver((entries) => {
@@ -1399,7 +1415,7 @@ window.__ModuleLoader__.load({
   function settingsChanges(previous, next) {
     let dirty = 0
     const changed = (keys) => keys.some((key) => previous[key] !== next[key])
-    if (changed(['treeStyle', 'botanicalStyle', 'canopyEnabled', 'canopyScale', 'topTransition', 'subTransition', 'indent', 'leading'])) dirty |= DIRTY_LAYOUT
+    if (changed(['treeStyle', 'botanicalStyle', 'botanicalScrollOptimization', 'canopyEnabled', 'canopyScale', 'topTransition', 'subTransition', 'indent', 'leading'])) dirty |= DIRTY_LAYOUT
     const before = dotMetrics(previous), after = dotMetrics(next)
     if (before.padding !== after.padding || before.minRow !== after.minRow) dirty |= DIRTY_LAYOUT
     if (changed(['treeStyle', 'topBend', 'subBend', 'curveShape', 'vineAmplitude', 'lineWidth', 'thicknessDecay', 'rootFusion'])) dirty |= DIRTY_SHAPE
@@ -1657,6 +1673,23 @@ window.__ModuleLoader__.load({
     }
     return d
   }
+  // Experimental: one shared sheet for isolated drawing roots.
+  let isolatedTreeSheet = null
+  function installIsolatedTreeStyles(root) {
+    if (typeof CSSStyleSheet === 'function' && 'adoptedStyleSheets' in root && CSSStyleSheet.prototype.replaceSync) {
+      try {
+        const sheet = isolatedTreeSheet || new CSSStyleSheet()
+        if (!isolatedTreeSheet) sheet.replaceSync(CSS)
+        root.adoptedStyleSheets = [sheet]
+        isolatedTreeSheet = sheet
+        return
+      } catch (_) { /* Constructed stylesheets may be blocked by the host. */ }
+    }
+    const style = document.createElement('style')
+    style.textContent = CSS
+    root.append(style)
+  }
+
   class TreeView {
     constructor(content) {
       this.content = content
@@ -1665,6 +1698,7 @@ window.__ModuleLoader__.load({
       this.vineKey = this.group?.dataset.chatGroupKey ||
         content.querySelector('[data-chat-anchor-key]')?.dataset.chatAnchorKey || PLUGIN_ID
       this.svg = null
+      this.treeShadowHost = null
       this.edgeGroup = null
       this.dotGroup = null
       this.edgeEls = new Map()
@@ -1697,9 +1731,17 @@ window.__ModuleLoader__.load({
       this.structure = []
       this.roots = []
       this.structureByElement = new Map()
+      this.emptyRows = new Set()
+      this.emptyObserver = null
       this.rowTargets = new Map()
       this.rowSizes = new Map()
       this.headerWindow = new Set()
+      this.windowRevision = 0
+      this.paintedWindowRevision = -1
+      this.paintedWindowBand = null
+      this.paintedFullBox = null
+      this.paintedCrownSpace = null
+      this.windowScale = 0
       this.blockWindow = new Set()
       this.clipParents = null
       this.suspended = false
@@ -1931,7 +1973,7 @@ window.__ModuleLoader__.load({
 
     rebuildStructure() {
       const previous = this.structureByElement
-      const next = new Map(), targets = new Map(), entries = [], roots = []
+      const next = new Map(), targets = new Map(), entries = [], roots = [], emptyRows = []
       const add = (el, call, parent, siblingIndex) => {
         const entry = previous.get(el) || { el }
         entry.call = call
@@ -1961,7 +2003,7 @@ window.__ModuleLoader__.load({
       for (const row of this.content.children) {
         if (!row.matches('[data-chat-flow-kind]') || row.closest(QUIET_SELECTOR)) continue
         const call = rootCall(row)
-        if (!call && !row.textContent.trim()) continue
+        if (!call && !row.textContent.trim()) { emptyRows.push(row); continue }
         add(row, call, null, index++)
       }
       for (const target of this.rowTargets.keys()) {
@@ -1986,6 +2028,34 @@ window.__ModuleLoader__.load({
       this.structureByElement = next
       this.rowTargets = targets
       this.structureDirty = false
+      this.watchEmptyRows(emptyRows)
+    }
+
+    watchEmptyRows(rows) {
+      this.emptyObserver?.disconnect()
+      this.emptyRows = new Set(rows)
+      if (!rows.length) { this.emptyObserver = null; return }
+      if (!this.emptyObserver) this.emptyObserver = new MutationObserver((records) => {
+        if (this.stopped || this.suspended) return
+        let changed = false
+        for (const record of records) {
+          const element = record.target.nodeType === 1 ? record.target : record.target.parentElement
+          let row = element?.closest('[data-chat-flow-kind]')
+          while (row && row.parentElement !== this.content) row = row.parentElement?.closest('[data-chat-flow-kind]')
+          if (!row || !this.emptyRows.has(row) || !row.isConnected || (!rootCall(row) && !row.textContent.trim())) continue
+          // Transition just once; later stream text is handled by existing layout observers.
+          this.emptyRows.delete(row)
+          changed = true
+          this.structureDirty = true
+          this.schedule(DIRTY_LAYOUT | DIRTY_STRUCTURE)
+        }
+        if (changed) {
+          this.emptyObserver.disconnect()
+          for (const row of this.emptyRows) this.emptyObserver.observe(row, { childList: true, characterData: true, subtree: true })
+          if (!this.emptyRows.size) this.emptyObserver = null
+        }
+      })
+      for (const row of rows) this.emptyObserver.observe(row, { childList: true, characterData: true, subtree: true })
     }
 
     selectedEntries() {
@@ -2024,8 +2094,11 @@ window.__ModuleLoader__.load({
         bottom = Math.min(bottom, box.bottom)
       }
       if (this.isPreview) return { top: 0, bottom: height }
-      return { top: Math.max(0, (top - rect.top) / scale - ROW_OVERSCAN),
-        bottom: Math.min(height, (bottom - rect.top) / scale + ROW_OVERSCAN) }
+      // Always round outwards: the original overscan is never reduced.
+      const first = (top - rect.top) / scale - ROW_OVERSCAN
+      const last = (bottom - rect.top) / scale + ROW_OVERSCAN
+      return { top: Math.max(0, Math.floor(first / WINDOW_TILE) * WINDOW_TILE),
+        bottom: Math.min(height, Math.ceil(last / WINDOW_TILE) * WINDOW_TILE) }
     }
 
     unwatchClips() {
@@ -2057,10 +2130,15 @@ window.__ModuleLoader__.load({
     stop() {
       if (this.stopped) return
       this.stopped = true
+      this.emptyObserver?.disconnect()
+      this.emptyObserver = null
+      this.emptyRows.clear()
       if (!this.suspended) unwatchView(this)
       settingsViews.delete(this)
       this.finishGrowth()
-      if (this.svg) this.svg.remove()
+      if (this.treeShadowHost) this.treeShadowHost.remove()
+      else if (this.svg) this.svg.remove()
+      this.treeShadowHost = null
       this.content.classList.remove('dpt-host')
       this.destroyCrown()
       delete this.content.dataset.dptBotanical
@@ -2090,11 +2168,16 @@ window.__ModuleLoader__.load({
     suspend() {
       if (this.stopped || this.suspended) return
       this.suspended = true
+      this.emptyObserver?.disconnect()
+      this.emptyObserver = null
+      this.emptyRows.clear()
       this.inViewport = false
       unwatchView(this)
       this.finishGrowth()
       this.destroyCrown(true)
-      this.svg?.remove()
+      if (this.treeShadowHost) this.treeShadowHost.remove()
+      else this.svg?.remove()
+      this.treeShadowHost = null
       this.svg = this.rootWoodGradient = this.haloGradient = this.haloGroup = null
       this.edgeGroup = this.dotGroup = this.defs = this.leafGroup = null
       this.clipParents = null
@@ -2174,7 +2257,26 @@ window.__ModuleLoader__.load({
       this.haloEls.clear()
       this.rootWoodGradient = this.haloGradient = this.haloGroup = null
       this.syncMaterials()
-      this.content.prepend(svg)
+      if (SETTINGS.botanicalStyle && SETTINGS.botanicalScrollOptimization && !this.isPreview) {
+        const host = document.createElement('div')
+        host.setAttribute('aria-hidden', 'true')
+        host.setAttribute('data-dsh-claude-quiet', '')
+        // Keep the host nonempty in light DOM: rc.5 uses :empty to lay out
+        // flow items. The marker is static, hidden, and not part of the SVG.
+        const marker = document.createElement('span')
+        marker.hidden = true
+        host.append(marker)
+        host.style.cssText = 'position:absolute;left:0;top:0;width:0;height:0;overflow:visible;pointer-events:none;z-index:0'
+        const shadow = host.attachShadow({ mode: 'open' })
+        installIsolatedTreeStyles(shadow)
+        const wrapper = document.createElement('div')
+        wrapper.dataset.dptBotanical = 'on'
+        wrapper.dataset.dptStyle = 'botanical'
+        wrapper.append(svg)
+        shadow.append(wrapper)
+        this.treeShadowHost = host
+        this.content.prepend(host)
+      } else this.content.prepend(svg)
       return svg
     }
 
@@ -2222,7 +2324,17 @@ window.__ModuleLoader__.load({
     }
 
     applySettings() {
-      const dirty = settingsChanges(this.appliedSettings, SETTINGS)
+      let dirty = settingsChanges(this.appliedSettings, SETTINGS)
+      const shadowWanted = SETTINGS.botanicalStyle && SETTINGS.botanicalScrollOptimization && !this.isPreview
+      if (!this.suspended && this.svg && !!this.treeShadowHost !== shadowWanted) {
+        this.finishGrowth()
+        if (this.treeShadowHost) this.treeShadowHost.remove()
+        else this.svg.remove()
+        this.treeShadowHost = null
+        this.svg = null
+        this.ensureLayer()
+        dirty |= DIRTY_LAYOUT | DIRTY_SHAPE
+      }
       if (['treeStyle','botanicalStyle','canopyEnabled','canopyScale'].some((key) => this.appliedSettings[key] !== SETTINGS[key])) this.syncCrown()
       if (!this.suspended && this.svg) this.syncMaterials()
       if (SETTINGS.botanicalStyle && !this.suspended &&
@@ -2599,7 +2711,7 @@ window.__ModuleLoader__.load({
       }
       if (needsLayout) {
         if (this.structureDirty) this.rebuildStructure()
-        const onlyWindow = !!this.model && !(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE))
+        let onlyWindow = !!this.model && !(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE))
         if (!onlyWindow) for (const entry of this.structure) entry.layout = null
         const rect = this.content.getBoundingClientRect()
         const cssWidth = this.content.offsetWidth
@@ -2613,7 +2725,22 @@ window.__ModuleLoader__.load({
         if (update.box.width < 1 || update.box.height < 1) return { hidden: true }
         this.measuring = { rect: { left: rect.left, top: rect.top + update.crownSpace * scale }, scale }
         update.band = this.readWindow(this.measuring.rect, scale, update.box.height)
+        const sameBand = this.paintedWindowBand && update.band.top === this.paintedWindowBand.top && update.band.bottom === this.paintedWindowBand.bottom
+        const sameSize = this.paintedFullBox && Math.abs(this.paintedFullBox.width - update.fullBox.width) < 0.01 && Math.abs(this.paintedFullBox.height - update.fullBox.height) < 0.01
+        const sameCrownSpace = this.paintedCrownSpace === update.crownSpace
+        if (onlyWindow && !sameCrownSpace) {
+          onlyWindow = false
+          update.dirty |= DIRTY_LAYOUT
+          for (const entry of this.structure) entry.layout = null
+        }
+        if (onlyWindow && dirty === DIRTY_WINDOW && !this.replayRequested && sameBand && sameSize && sameCrownSpace &&
+            this.windowScale === scale && this.paintedWindowRevision === this.windowRevision) {
+          this.dirty = 0
+          return null
+        }
         this.windowBand = update.band
+        update.windowScale = scale
+        update.windowRevision = this.windowRevision
         this.lastSize = update.fullBox
         update.nodes = this.collect(onlyWindow)
         this.initialized = true
@@ -2970,6 +3097,13 @@ window.__ModuleLoader__.load({
       const replay = this.replayRequested
       this.replayRequested = false
       if (replay || growing.size) this.grow(model, growing, replay)
+      if (update.band) {
+        this.paintedWindowBand = update.band
+        this.paintedFullBox = update.fullBox
+        this.paintedCrownSpace = update.crownSpace
+        this.windowScale = update.windowScale
+        this.paintedWindowRevision = update.windowRevision
+      }
     }
 
     render() {
@@ -3369,6 +3503,12 @@ window.__ModuleLoader__.load({
             h('span', { className: 'dpt-advanced-hint' }, '枝条形态、纹理、圆点和行外观的细项')),
           ...(settings.treeStyle !== 'botanical' ? [] : [
           h('h3', { className: 'dpt-subhead' }, '植物手稿'),
+          h('label', { className: 'dpt-toggle' },
+            h('span', null, h('span', { className: 'dpt-label' }, '植物滚动优化'),
+              h('span', { className: 'dpt-toggle-desc' }, '减少长过程滚动时的卡顿；开启后其他插件或自定义样式可能无法访问根系图形。预览不受影响。')),
+            h('input', { type: 'checkbox', role: 'switch', 'aria-label': '植物滚动优化',
+              checked: settings.botanicalScrollOptimization,
+              onChange: event => commit({ botanicalScrollOptimization: event.currentTarget.checked }) })),
           h(SelectRow, { label: '顶部树冠', desc: '树冠随本轮过程一起折叠；不改变根系的曲线和缩进', value: settings.canopyEnabled ? 'on' : 'off', options: [{ value: 'on', label: '显示' }, { value: 'off', label: '隐藏' }], onChange: value => commit({ canopyEnabled: value === 'on' }) }),
           h(SelectRow, { label: '土壤装饰', desc: '在树干与根系交界处显示薄土层；随顶部树冠显示或隐藏', value: settings.soilEnabled ? 'on' : 'off', options: [{ value: 'on', label: '显示' }, { value: 'off', label: '隐藏' }], onChange: value => commit({ soilEnabled: value === 'on' }) }),
           h(SliderRow, { label: '树冠大小', desc: '顶部小树冠徽记的大小；树冠始终留在内容区内', min: CANOPY_MIN, max: CANOPY_MAX, step: .01, value: settings.canopyScale, format: value => Math.round(value * 100) + '%', onChange: canopyScale => commit({ canopyScale }) }),

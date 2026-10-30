@@ -1,0 +1,302 @@
+{
+  "date": "2026-10-30",
+  "host": "DSH 0.2.1-rc.5, isolated Web profiles on macOS arm64, desktop-bundled CLI",
+  "candidate": "0.8.2 with engines.dsh 0.2.1-rc.2 || 0.2.1-rc.5",
+  "clientSha256": "edcf55f1a029accd1df5b4024412d3ca4bc4c8f13c79ee59a39b75f4ba7c80a1",
+  "installation": "0.8.1 was rejected; 0.8.2 candidates installed without exemption in independent profiles",
+  "bug": "Original renderer omitted host tool state ok from finished states. The pre-fix real-host leaf assertion timed out; adding ok made the leaf and transitions pass.",
+  "testDevelopment": "An initial themed state-transition check targeted a row outside the clipped viewport and timed out; selecting a visible row fixed the test setup. SVG checkVisibility returned true for a display:none group, so the final leaf assertion uses computed display.",
+  "plain": {
+    "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+    "checks": [
+      {
+        "name": "native transcript and anchors",
+        "pass": true,
+        "boot": [
+          "dsh-process-tree"
+        ],
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "reasoning row fold and host-specific metadata handling",
+        "pass": true,
+        "filteredReasoning": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "completed host tool displays classic leaf",
+        "pass": true
+      },
+      {
+        "name": "host DOM state transitions running error stopped and restore",
+        "pass": true
+      },
+      {
+        "name": "native scrolling viewport",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "native process fold and restore",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settings style botanical",
+        "pass": true,
+        "crowns": 1
+      },
+      {
+        "name": "settings style classic",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "settings style quiet",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "reduced motion",
+        "pass": true
+      },
+      {
+        "name": "chat remains aligned after settings",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "dark theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "light theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settled overlay writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "live host disable cleans DOM and root variables",
+        "pass": true
+      },
+      {
+        "name": "live host re-enable creates one instance",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      }
+    ],
+    "errors": []
+  },
+  "stockClaudeStyle0191": {
+    "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+    "checks": [
+      {
+        "name": "native transcript and anchors",
+        "pass": true,
+        "boot": [
+          "dsh-process-tree",
+          "dsh-claude-style"
+        ],
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "reasoning row fold and host-specific metadata handling",
+        "pass": true,
+        "filteredReasoning": true,
+        "measured": 8,
+        "errors": [],
+        "dots": 11
+      },
+      {
+        "name": "completed host tool displays classic leaf",
+        "pass": true
+      },
+      {
+        "name": "host DOM state transitions running error stopped and restore",
+        "pass": true
+      },
+      {
+        "name": "native scrolling viewport",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "native process fold and restore",
+        "pass": true,
+        "measured": 8,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settings style botanical",
+        "pass": true,
+        "crowns": 1
+      },
+      {
+        "name": "settings style classic",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "settings style quiet",
+        "pass": true,
+        "crowns": 0
+      },
+      {
+        "name": "reduced motion",
+        "pass": true
+      },
+      {
+        "name": "chat remains aligned after settings",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "dark theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "light theme",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      },
+      {
+        "name": "settled overlay writes",
+        "pass": true,
+        "writes": 0
+      },
+      {
+        "name": "live host disable cleans DOM and root variables",
+        "pass": true
+      },
+      {
+        "name": "live host re-enable creates one instance",
+        "pass": true,
+        "measured": 9,
+        "errors": [],
+        "dots": 10
+      }
+    ],
+    "errors": []
+  },
+  "browser": {
+    "scope": "Chromium with synthetic host-shaped markup, not rc.5 host",
+    "cases": [
+      {
+        "name": "classic intensity controls apply the wider presets and preserve saved custom widths",
+        "pass": true
+      },
+      {
+        "name": "botanical intensity controls apply the narrower presets and preserve saved widths",
+        "pass": true
+      },
+      {
+        "name": "state colors remain independent across themes, styles, preview and reload",
+        "pass": true
+      },
+      {
+        "name": "last top-level fork joins the trunk smoothly without changing other rows",
+        "pass": true
+      },
+      {
+        "name": "viewport windows do not make intermediate top-level forks terminal",
+        "pass": true
+      },
+      {
+        "name": "nested stem tapers smoothly into its last fork at every fusion level",
+        "pass": true
+      },
+      {
+        "name": "same-size text, quiet decoration and incremental state",
+        "pass": true
+      },
+      {
+        "name": "quiet fast path, bounded paint and style switches",
+        "pass": true
+      },
+      {
+        "name": "row-size changes with unchanged group size, font, leading and zoom",
+        "pass": true
+      },
+      {
+        "name": "outer and capped inner scrolling preserve visible nodes",
+        "pass": true
+      },
+      {
+        "name": "growth, reduced motion and fold restoration",
+        "pass": true
+      },
+      {
+        "name": "far history sleeps without changing height and restores without growth",
+        "pass": true
+      },
+      {
+        "name": "new turns do not rescan or remeasure folded historical groups",
+        "pass": true
+      },
+      {
+        "name": "crown ignores unrelated mutations and settings coalesce per frame",
+        "pass": true
+      },
+      {
+        "name": "classic growth masks finish and offscreen calls stay static",
+        "pass": true
+      },
+      {
+        "name": "style cards render miniature conversations and remain selectable",
+        "pass": true
+      },
+      {
+        "name": "botanical soil follows the crown and its setting applies to chat and preview",
+        "pass": true
+      },
+      {
+        "name": "botanical settings preview crown follows sticky panel and inner scrolling",
+        "pass": true
+      },
+      {
+        "name": "real React settings, shadow preview growth and shared-resource teardown",
+        "pass": true
+      }
+    ]
+  },
+  "limits": [
+    "Native Desktop on rc.5 was not tested",
+    "Windows and Linux were not tested",
+    "Host fixture uses completed synthetic records; running, error and stopped are DOM mutations, not model or tool executions",
+    "Host fixture does not supply nested calls; browser fixture does",
+    "No sustained generation or performance measurements"
+  ]
+}

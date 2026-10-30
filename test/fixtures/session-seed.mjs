@@ -18,7 +18,7 @@ export async function apply(ctx) {
     append('assistant/message', {
       turn: 1, step, stream: [],
       message: message('assistant', [
-        { type: 'reasoning', text: `Inspect synthetic record ${step}.` },
+        { type: 'reasoning', text: `${step === 1 ? '<signature>fixture.metadata</signature>\n\n' : ''}Inspect synthetic record ${step}.` },
         { type: 'tool-call', id: callId, name: 'read', arguments: JSON.stringify({ path: `fixture-${step}.txt` }) },
       ], { kind: 'model', provider: 'compatibility-fixture', model: 'no-network' }),
     }, true)

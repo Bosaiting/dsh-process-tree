@@ -1,0 +1,3 @@
+- insert:
+    - id: process-tree-stream-fixture
+      name: ./stream-session-seed.mjs

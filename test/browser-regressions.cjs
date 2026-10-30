@@ -89,6 +89,164 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
 (async()=>{
   const browser=await chromium.launch({headless:true,...(process.env.DSH_CHROMIUM_EXECUTABLE?{executablePath:process.env.DSH_CHROMIUM_EXECUTABLE}:{})});
   try{
+    await test('botanical scroll optimization is opt-in, persistent, reversible, and has a stylesheet fallback',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'botanical',calls:30,nested:true,cap:260});
+      try {
+        assert.equal(await page.evaluate(()=>api.getSettings().botanicalScrollOptimization),false,'legacy settings default off');
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='optimization-settings';mount.style.cssText='position:fixed;left:500px;top:0;width:580px;height:700px;overflow:auto';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });await page.evaluate(()=>frames(20));
+        await page.locator('.dpt-advanced > summary').click();
+        const toggle=page.getByRole('switch',{name:'植物滚动优化'});assert.equal(await toggle.isChecked(),false);
+        let data=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);return {shadow:!!v.treeShadowHost,dots:v.content.querySelectorAll('.dpt-dot').length,contentHeight:v.content.getBoundingClientRect().height,rowTop:v.content.querySelector('[data-chat-flow-kind]').getBoundingClientRect().top,scrollHeight:v.content.closest('[data-step-process-body]').scrollHeight,preview:[...instances].filter(v=>v.isPreview&&!v.stopped).every(v=>!v.treeShadowHost)}});
+        assert.equal(data.shadow,false);assert.ok(data.dots>0);assert.equal(data.preview,true);
+        const baselineLayout={contentHeight:data.contentHeight,rowTop:data.rowTop,scrollHeight:data.scrollHeight};
+        await page.emulateMedia({reducedMotion:'no-preference'});
+        for(const mode of ['replaceSync','adoption']){
+          await page.evaluate(mode=>{if(mode==='replaceSync'){window.savedReplaceSync=CSSStyleSheet.prototype.replaceSync;CSSStyleSheet.prototype.replaceSync=function(){throw Error('fixture replaceSync denied')}}else{window.savedAdoption=Object.getOwnPropertyDescriptor(ShadowRoot.prototype,'adoptedStyleSheets');Object.defineProperty(ShadowRoot.prototype,'adoptedStyleSheets',{configurable:true,get(){return []},set(){throw Error('fixture adoption denied')}})}},mode);
+          await toggle.check();await page.evaluate(()=>frames(20));await aligned(page);
+          data=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);window.lastShadowHost=v.treeShadowHost;return {shadow:!!v.treeShadowHost,nonempty:!v.treeShadowHost.matches(':empty'),markerHidden:v.treeShadowHost.firstElementChild?.hidden,contentHeight:v.content.getBoundingClientRect().height,rowTop:v.content.querySelector('[data-chat-flow-kind]').getBoundingClientRect().top,scrollHeight:v.content.closest('[data-step-process-body]').scrollHeight,innerStyle:v.treeShadowHost?.shadowRoot.querySelector('style')?.textContent.length||0,dots:v.svg.querySelectorAll('.dpt-dot').length,externalDots:v.content.querySelectorAll('.dpt-dot').length,fill:getComputedStyle(v.svg.querySelector('.dpt-edge')).fill,preview:[...instances].filter(v=>v.isPreview&&!v.stopped).every(v=>!v.treeShadowHost)}});
+          assert.equal(data.shadow,true);assert.equal(data.nonempty,true);assert.equal(data.markerHidden,true);assert.equal(data.contentHeight,baselineLayout.contentHeight);assert.equal(data.rowTop,baselineLayout.rowTop);assert.equal(data.scrollHeight,baselineLayout.scrollHeight);assert.ok(data.innerStyle>100);assert.ok(data.dots>0);assert.equal(data.externalDots,0);assert.ok(data.fill.startsWith('url('));assert.equal(data.preview,true);
+          for(const theme of ['light','dark']) {
+            await page.evaluate(theme=>{if(theme==='dark')document.body.setAttribute('data-ds-dark-theme','');else document.body.removeAttribute('data-ds-dark-theme');const v=[...instances].find(v=>!v.isPreview&&!v.stopped);v.model.nodes.find(n=>n.call)?.call.querySelector('[data-state]')?.setAttribute('data-state','running')},theme);await page.evaluate(()=>frames(12));
+            const appearance=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped),r=[...v.edgeRecords.values()].find(r=>r.texture);return {wood:getComputedStyle(v.svg).getPropertyValue('--dpt-wood').trim(),running:getComputedStyle(v.svg).getPropertyValue('--dpt-state-running').trim(),motion:v.svg.dataset.stateMotion,active:!!v.svg.querySelector('.dpt-dot.dpt-running'),clip:r?.clip?.id,texture:r?.texture?.getAttribute('clip-path'),clipD:r?.silhouette?.getAttribute('d'),pathD:r?.path?.getAttribute('d')}});
+            assert.equal(appearance.wood,theme==='dark'?'#ae9a83':'#9c8770');assert.equal(appearance.running,theme==='dark'?'#8ca9cb':'#7190b1');assert.equal(appearance.motion,'on');assert.equal(appearance.active,true);assert.ok(appearance.clip);assert.equal(appearance.texture,'url(#'+appearance.clip+')');assert.equal(appearance.clipD,appearance.pathD);
+          }
+          await toggle.uncheck();await page.evaluate(()=>frames(20));await aligned(page);
+          data=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);return {shadow:!!v.treeShadowHost,dots:v.content.querySelectorAll('.dpt-dot').length,oldHostConnected:window.lastShadowHost.isConnected}});
+          assert.equal(data.shadow,false);assert.ok(data.dots>0);assert.equal(data.oldHostConnected,false,'previous isolated host was removed');
+          await page.evaluate(mode=>{if(mode==='replaceSync')CSSStyleSheet.prototype.replaceSync=window.savedReplaceSync;else if(window.savedAdoption)Object.defineProperty(ShadowRoot.prototype,'adoptedStyleSheets',window.savedAdoption);else delete ShadowRoot.prototype.adoptedStyleSheets},mode);
+        }
+        await toggle.check();await page.evaluate(()=>frames(20));
+        await page.waitForFunction(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').botanicalScrollOptimization===true);
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});await page.evaluate(()=>frames(12));
+        assert.equal(await page.evaluate(()=>[...instances].filter(v=>!v.isPreview).every(v=>v.stopped&&!v.treeShadowHost)),true,'disable removes isolated hosts');
+        await page.reload();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').botanicalScrollOptimization),true);
+        await page.evaluate(setup);await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});await page.addScriptTag({content:tested});
+        await page.evaluate(()=>{window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)})});assert.equal(await page.evaluate(()=>api.getSettings().botanicalScrollOptimization),true,'reload restores opt-in');
+        assert.deepEqual(errors,[]);return {faultModes:['replaceSync','adoption'],reload:true};
+      }finally{await context.close()}
+    });
+    await test('window snapshots retry after compute or paint failures',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'quiet',calls:30,nested:false,cap:260});
+      try{
+        for(const method of ['computeUpdate','grow']){
+          const before=await page.evaluate(async method=>{
+            const view=[...instances][0];window.failureOriginal=view[method];window.failureMethod=method;
+            const prior={...view.paintedFullBox};window.failureSnapshot=null;view[method]=function(){const snapshot=window.failureSnapshot={painted:{...this.paintedFullBox}};queueMicrotask(()=>{snapshot.dirty=this.dirty});throw Error('intentional-window-test-failure')};
+            document.querySelector('[data-chat-flow]').style.width=(prior.width-20)+'px';
+            view.replayRequested=method==='grow';view.schedule(1);await frames(5);
+            return {prior,...window.failureSnapshot};
+          },method);
+          assert.ok(before.dirty&1,'failure keeps full-layout dirty flag: '+JSON.stringify({method,before,errors}));assert.deepEqual(before.painted,before.prior,'failed update cannot become the last successful size');
+          await page.evaluate(async()=>{const view=[...instances][0];view[window.failureMethod]=window.failureOriginal;view.schedule(32);await frames(12)});
+          assert.equal(await page.evaluate(()=>[...instances][0].dirty),0);assert.ok(await page.evaluate(width=>[...instances][0].paintedFullBox.width<width,before.prior.width));
+          await aligned(page);
+        }
+        assert.ok(errors.filter(e=>e.includes('intentional-window-test-failure')).length>=2);
+        assert.deepEqual(errors.filter(e=>!e.includes('intentional-window-test-failure')),[]);
+      }finally{await context.close()}
+    });
+    await test('window invalidates cached coordinates when the crown gap changes',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'botanical',calls:24,nested:false,cap:260});
+      try{
+        await page.evaluate(async()=>{const c=document.querySelector('[data-step-process-content]');c.style.height=c.offsetHeight+'px';await frames(15)});
+        const prev=await page.evaluate(()=>[...instances][0].paintedCrownSpace);
+        await page.evaluate(async()=>{const c=document.querySelector('[data-step-process-content]'),v=[...instances][0];const gap=parseFloat(getComputedStyle(c).rowGap)||0;c.style.setProperty('--dpt-row-gap',(gap+3)+'px');reset();v.schedule(32);await frames(12)});
+        const result=await page.evaluate(()=>({space:[...instances][0].paintedCrownSpace,collects:stats.collect||0}));
+        assert.ok(result.space>prev,JSON.stringify({prev,result,errors}));assert.ok(result.collects>0);await aligned(page);assert.deepEqual(errors,[]);
+      }finally{await context.close()}
+    });
+    await test('quantized band preserves visible nodes and invalidations during scrolling',async()=>{
+      const checks=[];
+      for(const cap of [0,260])for(const style of ['quiet','classic','botanical']){
+        const {page,context,errors}=await fixture(browser,{style,calls:120,nested:false,cap});
+        try{
+          await page.evaluate(()=>frames(20));
+          // A redundant window-only notification must not commit an unchanged overlay.
+          await page.evaluate(async()=>{reset();[...instances][0].schedule(32);await frames(10)});
+          assert.equal(await page.evaluate(()=>stats.commitUpdate||0),0,'stable window should skip redundant commit');
+          for(const offset of [0,1,7,31,127,255,256,257,400,1000,3000,1000,257,0]){
+            await page.evaluate(({offset,cap})=>{const scroller=cap?document.querySelector('[data-step-process-body]'):document.scrollingElement;scroller.scrollTop=offset},{offset,cap});
+            await page.evaluate(()=>frames(10));checks.push({cap,style,offset,visible:await aligned(page)});
+          }
+          for(const z of ['1.25','0.8','1']){
+            await page.evaluate(z=>{document.body.style.zoom=z},z);await page.evaluate(()=>frames(16));await aligned(page);
+          }
+          // A layout/state invalidation in a stable tile must still be committed.
+          await page.evaluate(async()=>{reset();const row=document.querySelector('[data-chat-call-id] [data-state]');row.dataset.state='error';row.querySelector('[data-disclosure-row] span').textContent='changed content';await frames(12)});
+          assert.ok(await page.evaluate(()=>stats.commitUpdate||0),'state and text updates must commit');
+          await aligned(page);
+          await page.evaluate(()=>[...instances][0].suspend());
+          assert.equal(await page.locator('.dpt-layer').count(),0);
+          await page.evaluate(()=>[...instances][0].resume());await page.evaluate(()=>frames(15));await aligned(page);
+          await page.evaluate(()=>manager.stop());assert.equal(await page.locator('.dpt-layer').count(),0);assert.deepEqual(errors,[]);
+        }finally{await context.close()}
+      }
+      return {checkedPositions:checks.length,checks};
+    });
+    await test('quantized band supports nested calls and two scroll containers',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:120,nested:true,cap:260});
+      try{
+        await page.evaluate(()=>{const pre=document.createElement('div');pre.style.height='400px';document.body.prepend(pre);const post=document.createElement('div');post.style.height='800px';document.body.append(post)});await page.evaluate(()=>frames(12));
+        for(const outer of [0,120,300])for(const inner of [0,30,255,257,800,2200,257,0]){
+          await page.evaluate(({outer,inner})=>{document.scrollingElement.scrollTop=outer;document.querySelector('[data-step-process-body]').scrollTop=inner},{outer,inner});
+          await page.evaluate(()=>frames(12));await aligned(page);
+        }
+        assert.deepEqual(errors,[]);
+      }finally{await context.close()}
+    });
+    await test('empty rows gain nodes on text insertion or character data without stream rescans',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'classic',calls:1,nested:false});
+      try {
+        await page.evaluate(()=>{
+          const content=document.querySelector('[data-step-process-content]');
+          for(const key of ['late-child','late-data','remain-empty']){
+            const row=document.createElement('div'); row.dataset.chatFlowKind='reasoning'; row.dataset.chatAnchorKey=key;
+            row.innerHTML='<div data-variant="think"><div data-disclosure-row><span></span></div></div>';
+            if(key==='late-data')row.querySelector('span').append(document.createTextNode(''));
+            content.append(row);
+          }
+        }); await page.evaluate(()=>frames(15));
+        const keys=()=>page.evaluate(()=>[...instances][0].structure.map(e=>e.key));
+        assert.deepEqual(await keys(),['g0-0']);
+        await page.evaluate(()=>{reset();document.querySelector('[data-chat-anchor-key="late-child"] span').textContent='hello'});
+        await page.waitForFunction(()=>[...document.querySelectorAll('.dpt-dot')].some(e=>e.dataset.dptKey==='late-child'),null,{timeout:5000});
+        await page.evaluate(()=>frames(10));
+        assert.ok((await keys()).includes('late-child'));
+        await page.evaluate(()=>{reset();document.querySelector('[data-chat-anchor-key="late-child"] span').firstChild.data='hello again'});
+        await page.evaluate(()=>frames(10));
+        assert.equal(await page.evaluate(()=>stats.collect||0),0,'already indexed text changes do not cause a tree layout');
+        await page.evaluate(()=>document.querySelector('[data-chat-anchor-key="late-data"] span').firstChild.data='second');
+        await page.waitForFunction(()=>[...document.querySelectorAll('.dpt-dot')].some(e=>e.dataset.dptKey==='late-data'),null,{timeout:5000});
+        assert.ok(!(await keys()).includes('remain-empty'));
+        await page.evaluate(()=>document.querySelector('[data-chat-anchor-key="remain-empty"]').remove());await page.evaluate(()=>frames(10));
+        assert.equal(await page.evaluate(()=>[...instances][0].emptyRows.size),0,'removed empty row is released');
+        await page.evaluate(()=>{const content=document.querySelector('[data-step-process-content]');for(const key of ['offscreen-one','offscreen-two']){const row=document.createElement('div');row.dataset.chatFlowKind='reasoning';row.dataset.chatAnchorKey=key;row.innerHTML='<div data-variant="think"><div data-disclosure-row><span></span></div></div>';content.append(row)}});
+        await page.evaluate(()=>frames(10));
+        await page.evaluate(async()=>{const view=[...instances][0];view.inViewport=false;document.querySelector('[data-chat-anchor-key="offscreen-one"] span').textContent='one';await Promise.resolve()});
+        assert.equal(await page.evaluate(()=>[...instances][0].emptyRows.size),1,'only still-empty rows remain watched offscreen');
+        await page.evaluate(async()=>{document.querySelector('[data-chat-anchor-key="offscreen-two"] span').textContent='two';await Promise.resolve()});
+        assert.equal(await page.evaluate(()=>[...instances][0].emptyObserver),null,'observer disconnects without waiting for an offscreen render');
+        await page.evaluate(()=>{const view=[...instances][0];view.inViewport=true;view.schedule()});await page.evaluate(()=>frames(10));
+        assert.ok((await keys()).includes('offscreen-one'));assert.ok((await keys()).includes('offscreen-two'));
+        await page.evaluate(()=>{const row=document.createElement('div');row.dataset.chatFlowKind='reasoning';row.dataset.chatAnchorKey='after-resume';row.innerHTML='<div data-variant="think"><div data-disclosure-row><span></span></div></div>';document.querySelector('[data-step-process-content]').append(row)});
+        await page.evaluate(()=>frames(10));
+        await page.evaluate(()=>[...instances][0].suspend());
+        assert.equal(await page.evaluate(()=>[...instances][0].emptyObserver),null,'suspend disconnects empty-row observer');
+        await page.evaluate(()=>[...instances][0].resume());await page.evaluate(()=>frames(10));
+        await page.evaluate(()=>{document.querySelector('[data-chat-anchor-key="after-resume"] span').textContent='restored'});
+        await page.waitForFunction(()=>[...document.querySelectorAll('.dpt-dot')].some(e=>e.dataset.dptKey==='after-resume'),null,{timeout:5000});
+        await page.evaluate(()=>manager.stop());
+        assert.equal(await page.evaluate(()=>[...instances][0].emptyObserver),null);
+        assert.equal(await page.evaluate(()=>[...instances][0].emptyRows.size),0);
+        assert.deepEqual(errors,[]); return {};
+      }finally{await context.close()}
+    });
     await test('classic intensity controls apply the wider presets and preserve saved custom widths',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'classic',calls:2,nested:false});
       try{

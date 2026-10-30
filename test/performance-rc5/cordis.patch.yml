@@ -1,0 +1,3 @@
+- insert:
+    - id: process-tree-compatibility-fixture
+      name: ./session-seed.mjs

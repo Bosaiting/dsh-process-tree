@@ -55,6 +55,66 @@ async function aligned(page){
   assert.ok(boot.includes('dsh-process-tree'));assert.equal(boot.includes('dsh-claude-style'),process.env.DSH_EXPECT_THEME==='1');
   assert.equal(await page.locator('[data-chat-call-id]').count(),6);
   results.checks.push({name:'native transcript and anchors',pass:true,boot,...await aligned(page)});
+  // Exercise reasoning folding on an actual host-rendered row. rc.5 filters
+  // signature metadata; older hosts need not implement that display behavior.
+  const thinking=page.locator('[data-step-process-content] [data-variant="think"]').first();
+  const filteredReasoning=process.env.DSH_EXPECT_FILTERED_REASONING==='1';
+  assert.ok(await thinking.count());
+  if(filteredReasoning) { assert.ok((await thinking.textContent()).includes('Inspect synthetic record 1.')); assert.ok(!(await thinking.textContent()).includes('fixture.metadata')); }
+  await thinking.locator('[data-disclosure-row]').click();
+  assert.ok((await thinking.textContent()).includes('Inspect synthetic record 1.'));
+  if(filteredReasoning)assert.ok(!(await thinking.textContent()).includes('fixture.metadata'));
+  await thinking.locator('[data-disclosure-row]').click();await frames(page);
+  results.checks.push({name:'reasoning row fold and host-specific metadata handling',pass:true,filteredReasoning,...await aligned(page)});
+  // Synthetic empty-row timing inside the actual host DOM; the real stream
+  // behavior is exercised separately by host-stream-regression.cjs.
+  const emptyKey='fixture-empty-reasoning';
+  await page.evaluate(key=>{
+   const content=document.querySelector('[data-step-process-content]');
+   const row=document.createElement('div');row.dataset.chatFlowKind='reasoning';row.dataset.chatAnchorKey=key;
+   row.innerHTML='<div data-variant="think"><div data-disclosure-row style="height:24px"><span></span></div></div>';
+   content.insertBefore(row,content.querySelectorAll('[data-chat-flow-kind]')[2]);
+  },emptyKey);
+  const emptyRow=page.locator('[data-chat-anchor-key="fixture-empty-reasoning"]');
+  await emptyRow.scrollIntoViewIfNeeded();await frames(page);
+  assert.equal(await page.evaluate(key=>[...document.querySelectorAll('.dpt-dot')].filter(e=>e.dataset.dptKey===key).length,emptyKey),0);
+  await emptyRow.locator('span').evaluate(el=>{el.textContent='Synthetic text arrives later.'});
+  await page.waitForFunction(key=>[...document.querySelectorAll('.dpt-dot')].some(e=>e.dataset.dptKey===key),emptyKey,{timeout:5000});
+  await emptyRow.evaluate(el=>el.remove());await frames(page);
+  results.checks.push({name:'synthetic empty reasoning row gains its matching dot',pass:true});
+  // Change the rendered host state attributes without running a model or tool.
+  const stateCall=page.locator('[data-step-process-content] [data-chat-call-id]').nth(2);
+  await stateCall.scrollIntoViewIfNeeded();await frames(page);
+  const callState=stateCall.locator('[data-state]').first();
+  const originalState=await callState.getAttribute('data-state');
+  assert.ok(originalState);
+  if(filteredReasoning)assert.equal(originalState,'ok','rc.5 fixture exposes successful tool state');
+  const callKey=await stateCall.evaluate(el=>el.closest('[data-chat-flow-kind]').dataset.chatAnchorKey);
+  assert.ok(callKey);
+  // Completed host calls should grow leaves in the default classic style.
+  if(originalState==='ok'){
+   await page.waitForFunction(key=>[...document.querySelectorAll('[data-step-process-content] .dpt-leaf')].some(e=>e.dataset.dptLeafKey===key&&getComputedStyle(e).display!=='none'),callKey,{timeout:5000});
+   results.checks.push({name:'completed host tool displays classic leaf',pass:true});
+  }
+  try{
+   for(const [state,selector] of [['running','.dpt-running'],['error','.dpt-error'],['stopped','.dpt-stopped']]){
+    await callState.evaluate((el,value)=>el.setAttribute('data-state',value),state);
+    try{
+     await page.waitForFunction(({key,stateClass})=>[...document.querySelectorAll('[data-step-process-content] .dpt-dot')].some(e=>e.dataset.dptKey===key&&e.classList.contains(stateClass)),{key:callKey,stateClass:selector.slice(1)},{timeout:5000});
+     await page.waitForFunction(key=>![...document.querySelectorAll('[data-step-process-content] .dpt-leaf')].some(e=>e.dataset.dptLeafKey===key&&getComputedStyle(e).display!=='none'),callKey,{timeout:5000});
+    }
+    catch(error){
+     results.stateDiagnostic=await page.evaluate(()=>({
+      states:[...document.querySelectorAll('[data-step-process-content] [data-chat-call-id] [data-state]')].map(e=>({state:e.getAttribute('data-state'),call:e.closest('[data-chat-call-id]')?.dataset.chatCallId,row:e.closest('[data-chat-flow-kind]')?.dataset.chatAnchorKey,top:e.getBoundingClientRect().top})),
+      dots:[...document.querySelectorAll('[data-step-process-content] .dpt-dot')].map(e=>({key:e.getAttribute('data-dpt-key'),class:e.getAttribute('class'),visible:e.checkVisibility(),top:e.getBoundingClientRect().top})),
+      leaves:[...document.querySelectorAll('[data-step-process-content] .dpt-leaf')].map(e=>({key:e.dataset.dptLeafKey,display:e.style.display,computed:getComputedStyle(e).display,visible:e.checkVisibility()})),
+     }));throw error
+    }
+   }
+  }finally{await callState.evaluate((el,value)=>el.setAttribute('data-state',value),originalState)}
+  await page.waitForFunction(()=>!document.querySelector('[data-step-process-content] .dpt-dot.dpt-running, [data-step-process-content] .dpt-dot.dpt-error, [data-step-process-content] .dpt-dot.dpt-stopped'));
+  if(originalState==='ok')await page.waitForFunction(key=>[...document.querySelectorAll('[data-step-process-content] .dpt-leaf')].some(e=>e.dataset.dptLeafKey===key&&getComputedStyle(e).display!=='none'),callKey,{timeout:5000});
+  results.checks.push({name:'host DOM state transitions running error stopped and restore',pass:true});
   await page.locator('[data-chat-call-id]').last().scrollIntoViewIfNeeded();await frames(page);
   results.checks.push({name:'native scrolling viewport',pass:true,...await aligned(page)});
   await activity.click();

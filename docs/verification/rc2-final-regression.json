@@ -1,0 +1,232 @@
+{
+  "host_version": "0.2.1-rc.2",
+  "platform": "macOS arm64, isolated web profile",
+  "client_sha256": "8ee4deda8c0b3968285a07a81dbf5a5f3e631d8bed14937414b0160e609ac79c",
+  "note": "Initial host check failed because rc.2 collapsed reasoning shows a signature while its expanded row contains the body. The adjusted host test preserves the expanded-body assertion and applies the filtered collapsed-title assertion only when explicitly requested.",
+  "results": {
+    "host": {
+      "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+      "checks": [
+        {
+          "name": "native transcript and anchors",
+          "pass": true,
+          "boot": [
+            "dsh-process-tree"
+          ],
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        },
+        {
+          "name": "reasoning row fold and host-specific metadata handling",
+          "pass": true,
+          "filteredReasoning": false,
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        },
+        {
+          "name": "synthetic empty reasoning row gains its matching dot",
+          "pass": true
+        },
+        {
+          "name": "completed host tool displays classic leaf",
+          "pass": true
+        },
+        {
+          "name": "host DOM state transitions running error stopped and restore",
+          "pass": true
+        },
+        {
+          "name": "native scrolling viewport",
+          "pass": true,
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        },
+        {
+          "name": "native process fold and restore",
+          "pass": true,
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        },
+        {
+          "name": "settings style botanical",
+          "pass": true,
+          "crowns": 1
+        },
+        {
+          "name": "settings style classic",
+          "pass": true,
+          "crowns": 0
+        },
+        {
+          "name": "settings style quiet",
+          "pass": true,
+          "crowns": 0
+        },
+        {
+          "name": "reduced motion",
+          "pass": true
+        },
+        {
+          "name": "chat remains aligned after settings",
+          "pass": true,
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        },
+        {
+          "name": "dark theme",
+          "pass": true,
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        },
+        {
+          "name": "light theme",
+          "pass": true,
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        },
+        {
+          "name": "settled overlay writes",
+          "pass": true,
+          "writes": 0
+        },
+        {
+          "name": "live host disable cleans DOM and root variables",
+          "pass": true
+        },
+        {
+          "name": "live host re-enable creates one instance",
+          "pass": true,
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        }
+      ],
+      "errors": []
+    },
+    "botanical_opt_in": {
+      "scope": "Real DSH 0.2.1-rc.2 Web synthetic session, botanical optimization enabled; no model or native desktop claim. The shared harness originally labeled its scope rc.5.",
+      "boot": [
+        "dsh-process-tree"
+      ],
+      "checks": [
+        {
+          "name": "default off, botanical aligns",
+          "pass": true,
+          "shadow": false,
+          "hostNonempty": null,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        },
+        {
+          "name": "enabled matching nodes and unchanged layout",
+          "pass": true,
+          "shadow": true,
+          "hostNonempty": true,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        },
+        {
+          "name": "dark theme alignment",
+          "pass": true,
+          "shadow": true,
+          "hostNonempty": true,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        },
+        {
+          "name": "light theme alignment",
+          "pass": true,
+          "shadow": true,
+          "hostNonempty": true,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        },
+        {
+          "name": "fold and restore",
+          "pass": true,
+          "shadow": true,
+          "hostNonempty": true,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        },
+        {
+          "name": "reload persists enabled setting",
+          "pass": true,
+          "shadow": true,
+          "hostNonempty": true,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        },
+        {
+          "name": "disable while optimized cleans shadow host",
+          "pass": true
+        },
+        {
+          "name": "re-enable optimized aligns",
+          "pass": true,
+          "shadow": true,
+          "hostNonempty": true,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        },
+        {
+          "name": "disabled restores ordinary DOM",
+          "pass": true,
+          "shadow": false,
+          "hostNonempty": null,
+          "dots": 8,
+          "measured": 7,
+          "fail": [],
+          "height": 641,
+          "firstTop": 391
+        }
+      ],
+      "errors": []
+    },
+    "initial_test_assertion_failure": {
+      "scope": "Real DSH Web, exact plugin package, synthetic Session records, no model requests; no native Desktop FPS claim.",
+      "checks": [
+        {
+          "name": "native transcript and anchors",
+          "pass": true,
+          "boot": [
+            "dsh-process-tree"
+          ],
+          "measured": 9,
+          "errors": [],
+          "dots": 10
+        }
+      ],
+      "failure": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok((await thinking.textContent()).includes('Inspect synthetic record 1.'))\n",
+      "errors": []
+    }
+  }
+}
