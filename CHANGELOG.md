@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refresh the Chinese and English guides and add high-resolution previews of code views, palettes and failure navigation.
+
 ## 0.11.0
 
 - Convert recorded `web_fetch` URL arguments into code while delegating to the original native link; keep the native row if the destination is unsafe or ambiguous.

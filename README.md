@@ -1,144 +1,151 @@
-# dsh-process-tree
+<div align="center">
+  <h1>DSH Process Tree</h1>
+  <p><strong>让 DeepSeek Harness 的工具调用过程更清晰、更易导航。</strong></p>
+  <p>任务函数 · 代码配色 · 可交互过程树</p>
+  <p>
+    <a href="README.md"><img src="https://img.shields.io/badge/lang-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-B85645.svg" alt="简体中文" /></a>
+    <a href="README.en.md"><img src="https://img.shields.io/badge/lang-English-3771A4.svg" alt="English" /></a>
+  </p>
+  <p>
+    <a href="https://www.npmjs.com/package/dsh-process-tree"><img src="https://img.shields.io/npm/v/dsh-process-tree.svg?label=version&amp;color=B56C43" alt="npm 版本" /></a>
+    <a href="https://www.npmjs.com/package/dsh-process-tree"><img src="https://img.shields.io/npm/dm/dsh-process-tree.svg?label=downloads&amp;color=8A674F" alt="npm 月下载量" /></a>
+    <a href="https://github.com/Bosaiting/dsh-process-tree"><img src="https://img.shields.io/github/stars/Bosaiting/dsh-process-tree.svg?label=stars&amp;color=3B77A1" alt="GitHub 星标数" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-478164.svg" alt="MIT 许可证" /></a>
+  </p>
+</div>
 
-[English](README.en.md)
+默认代码模式以任务函数、参数、注释和嵌套作用域呈现已记录的调用；也可以切换为经典曲线、安静线条或植物手稿。
 
-为 DeepSeek Harness 的任务过程提供代码块与树形展示。默认使用代码块，另有经典曲线、安静线条和植物树冠风格。支持嵌套工具调用、状态展示、按视口绘制和减少动态效果设置。
+这是社区界面插件，适用于 DSH Web 和使用同一界面的桌面版；TUI 不显示插件界面。
 
-这是社区界面插件，适用于 DSH Web 和使用同一界面的桌面版。TUI 不显示此插件。已验证环境和限制见 [兼容性记录](docs/COMPATIBILITY.md)。
+## 快速安装
+
+```sh
+dsh plugin --profile web add dsh-process-tree@latest
+```
+
+安装后重启对应 DSH 实例。桌面版可使用插件管理界面；其他安装方式见[安装说明](#安装)。
 
 ## 效果预览
 
-以下示例来自一段真实的 DSH 桌面对话：三组只读任务分别展开多个嵌套调用，其中一项有意失败。
+### 默认代码模式
 
-### 三种风格
+任务函数显示已加载的调用、真实参数、失败状态和嵌套关系。右侧迷你地图可以定位已显示的调用；文件和网页地址保留宿主原有操作。
 
-同一段对话的多分支片段，从上到下依次展示**经典曲线**、**植物手稿**和**安静线条**。
+| 深色模式 | 浅色模式 |
+|:---:|:---:|
+| [![深色代码视图：任务函数、网页获取、失败结果与迷你地图](docs/images/code-view-dark.png)](docs/images/code-view-dark.png) | [![浅色代码视图：同一组任务记录](docs/images/code-view-light.png)](docs/images/code-view-light.png) |
 
-![同一过程分别使用经典曲线、植物手稿和安静线条](docs/images/process-tree-styles.png)
+点击“已记录失败”可以查看列表，选择条目后跳转到对应调用，并在需要时展开插件折叠的父作用域：
 
-### 代码块：任务函数（0.10.0）
+![失败调用列表](docs/images/code-failures.png)
 
-第四种风格默认显示为 Python 风格的任务函数：外层 `def task_01(workspace="..."):`，内部是工具的真实名称与参数，思考摘要显示为绿色注释。窄行号栏、缩进导引和等宽字体让过程更接近编辑器。短会话标题可作为函数名；没有合适标题时使用稳定的编号。带子调用的工具显示为 `def` 作用域，子调用排列在函数体内；没有子调用的工具仍显示为普通调用。右侧迷你地图按当前已加载且可见的调用位置标记状态，可点击跳转。隐藏的子调用不会显示在地图中，记录很多时标记会按位置合并并优先保留异常和运行状态。
+上方截图来自隔离 DSH 宿主中的**合成会话**：文件、网址、输出和失败均为演示数据，没有运行模型或工具，也没有访问示例网址。截图以 2 倍像素密度采集；点击图片可查看原尺寸。
 
-当前源码还可在 **代码形态 → 任务函数 → 展示语言** 中选择 JavaScript、C 或 C++。JavaScript 用对象展示已记录的命名参数；C 和 C++ 用注释标注参数名，对数组和对象标明 JSON，对空值明确标注 null，不推断真实参数类型。特殊工具名按记录原文显示在注释中；C++ 对名称采用独立关键字规则，虚拟文件标签为 `.cpp`。这些风格使用 `//` 思考注释和花括号，带子调用的记录用独立花括号表示层级，不添加未记录的回调或类型。所有语言视图都是执行记录的可视化示意，不是原始源代码或可执行程序；展示顺序也不能证明子调用是串行执行的。已有语言选择保持不变，未指定语言的设置继续使用 Python；行尾大括号形态不受语言选择影响。此功能属于当前源码，公开安装版本请另行核对。
+### 代码配色
 
-也可选择 **Java** 风格：简单参数值按原始记录顺序展示为类似 `read("src/Main.java", 20)` 的位置参数，点击省略号可查看带参数名的原始记录。对象、数组、未完整记录的参数或不适合 Java 方法名的工具保留原生摘要，并可展开已记录的原始参数。显示顺序不代表真实 Java 方法签名；该视图是只读示意，`.java` 标签不会生成源文件。
+浅色与深色方案可以分别选择，背景可跟随界面或使用配色方案背景。以下为实际设置预览中的四种深色方案：
 
-Go 风格使用 `.go` 虚拟标签、`func` 标题和位置参数；原始参数名可通过省略号查看，`null` 以 `nil` 示意。对象、数组、不完整记录和不适合 Go 标识符的工具名保留原生摘要；子调用使用独立分组表示记录层级，不推断函数签名或执行顺序。视图仅供阅读，不生成可执行源文件。
+| VS Code Dark+ | JetBrains Darcula |
+|:---:|:---:|
+| ![VS Code Dark+ 配色预览](docs/images/palette-vscode.png) | ![JetBrains Darcula 配色预览](docs/images/palette-jetbrains.png) |
+| **Catppuccin Mocha** | **Dracula Classic** |
+| ![Catppuccin Mocha 配色预览](docs/images/palette-catppuccin.png) | ![Dracula Classic 配色预览](docs/images/palette-dracula.png) |
 
-![任务函数与真实参数预览](docs/images/function-code.png)
+配色针对本插件的语法角色做了适配，部分颜色为可读性微调，并非对原 IDE 的完整复刻。来源见 [第三方声明](THIRD_PARTY_NOTICES.md)。
 
-函数视图只读复用当前界面已加载的 Chat 投影，按原生行标识匹配记录。短调用保持单行；较长调用或空间不足时，每个参数独占一行并对齐括号。长字符串及超出展示上限的参数可点击省略号查看。展开的原生工具代码块与函数摘要使用相同字号，保留原生高亮、复制和换行。函数上方显示当前轮次已加载的调用数、已记录失败数，以及存在时的中断和未结束数量；嵌套调用也计入。已完成调用仅在起止时间均可用时显示耗时。顶部虚拟标签显示任务名和只读标识；作用域旁的独立箭头折叠子调用，不改变原生工具结果的折叠状态。悬停或聚焦时高亮当前行与所在缩进导线，悬停括号会突出括号对。失败行的行号旁显示标记；错误信息或类型有明确记录时优先显示，否则将失败结果的首行标为“结果摘要”，不会冒充错误原因。点击摘要可打开原生结果。点击“已记录失败”可查看当前已加载的失败调用并跳转；插件折叠的父作用域会自动展开，尚未由宿主显示的调用标为暂不可定位。折叠作用域会显示其中已记录的失败子调用数；失败、已中断和结果未知分别显示及统计，运行中的调用计入未结束；“结果未知”仅用于宿主明确标记未知或结果记录缺少有效成功／失败字段，不能据此推断操作是否执行。当前已验证的宿主提供失败与中断状态，未提供独立未知状态。父子调用各按自身结果计数。文件参数沿用原生文件打开操作，工具结果继续使用原生折叠。缺少结构化记录、不完整参数、特殊交互控件均保守处理，不根据摘要猜参数。语法颜色与运行、错误状态分开。
+### 树形风格
 
-长记录会优先转换当前视口附近的调用，并分批处理其余内容；尚未转换的行继续显示原生摘要。转换期间迷你地图逐步补全，统计仍来自已加载的结构化记录。
+同一组工具调用可以使用三种树形风格。图片来自隔离宿主的合成会话，点击可查看原尺寸：
 
-当宿主将调用标为失败、但结构化工具结果记录为成功时，统计会另列“宿主标记失败”，不把它混入“已记录失败”；这不推断命令退出码。Python、JavaScript、C 和 C++ 视图遇到无法无损表示的数字或重复参数名时显示省略号，完整参数面板保留原始记录；无法安全保留文件按钮时继续显示原生摘要。参数面板过长时仍须查看原始调用详情。
+| 经典曲线 | 植物手稿 | 安静线条 |
+|:---:|:---:|:---:|
+| [![经典曲线](docs/images/tree-classic.png)](docs/images/tree-classic.png) | [![植物手稿](docs/images/tree-botanical.png)](docs/images/tree-botanical.png) | [![安静线条](docs/images/tree-quiet.png)](docs/images/tree-quiet.png) |
 
-“代码形态”可切回 **行尾大括号**：`() {`、组末 `}`、淡范围线和括号配对高亮。原有三个风格与已保存的视觉设置保留；新增 `codeLayout` 默认为 `function`。
+## 功能
 
-![可选的行尾大括号形态](docs/images/code.png)
+- **任务函数与嵌套作用域**：按已记录的调用关系显示工具名称、参数、注释和子调用；独立箭头折叠子调用，不改变原生工具结果的折叠状态。
+- **多语言展示**：支持 Python、JavaScript、C、C++、Java 和 Go；也可选择独立的“行尾大括号”形态。
+- **状态与定位**：区分失败、已中断、结果未知和未结束；失败列表与迷你地图用于定位当前已加载、可见的调用。耗时仅在起止时间均有记录时显示。
+- **保留原生交互**：文件按钮和 `web_fetch` 网页链接在能够安全匹配时沿用宿主原有操作；原生结果仍可展开，长参数可查看完整记录。无法安全匹配或缺少结构化记录时保留原生摘要，不猜测参数。
+- **长记录**：优先处理视口附近的调用，其余记录分批转换；未转换的行继续显示原生摘要。远离视口的历史过程释放绘制资源，滚回时恢复。
 
-配色参考 VS Code Dark+／Light+：[官方主题](https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes)、[括号配色定义](https://github.com/microsoft/vscode/blob/main/src/vs/editor/common/core/editorColorRegistry.ts)。函数预览使用合成示例；大括号图片来自隔离 rc.5 宿主与测试注入的嵌套 DOM。均未为截图执行模型或工具。
+这些语言视图是**只读的执行记录示意**，不是原始源代码或可执行程序；子调用的展示顺序不证明其串行执行，也不推断真实函数签名。Java 和 Go 对对象、数组、不完整参数或不适合的工具名保留原生摘要；其位置参数可通过展开查看原始参数名。Python、JavaScript、C 和 C++ 在无法无损表示数字或重复参数名时使用省略号，并保留原始参数详情。
 
-### 浅色与深色
-
-同一段多分支过程使用植物手稿风格，在两种界面外观下的效果：
-
-![同一过程树在浅色和深色模式下的并排对比](docs/images/process-tree-themes.png)
-
-### 安装前后
-
-上方为未安装插件的原始过程，下方为使用经典曲线风格展示的相同记录。
-
-![同一任务安装插件前后的上下对比](docs/images/process-tree-before-after.png)
-
-### 同时看见不同状态
-
-空心圆点表示已完成的工具步骤，红色节点是演示中的预期失败，蓝色节点正在运行。植物手稿的运行分支保留木色。
-
-![同一任务中已完成、失败和运行中的节点](docs/images/process-tree-states.png)
-
-状态图截取自专门创建的桌面演示会话；风格与对比图使用该会话的脱敏记录，在隔离的 DSH Web 实例中回放，并拼接滚动截图以展示多层分支。图片按采集时的外观设置展示；状态颜色可以自定义。
+“结果未知”仅用于宿主明确标记未知，或结果记录缺少有效成功／失败字段的情况；不能据此推断操作是否执行。宿主标记失败而结构化结果记录为成功时，会单独计数，不推断命令退出码。
 
 ## 安装
 
-0.11.0 包含任务函数与大括号两种代码形态，以及多组可独立选择的 IDE 配色。
-
-当前源码不再通过 DSH 版本号限制安装或加载。已验证版本和未验证的平台仍分别记录在[兼容性记录](docs/COMPATIBILITY.md)中；移除门槛不代表已经验证未来版本。
-
-旧版 0.8.2 声明支持 **DSH 0.2.1-rc.2 和 0.2.1-rc.5**。rc.5 已通过隔离 Web 宿主测试及 macOS 桌面版抽查；Windows、Linux 和其他桌面配置尚未验证。早期 npm 0.8.0 仅声明支持 rc.2。详见[兼容性记录](docs/COMPATIBILITY.md)。
-
-### 通过 Discover 安装
+### 通过插件市场
 
 1. 打开 **插件 → 实验性插件**，启用 **自定义插件市场 / Custom plugin markets**（部分版本显示为 Custom plugin indexes）。
-2. 进入 **发现 / Discover**，选择 **添加索引源 / Add index source**；已有索引时，从市场菜单进入 **管理索引源…**。
-3. 粘贴下面的完整地址，添加后选择 **Bosaiting 过程树**。
+2. 进入 **发现 / Discover → 添加索引源 / Add index source**。已有索引时，可在市场菜单选择 **管理索引源…**。
+3. 添加以下地址，选择 **Bosaiting 过程树**，搜索 `dsh-process-tree`，确认来源为 `https://registry.npmjs.org` 后安装。
 
 ```text
 https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
 ```
 
-搜索 `dsh-process-tree` 或“过程树”，核对包名 **`dsh-process-tree`**、版本的 DSH 兼容范围和来源 **`https://registry.npmjs.org`**，确认安装并按提示重启。已安装时可直接打开现有插件。索引源按 profile 保存，其他用户需要各自添加。
-
-这是项目维护者提供的独立社区索引。详细操作、加载排查和版本维护见 [Discover 安装说明](docs/DISCOVER.md)。
+按提示重启。索引源按 profile 保存，其他用户需要各自添加；排查方法见 [Discover 安装说明](docs/DISCOVER.md)。
 
 ### 命令行或离线安装
 
-从 [npm](https://www.npmjs.com/package/dsh-process-tree) 安装最新版本前，请确认其声明的 DSH 兼容范围：
-
 ```sh
-npm view dsh-process-tree version engines
+# 安装最新版到 Web profile
 dsh plugin --profile web add dsh-process-tree@latest
-```
 
-也可以从 npm 安装固定版本：
-
-```sh
+# 或安装固定版本
 dsh plugin --profile web add dsh-process-tree@0.11.0
 ```
 
-也可以先下载 npm 包，再从本地安装：
+离线安装可先下载 npm 包，再使用实际文件名：
 
 ```sh
-npm pack dsh-process-tree@latest
-# 将文件名替换为 npm pack 实际输出的名称
-dsh plugin --profile web add ./dsh-process-tree-版本.tgz
+npm pack dsh-process-tree@0.11.0
+dsh plugin --profile web add ./dsh-process-tree-0.11.0.tgz
 ```
 
-安装后重新启动对应的 DSH 实例。桌面版通过其插件管理入口安装到桌面配置；已验证的 macOS 版本也可由桌面程序自带的 CLI 管理 `desktop` profile，单独安装的 CLI 行为可能不同。不要直接修改桌面安装目录。该插件不需要安装时构建或构建脚本许可。
-
-使用原版 DSH 即可；Claude Style 不属于运行依赖。建议停用重复提供缩进或过程连接线的插件，尤其是 `dsh-tool-indent` 和其他过程树/时间线装饰，以免同时修改相同的间距和 CSS 变量。
+安装后重启对应 DSH 实例。桌面版使用插件管理界面；已验证的 macOS 桌面版也可使用其自带 CLI 管理 `desktop` profile。不要直接修改桌面应用安装目录。
 
 ## 设置
 
-打开 **设置 → 插件 → 过程树**。主设置提供风格、强度和动画。三种树形风格还可分别设置浅色与深色界面的运行、错误颜色，选择或输入六位 HEX 值后立即生效并自动保存；也可单独恢复状态颜色，不影响其他偏好。代码风格隐藏状态颜色控件，已保存的颜色仍会保留。
+打开 **设置 → 插件 → 过程树**。首次安装和恢复默认时使用以下组合：
 
-选择代码块风格后，默认以任务函数形态、Python 语言展示；浅色默认 VS Code Light+，深色默认 JetBrains Darcula，代码过程区域默认使用方案背景。在**代码颜色**中可分别选择 VS Code、JetBrains、Catppuccin 或 Dracula 风格，也可改为跟随 DSH 背景。实时预览可切换浅色和深色。配色针对本插件的语法角色调整，部分颜色为可读性微调，不能视为原 IDE 的完整复刻。已有明确保存的选项保持不变。
-
-展开浅色或深色设置，可调整函数与工具、关键字、参数名、字符串与文件、数字、思考与注释、普通文字以及三级括号颜色。各方案分别记住自定义值；恢复按钮只恢复当前模式下选中方案的颜色，不重置其他方案或状态颜色。升级时原有颜色作为 VS Code 方案的自定义值保留；完整恢复默认会重置所有方案偏好。切换或调整配色不需要联网。
-
-退回旧版后如果保存设置，当前生效的颜色仍会保留，但旧版可能丢弃方案选择和其他方案的自定义值；需要退回时建议先备份设置。
-
-经典曲线的轻、标准、鲜明三档线宽分别为 3.10、3.80、4.64 px；植物手稿分别为 3.20、4.60、6.28 px。已保存的线宽保持不变；重新选择强度后应用新的预设值。
-
-| 风格 | 外观 |
+| 项目 | 默认值 |
 | --- | --- |
-| 经典曲线 `classic` | 流动曲线、粗细衰减，完成的工具步骤长出叶片 |
-| 植物手稿 `botanical` | 原创小树冠、带明暗的木质根系和状态光晕 |
-| 安静线条 `quiet`，低调模式 | 1.5 px 等宽线，直主干，圆角分支，各层级一致的圆点 |
-| 代码块 `code`，默认 | 任务函数、真实参数、注释和行号；可选行尾大括号，保留原生操作 |
+| 风格 | 代码块 |
+| 代码形态 | 任务函数 |
+| 展示语言 | Python |
+| 浅色配色 | VS Code Light+ |
+| 深色配色 | JetBrains Darcula |
+| 代码背景 | 使用配色方案背景 |
 
-树形风格的细项（分支过渡、线宽、纹理、叶片、圆点、缩进、摘要浓度、行距、生长速度等）收在默认折叠的 **高级设置** 中；在高级设置里改动线宽或圆点后，强度显示为自定义，重新选择一档即可恢复。植物风格下另有树冠设置。代码块风格隐藏强度与高级设置。设置预览与聊天区使用同一渲染器，可切换预览状态和浅色、深色主题。安静线条以节点显示状态色；植物手稿的运行分支保持木色，节点及微光使用运行色。
+已保存的有效风格和颜色选择不会因默认值变化而被覆盖。代码模式隐藏树形风格使用的**强度**、**状态颜色**和**高级设置**；切回树形风格后可继续调整相关选项。
 
-植物手稿的高级设置中可选择开启 **植物滚动优化**，该选项默认关闭。开启后可减少长过程滚动时的浏览器样式重算；其他插件或自定义 CSS 若直接查询或修改树根内部元素，可能无法继续生效。关闭选项即可恢复原有访问方式，设置预览不受影响。
+![浅色与深色配色方案和代码背景设置](docs/images/code-color-settings.png)
 
-减少动态效果会停止生长和状态微动效。远离视口的历史过程释放绘制资源并保留布局占位；滚回时重新创建。首次安装及缺少有效风格字段的早期设置使用代码块，保留行外观和树冠偏好；已保存的有效风格选择不变。
+浅色方案包括 VS Code Light+、JetBrains Light、Catppuccin Latte 和 Alucard Light；深色方案包括 VS Code Dark+、JetBrains Darcula、Catppuccin Mocha 和 Dracula Classic。每种方案各自保存自定义颜色，方案内的恢复按钮只重置当前方案；**恢复默认**会重置整个插件设置。切换配色无需联网。
 
-## 数据与权限
+代码颜色可分别调整函数与工具、关键字、参数名、字符串与文件、数字、注释、普通文字和三级括号颜色。若退回旧版并由旧版保存设置，当前生效的颜色会保留，但方案选择和其他方案的自定义值可能丢失，建议先备份设置。
 
-插件读取已显示的聊天结构和元素尺寸；任务函数还只读复用当前会话已加载的 Chat 投影，不额外加载历史。插件追加自有的 SVG、代码表达式或 CSS 装饰；不注册模型工具、不执行命令、不发送网络请求。偏好仅保存在当前界面的 `localStorage`，键为 `dsh.process-tree.v1`。它不修改会话内容，也不读取 API 密钥。卸载保留偏好；可在设置中恢复默认值。
+三种树形风格可分别设置浅色和深色的运行、错误颜色。线条、圆点、缩进、摘要浓度与行距等细项位于折叠的**高级设置**中。植物手稿提供默认关闭的植物滚动优化；开启后，其他直接访问根系内部元素的插件或自定义 CSS 可能受到影响。
 
-如果本地存储无法读取或写入，设置页会提示当前调整可能无法保留；存储恢复后再次调整会尝试保存。
+## 兼容性与数据
+
+0.11.0 不按 DSH 版本号阻止安装或加载；这不等于未来版本都已测试。rc.5 已通过隔离 Web 宿主检查；原生桌面的持续运行、Windows 和 Linux 等仍有未验证范围。旧版 0.8.2 的 RC2／RC5 限制保持其原始发布记录。具体证据见 [兼容性记录](docs/COMPATIBILITY.md)。
+
+插件读取已显示的聊天结构、元素尺寸和当前会话已加载的 Chat 投影，不额外加载历史；不注册模型工具、不执行命令、不发送网络请求。设置保存在当前界面的 `localStorage`（`dsh.process-tree.v1`）；卸载不会清除偏好。若存储不可用，设置页会提示，恢复后再次调整可重试。
+
+Claude Style 不是运行依赖。建议停用重复添加缩进或过程连接线的插件，避免相同区域被重复修改。
+
+## 文档
+
+| 文档 | 内容 |
+| --- | --- |
+| [插件市场](docs/DISCOVER.md) | 添加索引源、安装与排查 |
+| [兼容性记录](docs/COMPATIBILITY.md) | 已验证环境、测试证据与未验证范围 |
+| [更新日志](CHANGELOG.md) | 版本变更 |
+| [第三方声明](THIRD_PARTY_NOTICES.md) | 配色来源、版权与许可 |
 
 ## 卸载
 
@@ -146,11 +153,11 @@ dsh plugin --profile web add ./dsh-process-tree-版本.tgz
 dsh plugin --profile web remove dsh-process-tree
 ```
 
-重新启动相应实例；桌面版使用插件管理界面。不要删除整个 DSH profile。
+重启对应实例；桌面版可使用插件管理界面。无需删除整个 DSH profile。
 
 ## 开发与验证
 
-需要 Node.js 22.19 或更新版本。运行文件已入库，无须构建。开发依赖只有测试工具及测试使用的 React，不会打入插件。
+需要 Node.js 22.19 或更新版本。运行文件已入库，无须构建；React 和 Playwright 开发依赖仅供测试。
 
 ```sh
 npm ci
@@ -158,17 +165,10 @@ npm test
 npx playwright install chromium
 npm run test:browser
 npm run check:package
-npm pack
 ```
 
-已有 Chromium 可通过 `DSH_CHROMIUM_EXECUTABLE` 指定；浏览器测试默认使用锁定的 React 依赖，完整执行设置预览检查。与其他插件共存的额外检查可通过 `DSH_COMPOSER_SOURCE` 和 `DSH_CLAUDE_ROW_SKIP_CSS` 指定独立取得的源码，不是基础测试的前提。
-
-旧的三风格静态示意图可在安装浏览器后运行 `node scripts/capture-previews.mjs` 重新生成，同样支持 `DSH_CHROMIUM_EXECUTABLE`。上方的实录与回放截图需要通过 DSH 界面重新采集。
-
-`canopy.svg` 保留原始树冠图稿；运行时使用 `client.js` 中经过参数化的内嵌图稿，修改原图不会自动更新运行文件。原图不重复放入安装包。
-
-真实宿主测试的运行方式与证据范围见 [兼容性记录](docs/COMPATIBILITY.md)。不要把 DOM 夹具中的测试结果写成桌面帧率结论。提交问题时请提供 DSH 版本、系统、风格、其他界面插件及复现步骤，避免附带私人聊天内容。
+已有 Chromium 可通过 `DSH_CHROMIUM_EXECUTABLE` 指定。宿主检查、测试范围和限制见 [兼容性记录](docs/COMPATIBILITY.md)。提交问题时请提供 DSH 版本、系统、所选风格及其他界面插件，避免附带私人聊天内容。
 
 ## 许可与致谢
 
-MIT，见 [LICENSE](LICENSE)。树冠 SVG 为项目所有者原创。缩进、摘要浓度和行距部分改编自 Asheep233 的 [dsh-tool-indent](https://github.com/Asheep233/dsh-tool-indent)，原版权及许可完整保留在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+MIT，见 [LICENSE](LICENSE)。树冠 SVG 为项目所有者原创。缩进、摘要浓度和行距部分改编自 Asheep233 的 [dsh-tool-indent](https://github.com/Asheep233/dsh-tool-indent)，原版权及许可保留在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

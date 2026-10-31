@@ -34,6 +34,9 @@ assert.equal(typeof registrations[0].factory, 'function')
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const [archive] = JSON.parse(execFileSync(npm, ['pack', '--dry-run', '--ignore-scripts', '--json'], { cwd: root, encoding: 'utf8' }))
 const expected = ["LICENSE", "client.js", "index.js", "docs/verification/0.10.0.json", "docs/verification/0.7.2.json", "docs/verification/0.7.3.json", "docs/verification/0.7.4.json", "docs/verification/0.8.2.json", "docs/verification/0.9.0.json", "docs/verification/0.9.1.json", "package.json", "docs/verification/rc2-final-regression.json", "docs/COMPATIBILITY.md", "docs/DISCOVER.md", "README.en.md", "README.md", "THIRD_PARTY_NOTICES.md", "docs/images/botanical.png", "docs/images/classic.png", "docs/images/code.png", "docs/images/function-code.png", "docs/images/process-tree-before-after.png", "docs/images/process-tree-states.png", "docs/images/process-tree-styles.png", "docs/images/process-tree-themes.png", "docs/images/quiet.png", "cordis.patch.yml"]
+expected.push(...["docs/images/code-view-dark.png","docs/images/code-view-light.png","docs/images/code-color-settings.png","docs/images/code-failures.png","docs/images/palette-vscode.png","docs/images/palette-jetbrains.png","docs/images/palette-catppuccin.png","docs/images/palette-dracula.png"])
+expected.push(...["docs/images/tree-classic.png","docs/images/tree-botanical.png","docs/images/tree-quiet.png"])
+expected.push('CHANGELOG.md')
 assert.deepEqual(archive.files.map(file => file.path).sort(), expected.sort(), 'unexpected publication files')
 for (const readme of ['README.md', 'README.en.md']) {
   for (const match of read(readme).matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {

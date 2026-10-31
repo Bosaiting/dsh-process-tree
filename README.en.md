@@ -1,131 +1,151 @@
-# dsh-process-tree
+<div align="center">
+  <h1>DSH Process Tree</h1>
+  <p><strong>Make DeepSeek Harness tool activity easier to read and navigate.</strong></p>
+  <p>Task functions · Code palettes · Interactive process trees</p>
+  <p>
+    <a href="README.md"><img src="https://img.shields.io/badge/lang-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-B85645.svg" alt="简体中文" /></a>
+    <a href="README.en.md"><img src="https://img.shields.io/badge/lang-English-3771A4.svg" alt="English" /></a>
+  </p>
+  <p>
+    <a href="https://www.npmjs.com/package/dsh-process-tree"><img src="https://img.shields.io/npm/v/dsh-process-tree.svg?label=version&amp;color=B56C43" alt="npm version" /></a>
+    <a href="https://www.npmjs.com/package/dsh-process-tree"><img src="https://img.shields.io/npm/dm/dsh-process-tree.svg?label=downloads&amp;color=8A674F" alt="npm monthly downloads" /></a>
+    <a href="https://github.com/Bosaiting/dsh-process-tree"><img src="https://img.shields.io/github/stars/Bosaiting/dsh-process-tree.svg?label=stars&amp;color=3B77A1" alt="GitHub stars" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-478164.svg" alt="MIT license" /></a>
+  </p>
+</div>
 
-[中文](README.md)
+The default code view presents recorded calls, arguments, comments and nested scopes as a task function. Classic curves, quiet lines and botanical artwork are also available.
 
-A process view for DeepSeek Harness: code blocks by default, with optional classic branches, quiet lines and botanical artwork. Supports nested calls, status indicators, viewport rendering and reduced motion.
+This community UI plugin supports DSH Web and the Desktop web interface. It does not render in TUI.
 
-This community UI plugin targets DSH Web and the Desktop web interface. It does not render in TUI. See [compatibility and verification](docs/COMPATIBILITY.md) for tested environments and limits.
+## Quick install
 
-## See it in action
+```sh
+dsh plugin --profile web add dsh-process-tree@latest
+```
 
-These examples come from a real DSH Desktop conversation with three read-only steps and several nested calls; one check fails deliberately.
+Restart the corresponding DSH instance after installation. Desktop users can use the plugin manager; see [installation](#install) for other options.
 
-### Three styles
+## Preview
 
-The same branching excerpt shown from top to bottom in **classic curve**, **botanical**, and **quiet lines**.
+### Default code view
 
-![The same process in classic, botanical, and quiet styles](docs/images/process-tree-styles.png)
+The task-function view shows loaded calls, recorded arguments, failure status and nesting. The minimap navigates visible calls; file and web links retain their native host actions.
 
-### Light and dark
+| Dark mode | Light mode |
+|:---:|:---:|
+| [![Dark code view with task function, web fetch, failure result and minimap](docs/images/code-view-dark.png)](docs/images/code-view-dark.png) | [![The same task records in the light code view](docs/images/code-view-light.png)](docs/images/code-view-light.png) |
 
-The same multi-branch process in the botanical style, shown in both interface themes:
+Select the recorded-failures count to open a list and navigate to a call. Plugin-folded ancestor scopes are opened when needed:
 
-![The same process tree side by side in light and dark mode](docs/images/process-tree-themes.png)
+![Recorded failure list](docs/images/code-failures.png)
 
-### Before and after
+These screenshots use a **synthetic session** in an isolated DSH host. Files, URLs, outputs and the failure are demonstration data; no model or tool was run and the example URL was not accessed. Screenshots were captured at 2× pixel density; open an image to view it at full resolution.
 
-The same records without the plugin above, and with Process Tree's classic curves below.
+### Code palettes
 
-![The same task before and after installing Process Tree](docs/images/process-tree-before-after.png)
+Choose light and dark palettes independently, and use either the host background or the preset's code-area background. The four dark variants below are captured from the actual settings preview:
 
-### States at a glance
+| VS Code Dark+ | JetBrains Darcula |
+|:---:|:---:|
+| ![VS Code Dark+ preview](docs/images/palette-vscode.png) | ![JetBrains Darcula preview](docs/images/palette-jetbrains.png) |
+| **Catppuccin Mocha** | **Dracula Classic** |
+| ![Catppuccin Mocha preview](docs/images/palette-catppuccin.png) | ![Dracula Classic preview](docs/images/palette-dracula.png) |
 
-Hollow dots mark completed tool steps, red marks the intentional failure, and blue shows a running call. In the botanical style, running branches retain their wood color.
+Colours are adapted to this plugin's syntax roles, with some contrast adjustments; they are not complete reproductions of the original IDE themes. See [third-party notices](THIRD_PARTY_NOTICES.md) for sources.
 
-![Completed, failed and running nodes in the same task](docs/images/process-tree-states.png)
+### Tree styles
 
-The state image was captured from a dedicated Desktop demo. The style and comparison images replay sanitized records from that conversation in an isolated DSH Web instance and stitch scroll captures to show the nested branches. Images use the appearance settings selected at capture time; state colors are customizable.
+The same tool calls in three tree styles, captured from a synthetic session in an isolated host. Select an image to view it at full size:
+
+| Classic curves | Botanical | Quiet lines |
+|:---:|:---:|:---:|
+| [![Classic curves](docs/images/tree-classic.png)](docs/images/tree-classic.png) | [![Botanical](docs/images/tree-botanical.png)](docs/images/tree-botanical.png) | [![Quiet lines](docs/images/tree-quiet.png)](docs/images/tree-quiet.png) |
+
+## Features
+
+- **Task functions and nested scopes:** show recorded tool names, arguments, comments and call relationships. Independent arrows fold child calls without changing native result disclosure.
+- **Display languages:** Python, JavaScript, C, C++, Java and Go, plus a separate trailing-braces layout.
+- **Status and navigation:** distinguish failures, interruptions, unknown outcomes and unfinished calls. The failure list and minimap navigate loaded, visible calls. Durations appear only when both timestamps are recorded.
+- **Native interactions:** safely matched file buttons and `web_fetch` URLs delegate to the original host actions. Native results remain expandable and long arguments can be disclosed. Unsafe mappings and missing structured records retain the native summary instead of guessing.
+- **Long histories:** calls near the viewport are converted first, with the rest processed in batches. Unconverted rows keep their native summary; distant histories release drawing resources and restore them on return.
+
+Language views are **read-only illustrations of execution records**, not original or executable source code. Display order does not establish sequential execution or an actual function signature. Java and Go retain native summaries for objects, arrays, incomplete arguments or unsuitable tool names; raw names remain available through disclosure. Python, JavaScript, C and C++ use ellipses when numbers or duplicate names cannot be represented without changing the record, and retain the raw arguments.
+
+An unknown outcome requires an explicit host indication or a result without a valid success/error flag; it does not establish whether an operation ran. Host-marked failures with a successful structured result are counted separately without inferring an exit code.
 
 ## Install
 
-Version 0.11.0 does not restrict installation or loading by DSH version. Tested hosts and unverified platforms are recorded separately in [compatibility](docs/COMPATIBILITY.md); removing the gate does not mean future releases have been tested. Older version 0.8.2 still declares **DSH 0.2.1-rc.2 and 0.2.1-rc.5**. rc.5 passed isolated Web-host checks and a macOS Desktop spot check; Windows, Linux and other Desktop configurations remain unverified. The earlier npm 0.8.0 release declares rc.2 only.
-
-### Install through Discover
+### Plugin market
 
 1. Open **Plugins → Experimental plugins** and enable **Custom plugin markets** (called **Custom plugin indexes** in some builds).
-2. Open **Discover → Add index source**, or use **Manage index sources…** in the market menu when a source already exists.
-3. Add the full URL below and select **Process Tree by Bosaiting**.
+2. Open **Discover → Add index source**. If sources already exist, use **Manage index sources…** in the market menu.
+3. Add the address below, select **Process Tree by Bosaiting**, search for `dsh-process-tree`, and confirm the source is `https://registry.npmjs.org` before installing.
 
 ```text
 https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.json
 ```
 
-Search for `dsh-process-tree` or **Process Tree**. Check the **`dsh-process-tree`** version, its DSH compatibility and the **`https://registry.npmjs.org`** source, confirm, and restart when prompted. An installed card opens the existing plugin. Sources belong to the current profile and must be added by each user.
-
-This is an independent community index maintained by the project owner. See the [Discover guide](docs/DISCOVER.md) for troubleshooting and maintenance.
+Restart when prompted. Index sources belong to a profile and must be added separately by each user. See the [Discover guide](docs/DISCOVER.md) for troubleshooting.
 
 ### Command-line or offline installation
 
-Check the declared DSH compatibility before installing the latest version from [npm](https://www.npmjs.com/package/dsh-process-tree):
-
 ```sh
-npm view dsh-process-tree version engines
+# Install the latest version into the Web profile
 dsh plugin --profile web add dsh-process-tree@latest
-```
 
-Install a pinned version from npm:
-
-```sh
+# Or install a pinned version
 dsh plugin --profile web add dsh-process-tree@0.11.0
 ```
 
-Alternatively, download the npm package and install it locally:
+For offline installation, download the npm package first and use the resulting filename:
 
 ```sh
-npm pack dsh-process-tree@latest
-# Replace the filename with the one printed by npm pack
-dsh plugin --profile web add ./dsh-process-tree-VERSION.tgz
+npm pack dsh-process-tree@0.11.0
+dsh plugin --profile web add ./dsh-process-tree-0.11.0.tgz
 ```
 
-Restart the corresponding DSH instance. Use Desktop's plugin manager for its managed configuration. The Desktop-bundled CLI also handled its `desktop` profile in the verified macOS build; a separately installed CLI may differ. No install-time build is required. Claude Style is optional. Disable overlapping indentation or process-connector plugins, including `dsh-tool-indent`, to avoid competing spacing and CSS variables.
-
-## Code blocks: task functions (0.10.0)
-
-The fourth style now defaults to Python-like task functions: an outer `def task_01(workspace="..."):` with genuine tool names and arguments inside, green reasoning comments, a narrow line-number gutter and indentation guides. A suitable short recorded title becomes the function name; otherwise a stable numbered name is used. This is a visualization of recorded execution, not executable Python.
-
-The current source also offers JavaScript, C and C++ under **Code layout → Task function → Display language**. JavaScript shows recorded named arguments as an object. C and C++ label argument names in comments, mark arrays and objects as JSON, and label null without inferring a pointer or a parameter type; unusual tool names are shown in a comment. C++ uses its own keyword rules and a `.cpp` virtual tab. These styles use `//` reasoning comments and braces for nesting. Scope braces group recorded children without inventing callbacks or types. All language views are read-only visualizations, not original source or executable programs; display order does not establish that children ran sequentially. Existing language preferences remain unchanged, and missing language settings retain Python. The separate trailing-braces layout is unchanged. Check the installed release separately for availability.
-
-The Java view shows simple values in their recorded order, such as `read("src/Main.java", 20)`. The disclosure opens the recorded arguments including names. Objects, arrays, incomplete records and tool names unsuitable as Java method names retain the native summary and provide access to recorded raw arguments. Display order does not establish an actual Java signature. The `.java` tab is virtual and no source file is created.
-
-The Go view uses a `.go` virtual tab, a `func` heading, and recorded positional values; the disclosure retains raw named arguments and `null` is shown as `nil`. Composite or incomplete arguments and names unsuitable as Go identifiers retain native summaries. Separate blocks group recorded children without asserting a function signature or execution order. The view is read-only and does not create executable source.
-
-![Task function and argument preview](docs/images/function-code.png)
-
-The view borrows the UI's already-loaded current Chat projection and matches native row identities. Short calls remain inline; longer calls wrap, and ellipsis buttons disclose long or additional values. File arguments delegate to the retained native file action, and native result disclosure remains available. Missing records, incomplete arguments and special interactive summaries fall back conservatively instead of guessing parameters. Syntax colours remain independent of execution status. Data subscriptions are released when the view is inactive.
-
-Within the task-function view, expanded native tool code uses the same font size as the call summary. Native syntax highlighting, copy and wrapping remain available.
-
-Long histories convert progressively, prioritizing calls near the viewport; unconverted rows retain their native summaries. The minimap fills in as conversion progresses, while counts use the loaded structured records.
-
-When the host marks a call as failed but its structured tool result records success, the count is shown separately as a host-marked failure; no exit code is inferred. Python, JavaScript, C and C++ views use an ellipsis when numbers or duplicate keys cannot be represented without changing the record. The argument disclosure preserves the raw recorded text, and an ambiguous native file action retains its native summary. Very long disclosures still refer to the original call details.
-
-Choose **Trailing braces** under Code layout to retain `() {`, normal-flow closing rows, subtle scope guides and pair matching. Existing styles and visual preferences remain intact; the new `codeLayout` field defaults to `function`.
-
-![Optional trailing braces](docs/images/code.png)
-
-Colours follow VS Code Dark+/Light+: [official themes](https://github.com/microsoft/vscode/tree/main/extensions/theme-defaults/themes) and [bracket colour registry](https://github.com/microsoft/vscode/blob/main/src/vs/editor/common/core/editorColorRegistry.ts). The function preview uses synthetic examples; the brace screenshot uses an isolated rc.5 host with explicitly injected nesting. Neither executes models or tools for the capture.
+Restart the corresponding DSH instance. Use the plugin manager for Desktop; the verified macOS Desktop also provides a bundled CLI for the `desktop` profile. Do not edit the Desktop application installation directory directly.
 
 ## Settings
 
-Open **Settings → Plugins → 过程树**. Code blocks are the default. Classic uses flowing tapered curves and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds a small original canopy, shaded wood roots and halos. The main settings cover style, intensity and animation. The three tree styles also allow separate six-digit HEX running and error colors for light and dark themes; changes apply immediately and are saved automatically. State colors can be reset without changing other preferences. Code style hides these controls while retaining saved colors.
+Open **Settings → Plugins → 过程树**. Fresh installations and the full reset use these defaults:
 
-Code blocks default to the task-function layout and Python, with VS Code Light+ for light mode, JetBrains Darcula for dark mode, and the preset background in the process view. Choose separate light and dark **Code colours** presets inspired by VS Code, JetBrains, Catppuccin and Dracula, or switch the background to follow DSH. The live preview can show either mode. Colours are adapted to this plugin's token roles, with some contrast adjustments, rather than a full IDE reproduction. Existing saved choices are preserved.
+| Setting | Default |
+| --- | --- |
+| Style | Code blocks |
+| Code layout | Task function |
+| Display language | Python |
+| Light palette | VS Code Light+ |
+| Dark palette | JetBrains Darcula |
+| Code background | Preset background |
 
-Expand the light or dark colour settings to adjust functions and tools, keywords, parameter names, strings and files, numbers, reasoning and comments, plain text, and three bracket levels. Each preset retains its own customisations; reset affects only the active preset and mode, while the full settings reset clears all presets. Existing colours migrate as custom VS Code values. Switching and editing colours work offline.
+Existing valid saved styles and colour choices are preserved. Code style hides the tree-style **Intensity**, **State colours** and **Advanced** controls; switch to a tree style to adjust those options.
 
-If an older version saves the settings after a downgrade, the active colours remain, but preset selections and customisations for other presets may be lost. Back up settings before downgrading if those preferences matter.
+![Light and dark palette selectors and code background setting](docs/images/code-color-settings.png)
 
-Classic's subtle, standard, and vivid presets use line widths of 3.10, 3.80, and 4.64 px respectively; botanical uses 3.20, 4.60, and 6.28 px. Saved line widths remain unchanged; choose an intensity again to apply its new preset.
+Light presets are VS Code Light+, JetBrains Light, Catppuccin Latte and Alucard Light; dark presets are VS Code Dark+, JetBrains Darcula, Catppuccin Mocha and Dracula Classic. Each preset retains its own custom colours. A palette reset affects only the selected preset; **Restore defaults** resets all plugin settings. Palette changes work offline.
 
-Tree-style details (transitions, line width, texture, leaves, dots, indentation, summary dimming, leading, growth speed) live under a collapsed **Advanced** section. Changing line width or dots there marks intensity as custom; picking a level restores it. Botanical controls appear in that style. Code style hides the intensity and advanced controls. The settings preview shares the chat renderer and can switch both state and light/dark appearance. Quiet uses state colors on dots; botanical retains its wood-colored running branches while the node and glow use the running color. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use code blocks while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
+Code colours can be adjusted for functions and tools, keywords, parameters, strings and files, numbers, comments, plain text and three bracket levels. If an older version saves settings after a downgrade, active colours remain but preset selections and other preset customisations may be lost; back up settings first if needed.
 
-Botanical Advanced settings include an opt-in **植物滚动优化** (botanical scrolling optimization), off by default. It can reduce browser style recalculation while scrolling long processes. When enabled, other plugins or custom CSS that directly query or alter the internal root graphics may no longer work; turn it off to restore the previous access. The settings preview is unaffected.
+The three tree styles support separate light and dark running/error colours. Line, dot, indentation, summary and leading controls live in the collapsed **Advanced** section. Botanical scrolling optimisation is off by default; enabling it may affect other plugins or custom CSS that directly access internal root elements.
 
-## Data and permissions
+## Compatibility and data
 
-The function layout reads the current UI’s already-loaded Chat projection without loading more history. Calls with recorded children appear as nested scopes; leaf calls remain ordinary calls. These scopes visualize execution relationships and are not actual function definitions or executable code. A minimap navigates loaded, visible calls; dense marks are binned by position, prioritizing failures and running calls. Short calls remain on one line; longer calls or narrow rows expand to one argument per line. The heading counts loaded calls, recorded failures, and, when present, interrupted and unfinished calls, including nested calls. Completed calls show elapsed time only when both recorded timestamps are available. A read-only virtual tab labels each task; independent scope controls fold child calls without changing native result disclosure. Hover or keyboard focus highlights rows and indent guides, and recorded error messages or types are shown when available; otherwise the first result line is labelled as a result excerpt, not a cause. A failure list navigates loaded calls and unfolds plugin-owned scopes when possible; unavailable calls are marked. Collapsed scopes count recorded failed descendants, excluding interruptions. Failed, interrupted, and unknown outcomes are displayed and counted separately; in-flight calls remain unfinished. Unknown requires an explicit host indication or a result without a valid success/error flag. The verified host does not provide a dedicated unknown state. The plugin reads rendered chat structure and element sizes, and adds owned SVG, code expressions or CSS decorations. It registers no model tools, executes no commands and sends no network requests. Preferences stay in the current interface's `localStorage` under `dsh.process-tree.v1`. It does not change session content or read API keys. Uninstalling retains preferences; use the settings reset control to restore defaults.
+Version 0.11.0 does not block installation or loading by DSH version. This does not mean future releases have been tested. rc.5 passed isolated Web-host checks; sustained native Desktop operation and Windows/Linux remain among the unverified areas. Older published 0.8.2 retains its original RC2/RC5 restriction. See [compatibility](docs/COMPATIBILITY.md) for evidence and limits.
 
-If local storage cannot be read or written, settings show a warning. After storage recovers, another change retries the save.
+The plugin reads rendered chat structure, element dimensions and the current session's already-loaded Chat projection without loading extra history. It registers no model tools, runs no commands and sends no network requests. Preferences are stored in the current interface's `localStorage` (`dsh.process-tree.v1`); uninstalling leaves them intact. If storage fails, settings display a warning and another change retries after recovery.
+
+Claude Style is not a runtime dependency. Avoid enabling another plugin that adds the same indentation or process connections to the same area.
+
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| [Plugin market](docs/DISCOVER.md) | Add an index, install and troubleshoot |
+| [Compatibility](docs/COMPATIBILITY.md) | Tested hosts, evidence and unverified areas |
+| [Changelog](CHANGELOG.md) | Version history |
+| [Third-party notices](THIRD_PARTY_NOTICES.md) | Palette sources, copyrights and licenses |
 
 ## Remove
 
@@ -133,11 +153,11 @@ If local storage cannot be read or written, settings show a warning. After stora
 dsh plugin --profile web remove dsh-process-tree
 ```
 
-Restart the corresponding instance; use the plugin manager on Desktop. Keep the rest of the profile.
+Restart the corresponding instance; Desktop users can use the plugin manager. The rest of the DSH profile can remain in place.
 
-## Develop
+## Develop and validate
 
-Node.js 22.19 or newer. Runtime JavaScript is checked in and needs no build. React and Playwright development dependencies serve tests only.
+Node.js 22.19 or newer is required. Runtime JavaScript is checked in and needs no build; React and Playwright development dependencies serve tests only.
 
 ```sh
 npm ci
@@ -145,17 +165,10 @@ npm test
 npx playwright install chromium
 npm run test:browser
 npm run check:package
-npm pack
 ```
 
-Set `DSH_CHROMIUM_EXECUTABLE` to use an existing Chromium. Settings-preview tests use the pinned React dependencies by default. Optional coexistence checks accept `DSH_COMPOSER_SOURCE` and `DSH_CLAUDE_ROW_SKIP_CSS`; ordinary tests need no other plugin checkout.
+Set `DSH_CHROMIUM_EXECUTABLE` to use an existing Chromium. See [compatibility](docs/COMPATIBILITY.md) for host checks, evidence and limits. When reporting issues, include the DSH version, OS, style and other UI plugins without private conversation data.
 
-The older static style illustrations can be regenerated with `node scripts/capture-previews.mjs` after installing Chromium. The command also accepts `DSH_CHROMIUM_EXECUTABLE`. The live recording and replay screenshots above must be captured through DSH.
+## License and credits
 
-`canopy.svg` preserves the original artwork. Runtime uses the parameterized artwork embedded in `client.js`; editing the original does not automatically update that embedded form. The original is not duplicated in the install archive.
-
-See [compatibility](docs/COMPATIBILITY.md) for real-host checks. Host-shaped DOM tests do not establish native Desktop frame rates. Bug reports should include DSH version, OS, selected style, UI plugins and reproduction steps, without private conversation data.
-
-## License
-
-MIT; see [LICENSE](LICENSE). The canopy is original artwork by the project owner. Row indentation, summary dimming and leading adapt Asheep233's [dsh-tool-indent](https://github.com/Asheep233/dsh-tool-indent). Its original notice is retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT; see [LICENSE](LICENSE). The canopy is original artwork by the project owner. Row indentation, summary dimming and leading adapt Asheep233's [dsh-tool-indent](https://github.com/Asheep233/dsh-tool-indent); its original notice is retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

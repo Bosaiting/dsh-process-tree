@@ -35,7 +35,19 @@
     "docs/verification/0.9.0.json",
     "docs/verification/0.9.1.json",
     "docs/images/function-code.png",
-    "docs/verification/0.10.0.json"
+    "docs/verification/0.10.0.json",
+    "docs/images/code-view-dark.png",
+    "docs/images/code-view-light.png",
+    "docs/images/code-color-settings.png",
+    "docs/images/code-failures.png",
+    "docs/images/palette-vscode.png",
+    "docs/images/palette-jetbrains.png",
+    "docs/images/palette-catppuccin.png",
+    "docs/images/palette-dracula.png",
+    "docs/images/tree-classic.png",
+    "docs/images/tree-botanical.png",
+    "docs/images/tree-quiet.png",
+    "CHANGELOG.md"
   ],
   "license": "MIT",
   "keywords": [
