@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 0.11.1
+
+- Fix overlapping Go child-scope labels on long calls while preserving scope guides, scrolling and folding.
 - Refresh the Chinese and English guides and add high-resolution previews of code views, palettes and failure navigation.
 
 ## 0.11.0
