@@ -46,8 +46,7 @@
     "web-ui"
   ],
   "engines": {
-    "node": ">=22.19.0",
-    "dsh": "0.2.1-rc.2 || 0.2.1-rc.5"
+    "node": ">=22.19.0"
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",

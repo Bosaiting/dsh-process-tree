@@ -30,8 +30,8 @@ The index belongs to the current profile. Other users and profiles must add it s
 
 `market/index.json` 使用 DSH `format: 1`，只列出公开可下载的正式 npm 包。`dist-tags.latest` 指向索引中已列出的精确版本；安装目标固定为 `包名@版本`。图标为本项目的原创小型 SVG，以内联图像提供，无须额外请求。
 
-发布新的 npm 版本后，确认注册表已可查询，再更新 `versions`、`dist-tags.latest` 和安装说明。`publishTimestamp` 必须来自 npm 的 `time[version]`，转换为 Unix 秒；`engines.dsh` 原样复制该版本包的声明。不要根据本地主分支版本预先添加未发布的版本。索引无需随插件安装，也无需为了修改索引重新发布旧 npm 版本。
+发布新的 npm 版本后，确认注册表已可查询，再更新 `versions`、`dist-tags.latest` 和安装说明。`publishTimestamp` 必须来自 npm 的 `time[version]`，转换为 Unix 秒；按该版本包的实际声明填写 `engines.dsh`，包中没有该字段时索引也不填写。不要根据本地主分支版本预先添加未发布的版本。索引无需随插件安装，也无需为了修改索引重新发布旧 npm 版本。
 
-After publishing a new npm version, verify its public availability before updating the index and installation instructions. Copy the exact version, registry publication time (Unix seconds), and declared `engines.dsh`. Keep the index URL stable and include only published versions. The inline icon is generated from `market/icon.svg`; regenerate its base64 data when changing the artwork.
+After publishing a new npm version, verify its public availability before updating the index and installation instructions. Copy the exact version, registry publication time (Unix seconds), and `engines.dsh` when the package declares it; omit the field when the package does not. Keep the index URL stable and include only published versions. The inline icon is generated from `market/icon.svg`; regenerate its base64 data when changing the artwork.
 
 格式和界面依据 / Format and UI: [DSH plugin markets](https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market).

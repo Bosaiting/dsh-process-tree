@@ -142,6 +142,60 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.deepEqual(errors,[]);return {first};
       }finally{await context.close()}
     });
+    await test('web fetch converts URL arguments and delegates to the original native link',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:true});
+      try {
+        await page.evaluate(()=>{
+          const header=document.querySelector('[data-chat-call-id="g0-1"] [data-disclosure-row]');
+          const url='https://example.com/showcase?p=%E5%A4%A7%E8%82%A5';
+          header.querySelector('span').innerHTML='<span>网页获取</span> · <a target="_blank" rel="noopener noreferrer"></a>';
+          const link=header.querySelector('a');link.setAttribute('href',url);link.textContent=url;
+          window.webClicks=0;link.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();webClicks++});
+          window.webRoot={callId:'g0-0',name:'run_code',argsRaw:'{}',subCalls:[{callId:'g0-1',name:'web_fetch',argsRaw:JSON.stringify({url}),subCalls:[]}]};
+          api.setCodeSource({sync(){},read(){return {key:'web-fetch',nodes:new Map([['g0-0',{kind:'tool-call',data:{root:webRoot}}]])}}});
+          for(const view of instances){view.structureDirty=true;view.schedule(17)}
+        });
+        await page.evaluate(()=>frames(10));
+        const child=page.locator('[data-chat-call-id="g0-1"]');
+        for(const language of ['python','javascript','c','cpp','java','go']) {
+          await page.evaluate(language=>api.change({codeLanguage:language}),language);await page.evaluate(()=>frames(8));
+          assert.equal(await child.locator('.dpt-code-expression').count(),1,language);
+          assert.match(await child.locator('.dpt-code-expression').innerText(),/web_fetch\(/,language);
+          assert.equal(await child.locator('.dpt-code-link').count(),1,language);
+          assert.match(await child.locator('.dpt-code-link').getAttribute('aria-label'),/^打开网页 /,language);
+          await child.locator('.dpt-code-link').click();
+        }
+        assert.equal(await page.evaluate(()=>webClicks),6);
+        assert.equal(await child.locator('a:not([data-dpt-owned])').getAttribute('target'),'_blank');
+        assert.equal(await child.locator('a:not([data-dpt-owned])').getAttribute('rel'),'noopener noreferrer');
+        await page.evaluate(()=>{
+          const child=document.querySelector('[data-chat-call-id="g0-1"]');
+          child.querySelector('a').setAttribute('href','https://other.example/');
+          child.querySelector('.dpt-code-link').click();
+        });
+        assert.equal(await page.evaluate(()=>webClicks),6,'a stale link must not activate the changed destination before repaint');
+        await page.evaluate(()=>frames(10));
+        assert.equal(await child.locator('.dpt-code-expression').count(),0,'changed href must not delegate to a different URL');
+        await page.evaluate(()=>document.querySelector('[data-chat-call-id="g0-1"] a').setAttribute('href','https://example.com/showcase?p=%E5%A4%A7%E8%82%A5'));
+        await page.evaluate(()=>frames(10));
+        assert.equal(await child.locator('.dpt-code-expression').count(),1,'restored href re-enables conversion');
+        await child.locator('.dpt-code-link').focus();await child.locator('.dpt-code-link').press('Enter');
+        assert.equal(await page.evaluate(()=>webClicks),7,'keyboard activation delegates to native link');
+        await page.evaluate(()=>{
+          const header=document.querySelector('[data-chat-call-id="g0-1"] [data-disclosure-row]');
+          const duplicate=header.querySelector('a').cloneNode(true);header.querySelector('a').after(duplicate);
+        });await page.evaluate(()=>frames(10));
+        assert.equal(await child.locator('.dpt-code-expression').count(),0,'duplicate native destinations must not be guessed');
+        await page.evaluate(()=>{
+          const header=document.querySelector('[data-chat-call-id="g0-1"] [data-disclosure-row]');
+          header.querySelectorAll('a')[1].remove();header.querySelector('a').setAttribute('href','javascript:alert(1)');
+          webRoot.subCalls[0].argsRaw=JSON.stringify({url:'javascript:alert(1)'});
+          for(const view of instances)view.schedule(65);
+        });await page.evaluate(()=>frames(10));
+        assert.equal(await child.locator('.dpt-code-expression').count(),0,'non-web protocols keep the native row');
+        assert.deepEqual(errors,[]);return {};
+      } finally { await context.close() }
+    });
     await test('function file arguments preserve abbreviated home-path actions',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:true});
       try {

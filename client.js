@@ -1629,12 +1629,22 @@ window.__ModuleLoader__.load({
       const el = codeElement(link || item.type === 'more' ? 'button' : 'span', 'dpt-code-token' + (link ? ' dpt-code-link' : item.type === 'more' ? ' dpt-code-more' : ''))
       el.dataset.token = item.type
       el.textContent = item.value
-      if (link) { el.type = 'button'; el.dataset.dptLink = String(links.indexOf(link)); el.title = '打开文件'; el.setAttribute('aria-label', '打开文件 ' + item.value) }
+      if (link) {
+        const action = link.tagName === 'A' && item.key === 'url' ? '打开网页' : '打开文件'
+        el.type = 'button'; el.dataset.dptLink = String(links.indexOf(link)); el.dptLinkToken = item
+        el.title = action; el.setAttribute('aria-label', action + ' ' + item.value)
+      }
       if (item.type === 'more') { el.type = 'button'; el.setAttribute('aria-label', '展开完整参数'); el.setAttribute('aria-expanded', 'false') }
       parent.append(el)
     }
   }
   function codeTokenLink(item, el) {
+    if (item.key === 'url' && typeof item.raw === 'string' && el.tagName === 'A') {
+      // Match the recorded URL to the exact native destination, not its
+      // potentially shortened display text, then delegate to the host link.
+      if (el.getAttribute('href') !== item.raw) return false
+      try { return ['http:', 'https:'].includes(new URL(item.raw).protocol) } catch (_) { return false }
+    }
     if (!item.key || !/^(path|file_path|filename|file|target_file)$/.test(item.key) || typeof item.raw !== 'string') return false
     const label = el.textContent.trim().replaceAll('\\', '/'), value = item.raw.replaceAll('\\', '/')
     // The host may abbreviate its home directory in the native file button,
@@ -2309,7 +2319,7 @@ window.__ModuleLoader__.load({
       watchedRoots.add(root)
       sharedMutations.observe(root, {
         childList: true, subtree: true, attributes: true,
-        attributeFilter: ['hidden', 'aria-expanded', 'data-state', 'data-chat-flow-kind', 'data-chat-call-id'],
+        attributeFilter: ['hidden', 'aria-expanded', 'data-state', 'data-chat-flow-kind', 'data-chat-call-id', 'href'],
       })
     }
     sharedResize.observe(view.content)
@@ -2335,7 +2345,7 @@ window.__ModuleLoader__.load({
         watchedRoots.add(root)
         sharedMutations.observe(root, {
           childList: true, subtree: true, attributes: true,
-          attributeFilter: ['hidden', 'aria-expanded', 'data-state', 'data-chat-flow-kind', 'data-chat-call-id'],
+          attributeFilter: ['hidden', 'aria-expanded', 'data-state', 'data-chat-flow-kind', 'data-chat-call-id', 'href'],
         })
       }
       routeViewMutations(records)
@@ -2895,12 +2905,19 @@ window.__ModuleLoader__.load({
             this.stateTargets.add(record.target)
             dirty |= DIRTY_STATE | (isFunctionCode() ? DIRTY_LAYOUT : 0)
           } else dirty |= DIRTY_LAYOUT
+        } else if (record.type === 'attributes' && record.attributeName === 'href') {
+          // Recheck the mapping if the native destination changes, including
+          // when a formerly ambiguous row becomes safe to convert again.
+          if (isFunctionCode() && record.target.matches?.('a:not([data-dpt-owned])') &&
+            record.target.closest('[data-disclosure-row]') && !record.target.closest('[data-dpt-owned]')) dirty |= DIRTY_LAYOUT
         } else if (isFunctionCode() && record.type === 'childList' &&
-          record.target.nodeType === 1 && record.target.closest('[data-dpt-function-label]') &&
-          record.target.closest('button:not([data-dpt-owned]), a:not([data-dpt-owned])') &&
+          record.target.nodeType === 1 && record.target.closest('[data-disclosure-row]') &&
+          (record.target.closest('button:not([data-dpt-owned]), a:not([data-dpt-owned])') ||
+            [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1 &&
+              (node.matches('button:not([data-dpt-owned]), a:not([data-dpt-owned])') || node.querySelector('button:not([data-dpt-owned]), a:not([data-dpt-owned])')))) &&
           !record.target.closest('[data-dpt-owned]')) {
-          // A retained native file button can change its displayed target
-          // without changing its identity. Recheck the action mapping.
+          // Native actions may change text or appear/disappear independently
+          // of the structured call. Recheck their one-to-one mapping.
           dirty |= DIRTY_LAYOUT
         } else if (structureMutation(record)) {
           dirty |= DIRTY_LAYOUT | DIRTY_STRUCTURE
@@ -3593,7 +3610,10 @@ window.__ModuleLoader__.load({
           const record = this.functionRows.get(header)
           if (!record) return
           event.stopPropagation(); event.preventDefault()
-          if (button.classList.contains('dpt-code-link')) record.links[Number(button.dataset.dptLink)]?.click()
+          if (button.classList.contains('dpt-code-link')) {
+            const link = record.links[Number(button.dataset.dptLink)]
+            if (link?.isConnected && button.dptLinkToken && codeTokenLink(button.dptLinkToken, link)) link.click()
+          }
           else if (button.classList.contains('dpt-scope-toggle') || button.classList.contains('dpt-scope-failures')) {
             if (button.classList.contains('dpt-scope-failures') || this.functionFolded.has(record.callId)) this.functionFolded.delete(record.callId)
             else this.functionFolded.add(record.callId)

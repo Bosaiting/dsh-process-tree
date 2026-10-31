@@ -13,7 +13,9 @@ assert.equal(lock.packages[''].version, pkg.version)
 assert.equal(lock.version, pkg.version)
 assert.equal(pkg.dsh.bundle.patch, './cordis.patch.yml')
 assert.equal(pkg.exports['./client'], './client.js')
-assert.ok(pkg.engines.dsh, 'declare verified host releases')
+assert.ok(!Object.hasOwn(pkg.engines, 'dsh'), 'do not block DSH versions through engines.dsh')
+assert.ok(!Object.keys(pkg.peerDependencies || {}).some(name => name === '@deepseek-ai/dsh' || name.startsWith('@deepseek-ai/dsh-')), 'do not reintroduce a DSH version gate through peers')
+assert.deepEqual(lock.packages[''].engines, pkg.engines, 'lockfile engines must match package manifest')
 for (const hook of ['prepare', 'preinstall', 'install', 'postinstall', 'prepack']) {
   assert.ok(!pkg.scripts[hook], `installation must not require a lifecycle script: ${hook}`)
 }

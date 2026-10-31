@@ -1,6 +1,10 @@
 # Compatibility / 兼容性
 
-Version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5; other releases are not declared compatible. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2.
+The current source does not declare an `engines.dsh` restriction or DSH peer-version requirements. This removes the version gate; it does not establish compatibility with untested host releases. Published version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2; previously published metadata is unchanged.
+
+## Local web-fetch display fix / 本地网页获取展示修复（2026-10-31）
+
+The code view matches a recorded HTTP(S) URL to its exact native anchor and delegates activation to that anchor. Changed, unsupported or ambiguous destinations retain the native row, and clicks recheck the mapping. On macOS, 61 unit tests and 48 synthetic Chromium browser cases passed. A separate isolated rc.5 Web host using the locally customized Claude Style theme displayed a synthetic nested `web_fetch` call as code and preserved the native link and result disclosure; no model, tool or external URL was accessed. Client SHA-256: `ea1684c3aef0b7dc4a520a29acb7519aef241eb921c62b5b48ee93c6314e4168`. Native Desktop visual acceptance and other host versions remain unverified.
 
 ## Local IDE colour presets / 本地 IDE 配色方案（2026-10-31）
 

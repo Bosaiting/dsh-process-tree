@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Convert recorded `web_fetch` URL arguments into code while delegating to the original native link; keep the native row if the destination is unsafe or ambiguous.
+- Remove the DSH version gate so newer host releases are not blocked solely by their version; verified hosts are documented separately.
 - Add independently selectable VS Code, JetBrains, Catppuccin and Dracula-inspired light/dark code palettes, per-preset custom colours, and optional code-area backgrounds. Preserve existing colour settings on migration and update colours without rebuilding call expressions.
 
 - Preserve raw argument disclosures and fall back when object-style formatting would change recorded numbers or duplicate keys; require an unambiguous one-to-one mapping for native file actions.
