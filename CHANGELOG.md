@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Preserve raw argument disclosures and fall back when object-style formatting would change recorded numbers or duplicate keys; require an unambiguous one-to-one mapping for native file actions.
+- Distinguish host-marked failures from recorded tool failures, correct duration rounding and Unicode truncation, and report recoverable settings-storage errors.
+- Reuse minimap geometry on data-only updates and adapt conversion batch sizes to measured work. Scroll positioning retains same-event updates; Desktop performance remains separately unverified.
+
 - Add a Go task-function display with positional primitive arguments, Go string and multiline rules, raw-argument access, separate visual child blocks, and conservative native fallback. Preserve all existing language settings.
 
 - Render Java simple arguments as positional values in the original recorded order, with a disclosure for raw named arguments. Keep native summaries for composite, incomplete and unsupported calls while retaining scope controls and raw-argument access.

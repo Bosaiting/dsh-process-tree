@@ -276,6 +276,13 @@ window.__ModuleLoader__.load({
     }
   }
 
+  let settingsStorageError = false
+  const settingsStorageListeners = new Set()
+  function setSettingsStorageError(value) {
+    if (settingsStorageError === value) return
+    settingsStorageError = value
+    for (const listener of settingsStorageListeners) listener(value)
+  }
   function readSettings() {
     try {
       const raw = window[PENDING_SETTINGS] ?? JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null')
@@ -286,6 +293,7 @@ window.__ModuleLoader__.load({
       }
       return settings
     } catch {
+      setSettingsStorageError(true)
       return DEFAULTS
     }
   }
@@ -293,7 +301,9 @@ window.__ModuleLoader__.load({
   function writeSettings(settings) {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
-    } catch {}
+      setSettingsStorageError(false)
+      return true
+    } catch { setSettingsStorageError(true); return false }
   }
 
   let persistTimer = 0
@@ -308,8 +318,7 @@ window.__ModuleLoader__.load({
     persistTimer = 0
     const pending = window[PENDING_SETTINGS]
     if (pending) {
-      writeSettings(pending)
-      delete window[PENDING_SETTINGS]
+      if (writeSettings(pending)) delete window[PENDING_SETTINGS]
     }
   }
 
@@ -1128,6 +1137,54 @@ window.__ModuleLoader__.load({
     return name && name.length <= 24 && identifier(name) ? name : 'task_' + String(turn || 1).padStart(2, '0')
   }
   const parsedCodeCalls = new WeakMap()
+  // Compare decimal spellings without converting their significant digits to
+  // Number. A changed value must never be presented as a recorded argument.
+  function canonicalDecimal(text) {
+    const match = /^(-?)(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(text)
+    if (!match || (match[4] || '').length > 6) return null
+    let digits = (match[2] + (match[3] || '')).replace(/^0+/, '')
+    if (!digits) return match[1] ? '-0' : '0'
+    let exponent = Number(match[4] || 0) - (match[3] || '').length
+    const tail = digits.match(/0+$/)?.[0].length || 0
+    if (tail) { digits = digits.slice(0, -tail); exponent += tail }
+    return match[1] + digits + 'e' + exponent
+  }
+  function losslessJSON(raw) {
+    const stack = []
+    const number = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y
+    for (let i = 0; i < raw.length;) {
+      const ch = raw[i]
+      if (ch === '"') {
+        const start = i++
+        while (i < raw.length) {
+          const end = raw.indexOf('"', i)
+          if (end < 0) return false
+          let slash = end - 1
+          while (slash >= i && raw[slash] === '\\') slash--
+          i = end + 1
+          if ((end - slash - 1) % 2 === 0) break
+        }
+        const object = stack[stack.length - 1]
+        let next = i
+        while (/\s/.test(raw[next] || '')) next++
+        if (object?.keys && raw[next] === ':') {
+          const key = JSON.parse(raw.slice(start, i))
+          if (object.keys.has(key)) return false
+          object.keys.add(key)
+        }
+      } else if (ch === '{' || ch === '[') { stack.push({ keys: ch === '{' ? new Set() : null }); i++ }
+      else if (ch === '}' || ch === ']') { stack.pop(); i++ }
+      else if (ch === '-' || ch >= '0' && ch <= '9') {
+        number.lastIndex = i
+        const match = number.exec(raw)
+        if (!match) return false
+        const value = Number(match[0])
+        if (!Number.isFinite(value) || Object.is(value, -0) || canonicalDecimal(match[0]) !== canonicalDecimal(String(value))) return false
+        i = number.lastIndex
+      } else i++
+    }
+    return true
+  }
   function codeCall(block) {
     if (!block || typeof block !== 'object') return null
     const call = 'kind' in block ? block.call : block
@@ -1135,9 +1192,12 @@ window.__ModuleLoader__.load({
     const raw = typeof call.argsRaw === 'string' ? call.argsRaw : ''
     const previous = parsedCodeCalls.get(block)
     if (previous?.raw === raw && previous.name === call.name) return previous
-    let args = null
-    if (raw.length <= 2_000_000) try { args = JSON.parse(raw) } catch (_) { /* incomplete streaming arguments */ }
-    const result = { name: call.name, raw, args, valid: args !== null && typeof args === 'object' && !Array.isArray(args) }
+    let args = null, lossless = false
+    if (raw.length <= 2_000_000) try {
+      args = JSON.parse(raw)
+      lossless = losslessJSON(raw)
+    } catch (_) { /* incomplete streaming arguments */ }
+    const result = { name: call.name, raw, args, lossless, valid: args !== null && typeof args === 'object' && !Array.isArray(args) }
     parsedCodeCalls.set(block, result)
     return result
   }
@@ -1147,7 +1207,12 @@ window.__ModuleLoader__.load({
   }
   function codeValue(value, key, depth = 0, language = 'python') {
     if (typeof value === 'string') {
-      const short = value.length > 54 ? value.slice(0, 51) + '…' : value
+      let short = value
+      if (value.length > 54) {
+        const chars = []
+        for (const character of value) { chars.push(character); if (chars.length > 54) break }
+        if (chars.length > 54) short = chars.slice(0, 51).join('') + '…'
+      }
       return { tokens: [token('string', codeString(short), key, value)], clipped: short !== value }
     }
     if (value === null || typeof value === 'boolean') return { tokens: [token('keyword', language === 'javascript' ? String(value) : value === null ? 'None' : value ? 'True' : 'False')], clipped: false }
@@ -1399,7 +1464,11 @@ window.__ModuleLoader__.load({
     }),
   })
   function codeExpression(call, multiline = false, scope = false, collapsed = false, language = 'python') {
-    return (CODE_LANGUAGES[language] || CODE_LANGUAGES.python).expression(call, multiline, scope, collapsed)
+    // Java/Go use a separate positional parser that preserves the original
+    // numeric spellings and key order. Object-style formats need fallback
+    // whenever JSON.parse would change the recorded content.
+    const display = call.lossless === false && language !== 'java' && language !== 'go' ? { ...call, valid: false } : call
+    return (CODE_LANGUAGES[language] || CODE_LANGUAGES.python).expression(display, multiline, scope, collapsed)
   }
   function codeDuration(block) {
     if (block?.kind !== 'tool-result' || block.error?.code === 'interrupted' ||
@@ -1408,7 +1477,8 @@ window.__ModuleLoader__.load({
     const ms = block.time - block.callTime
     if (ms < 1000) return Math.round(ms) + ' ms'
     if (ms < 60000) return (ms / 1000).toFixed(1) + ' s'
-    return Math.floor(ms / 60000) + ' min ' + Math.round((ms % 60000) / 1000) + ' s'
+    const seconds = Math.round(ms / 1000)
+    return Math.floor(seconds / 60) + ' min ' + seconds % 60 + ' s'
   }
   // Completed structured results take precedence over transient presentation
   // state. An unfinished call alone is not evidence of an unknown outcome.
@@ -1455,15 +1525,19 @@ window.__ModuleLoader__.load({
   }
 
   function codeStats(calls, hostStates = new Map()) {
-    let failures = 0, stopped = 0, unknown = 0, pending = 0
+    let failures = 0, hostFailures = 0, stopped = 0, unknown = 0, pending = 0
     for (const [id, block] of calls) {
       const state = codeOutcome(block, hostStates.get(id))
+      // Host presentation can also flag a nonzero command exit while the
+      // structured tool invocation itself completed successfully.
+      if (hostStates.get(id) === 'error' && state === 'ok') hostFailures++
       if (state === 'error') failures++
       else if (state === 'stopped') stopped++
       else if (state === 'unknown') unknown++
       else if (state === 'pending' || state === 'running' || state === 'preparing') pending++
     }
     return '已加载调用 ' + calls.size + ' · 已记录失败 ' + failures +
+      (hostFailures ? ' · 宿主标记失败 ' + hostFailures : '') +
       (stopped ? ' · 已中断 ' + stopped : '') + (unknown ? ' · 结果未知 ' + unknown : '') + (pending ? ' · 未结束 ' + pending : '')
   }
 
@@ -1488,7 +1562,11 @@ window.__ModuleLoader__.load({
   function codeTokenLink(item, el) {
     if (!item.key || !/^(path|file_path|filename|file|target_file)$/.test(item.key) || typeof item.raw !== 'string') return false
     const label = el.textContent.trim().replaceAll('\\', '/'), value = item.raw.replaceAll('\\', '/')
-    return !!label && (value === label || value.endsWith('/' + label))
+    // The host may abbreviate its home directory in the native file button,
+    // while the structured argument retains the absolute path. Match the
+    // complete displayed suffix and keep delegating to that original button.
+    return !!label && (value === label || value.endsWith('/' + label) ||
+      label.startsWith('~/') && /^(?:\/|[A-Za-z]:\/)/.test(value) && value.length > label.length && value.endsWith(label.slice(1)))
   }
 
   function codeTitle(header) {
@@ -2014,7 +2092,16 @@ window.__ModuleLoader__.load({
     for (const view of watchedViews.values()) {
       if (!view.inViewport) continue
       const target = event.target
-      if (target === document || target === document.documentElement || target.contains?.(view.content)) view.schedule(DIRTY_WINDOW)
+      if (target === document || target === document.documentElement || target.contains?.(view.content)) {
+        // Keep the minimap's viewport in the same scroll event as the native
+        // sticky anchor; the queued view frame may otherwise paint a frame late.
+        if (isFunctionCode() && view.functionNav && view.clipParents && !view.suspended) {
+          const rect = view.content.getBoundingClientRect()
+          const width = view.content.offsetWidth
+          view.updateFunctionViewport(rect, width && rect.width ? rect.width / width : 1)
+        }
+        view.schedule(DIRTY_WINDOW)
+      }
       else if (view.content.contains(target)) view.schedule(DIRTY_LAYOUT)
     }
   }
@@ -2881,7 +2968,9 @@ window.__ModuleLoader__.load({
       if (!panel || panel.dataset.dptFilled) return
       const call = record.panelCall
       if (!call) return
-      const raw = ['java', 'go'].includes(record.panelLanguage) ? call.raw : call.valid ? JSON.stringify(call.args, null, 2) : call.raw
+      // The disclosure is evidence of the recorded arguments, not a
+      // reserialization that may change numbers or erase duplicate keys.
+      const raw = call.raw
       panel.textContent = raw.length > 12000 ? raw.slice(0, 12000) + '\n…（参数较长，完整内容见原始调用详情）' : raw
       panel.dataset.dptFilled = ''
     }
@@ -3008,6 +3097,7 @@ window.__ModuleLoader__.load({
       if (ownsContext && calls.size) {
         if (!this.functionStats) {
           this.functionStats = codeElement('div', 'dpt-function-stats')
+          this.functionStats.title = '已记录失败按工具结果统计；宿主标记失败表示宿主显示失败但工具结果未记录失败，两者可能采用不同口径。'
           this.content.insertBefore(this.functionStats, this.functionHeader)
         }
         const stats = codeStats(calls, hostStates), failures = [...calls.values()].filter(codeFailed)
@@ -3036,7 +3126,7 @@ window.__ModuleLoader__.load({
             const entry = entryByCall.get(block.callId)
             const exists = !!entry?.header?.isConnected && !entry.header.closest('[hidden]')
             const call = codeCall(block), info = codeErrorInfo(block)
-            const path = call?.valid ? ['path', 'file_path', 'filename', 'file', 'target_file'].map(key => call.args[key]).find(value => typeof value === 'string' && value) : ''
+            const path = call?.valid && call.lossless ? ['path', 'file_path', 'filename', 'file', 'target_file'].map(key => call.args[key]).find(value => typeof value === 'string' && value) : ''
             const file = path ? codeString(path.length > 90 ? path.slice(0, 89) + '…' : path) : ''
             return { id: block.callId, name: call?.name || '工具调用', file, info, exists }
           })
@@ -3195,7 +3285,12 @@ window.__ModuleLoader__.load({
         const multiline = call.valid && fullCount > 0 &&
           (singleText.length > 72 || call.raw.length > 100 || singleText.length * fontSize * .62 > available)
         const syntax = multiline ? cached?.multiline || codeExpression(call, true, scope, collapsed, language) : single
-        if (links.some(el => !syntax.tokens.some(item => codeTokenLink(item, el))) || label.querySelector('input, select, textarea, [role="button"]')) {
+        // Each original action and each displayed argument must have one
+        // unambiguous counterpart, or keep the native row unchanged.
+        const linkedTokens = syntax.tokens.filter(item => links.some(el => codeTokenLink(item, el)))
+        const ambiguousLinks = links.some(el => linkedTokens.filter(item => codeTokenLink(item, el)).length !== 1) ||
+          linkedTokens.some(item => links.filter(el => codeTokenLink(item, el)).length !== 1)
+        if (ambiguousLinks || label.querySelector('input, select, textarea, [role="button"]')) {
           if (positional) { showPositionalNativeFallback(); return }
           if (record) this.releaseFunctionRow(record)
           next.delete(header)
@@ -3307,7 +3402,7 @@ window.__ModuleLoader__.load({
       const pending = new Set(entries)
       const large = entries.length > 80
       let cursor = 0
-      const batch = { frame: 0, pending, decorated, full: !dataOnly || !!interruptedBatch?.full,
+      const batch = { frame: 0, pending, decorated, limit: 12, full: !dataOnly || !!interruptedBatch?.full,
         needsLayout: !!interruptedBatch?.needsLayout || dataOnly && !!(dirty & DIRTY_LAYOUT) }
       const finish = () => {
         if (this.functionBatch !== batch && large) return
@@ -3341,14 +3436,21 @@ window.__ModuleLoader__.load({
           }
           for (const entry of visible) {
             if (pending.has(entry)) choose(entry)
-            if (chosen.length >= 24 || chosen.length && performance.now() - started >= 7) break
+            if (chosen.length >= batch.limit || chosen.length && performance.now() - started >= 7) break
           }
         }
-        while (cursor < entries.length && (!large || chosen.length < 24 && (!chosen.length || performance.now() - started < 7))) choose(entries[cursor++])
+        while (cursor < entries.length && (!large || chosen.length < batch.limit && (!chosen.length || performance.now() - started < 7))) choose(entries[cursor++])
         // Read all geometry before mutating any row. Interleaving these reads
         // with writes makes the browser repeatedly lay out the entire history.
         const measured = chosen.map(entry => [entry, measureEntry(entry)])
         for (const [entry, measure] of measured) processEntry(entry, measure)
+        if (large && chosen.length) {
+          // Include layout reads and DOM writes, not only the selection loop.
+          // Adapt the next batch to recent real work without promising a hard
+          // frame deadline (a single expensive row can still exceed it).
+          const elapsed = Math.max(0.5, performance.now() - started)
+          batch.limit = Math.max(2, Math.min(24, Math.floor(chosen.length * 6 / elapsed)))
+        }
         if (!pending.size) finish()
         else {
           if (performance.now() - (this.functionNavigationAt || 0) >= 250) {
@@ -3434,7 +3536,7 @@ window.__ModuleLoader__.load({
       }
     }
 
-    updateFunctionNavigation(rect, scale, refresh) {
+    updateFunctionNavigation(rect, scale, refresh, refreshStates = false) {
       if (!this.functionNav || !this.functionIdentity) return
       const partial = !!this.functionBatch && !!this.functionBlocks?.size
       const rebuild = (refresh || !this.functionNavRows) && (!partial || performance.now() - (this.functionNavigationAt || 0) >= 250 || !this.functionNavRows)
@@ -3455,21 +3557,17 @@ window.__ModuleLoader__.load({
         this.functionNavigationAt = performance.now()
       }
       const rows = this.functionNavRows || []
-      let top = 0, bottom = window.innerHeight
-      for (const parent of this.clipParents || []) {
-        const box = parent.getBoundingClientRect()
-        top = Math.max(top, box.top); bottom = Math.min(bottom, box.bottom)
+      // Status-only projection updates do not move rows. Reuse measured
+      // positions and update just the metadata; a ResizeObserver or a
+      // structure/layout invalidation will remeasure if geometry changes.
+      if (!rebuild && refreshStates) for (const row of rows) {
+        const entry = row.entry, record = this.functionRows?.get(entry.header)
+        row.name = record?.callName || '工具调用'
+        row.scope = !!record?.scope
+        row.state = codeOutcome(this.functionBlocks?.get(entry.callId), stateOf(entry.call || entry.el))
       }
-      // Sticky is anchored to the nearest scrolling clip. If an outer
-      // container clips that clip, offset it so the header stays in view.
-      const nearest = (this.clipParents || []).find(parent => getComputedStyle(parent).overflowY !== 'clip')
-      const anchorTop = nearest ? nearest.getBoundingClientRect().top : 0
-      const stickyTop = Math.max(0, (top - anchorTop) / scale).toFixed(2) + 'px'
-      if (this.functionNav.style.top !== stickyTop) this.functionNav.style.top = stickyTop
-      const visibleTop = Math.max(0, (Math.max(top, this.functionNav.getBoundingClientRect().bottom) - rect.top) / scale)
-      const visibleBottom = Math.max(visibleTop, (Math.min(bottom, rect.bottom) - rect.top) / scale)
       const height = Math.max(1, this.content.offsetHeight)
-      if (rebuild || !this.functionMapSignature) {
+      if (rebuild || refreshStates || !this.functionMapSignature) {
         const slots = Math.min(120, rows.length)
         const selected = new Map()
         // Bin by real vertical position and favor errors/running calls in crowded bins.
@@ -3493,6 +3591,25 @@ window.__ModuleLoader__.load({
           this.functionMapSignature = mapSig
         }
       }
+      this.updateFunctionViewport(rect, scale)
+    }
+
+    updateFunctionViewport(rect, scale) {
+      if (!this.functionNav || !this.functionViewport) return
+      const nearest = (this.clipParents || []).find(parent => getComputedStyle(parent).overflowY !== 'clip')
+      let top = 0, bottom = window.innerHeight, anchorTop = 0
+      for (const parent of this.clipParents || []) {
+        const box = parent.getBoundingClientRect()
+        top = Math.max(top, box.top); bottom = Math.min(bottom, box.bottom)
+        if (parent === nearest) anchorTop = box.top
+      }
+      // Sticky is anchored to the nearest scrolling clip. If an outer
+      // container clips that clip, offset it so the header stays in view.
+      const stickyTop = Math.max(0, (top - anchorTop) / scale).toFixed(2) + 'px'
+      if (this.functionNav.style.top !== stickyTop) this.functionNav.style.top = stickyTop
+      const visibleTop = Math.max(0, (Math.max(top, this.functionNav.getBoundingClientRect().bottom) - rect.top) / scale)
+      const visibleBottom = Math.max(visibleTop, (Math.min(bottom, rect.bottom) - rect.top) / scale)
+      const height = Math.max(1, this.content.offsetHeight)
       const start = Math.max(0, Math.min(100, visibleTop / height * 100))
       const end = Math.max(start, Math.min(100, visibleBottom / height * 100))
       const thumbTop = start.toFixed(2) + '%', thumbHeight = Math.max(3, end - start).toFixed(2) + '%'
@@ -3640,7 +3757,8 @@ window.__ModuleLoader__.load({
         this.unwatchClips()
         this.clipParents = []
         for (let parent = composedParent(this.content); parent && parent !== document.body; parent = composedParent(parent)) {
-          if (/^(auto|scroll|hidden|clip)$/.test(getComputedStyle(parent).overflowY)) {
+          const overflow = getComputedStyle(parent).overflowY
+          if (/^(auto|scroll|hidden|clip)$/.test(overflow)) {
             this.clipParents.push(parent)
             if (!clipOwners.has(parent)) { clipOwners.set(parent, new Set()); sharedResize?.observe(parent) }
             clipOwners.get(parent).add(this)
@@ -4295,7 +4413,8 @@ window.__ModuleLoader__.load({
         this.measuring = { rect: { left: rect.left, top: rect.top + update.crownSpace * scale }, scale }
         update.band = this.readWindow(this.measuring.rect, scale, update.box.height)
         if (isFunctionCode()) {
-          this.updateFunctionNavigation(rect, scale, !!(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE | DIRTY_CODE_DATA | DIRTY_CODE_INTERACTION)) || this.functionNavigationDirty)
+          this.updateFunctionNavigation(rect, scale, !!(dirty & (DIRTY_LAYOUT | DIRTY_STRUCTURE | DIRTY_CODE_INTERACTION)) || this.functionNavigationDirty,
+            !!(dirty & DIRTY_CODE_DATA))
           this.functionNavigationDirty = false
         }
         const sameBand = this.paintedWindowBand && update.band.top === this.paintedWindowBand.top && update.band.bottom === this.paintedWindowBand.bottom
@@ -5159,6 +5278,12 @@ window.__ModuleLoader__.load({
 
       function SettingsPage() {
         const [settings, setSettings] = React.useState(SETTINGS)
+        const [storageError, setStorageError] = React.useState(settingsStorageError)
+        React.useEffect(() => {
+          settingsStorageListeners.add(setStorageError)
+          setStorageError(settingsStorageError)
+          return () => settingsStorageListeners.delete(setStorageError)
+        }, [])
         const commit = (patch) => {
           const next = normalize({ ...SETTINGS, ...patch })
           SETTINGS = next
@@ -5178,6 +5303,7 @@ window.__ModuleLoader__.load({
         return h('div', { className: 'dpt-page' },
           h('h3', null, '过程树'),
           h('p', { className: 'dpt-hint' }, '选好风格和强度即可；改动立即生效并自动保存。'),
+          storageError && h('p', { role: 'alert', className: 'dpt-hint', style: { color: 'var(--dpt-state-error, #c7766e)' } }, '无法读取或保存过程树设置；当前调整可能在重启后丢失。恢复存储后再次调整即可重试。'),
           h('div', { className: 'dpt-settings-layout' },
           h('div', { className: 'dpt-controls' },
           h(MainSettings, { settings, commit }),

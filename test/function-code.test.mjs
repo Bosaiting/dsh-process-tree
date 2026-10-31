@@ -74,8 +74,41 @@ test('durations require matched real timestamps and interrupted calls stay separ
   assert.equal(api.codeDuration({kind:'tool-result', callTime:null, time:1450}), '')
   assert.equal(api.codeDuration({kind:'tool-result', callTime:1500, time:1450}), '')
   assert.equal(api.codeDuration({kind:'tool-result', callTime:1000, time:1450, error:{code:'interrupted'}}), '')
+  assert.equal(api.codeDuration({kind:'tool-result', callTime:0, time:119500}), '2 min 0 s')
   const calls = new Map([['a',{kind:'tool-result',isError:true}],['b',{name:'running'}],['c',{kind:'tool-result',isError:true,error:{code:'interrupted'}}]])
   assert.equal(api.codeStats(calls), '已加载调用 3 · 已记录失败 1 · 已中断 1 · 未结束 1')
+})
+
+test('lossy JSON is not presented as recorded values and raw positional formats retain spellings', () => {
+  for (const raw of ['{"n":9007199254740993}', '{"n":1e400}', '{"x":1,"x":2}', '{"x":{"a":1,"\\u0061":2}}', '{"x":0.1234567890123456789}', '{"x":-0}']) {
+    const call = api.codeCall({name:'read',argsRaw:raw})
+    assert.equal(call.lossless, false, raw)
+    for (const lang of ['python','javascript','c','cpp']) {
+      const expression = api.codeExpression(call,false,false,false,lang)
+      assert.equal(expression.clipped,true, lang+' '+raw)
+      assert.ok(!text(expression).includes('9007199254740992'), lang+' '+raw)
+    }
+  }
+  for (const raw of ['{"n":9007199254740992}', '{"n":1e2}', '{"v":0.1,"a":{"x":1},"b":{"x":2}}', '{"s":"a 1e400 \\\"x\\\""}']) {
+    assert.equal(api.codeCall({name:'read',argsRaw:raw}).lossless,true,raw)
+  }
+  const ordered = api.codeCall({name:'read',argsRaw:'{"n":9007199254740993,"n":2}'})
+  assert.equal(text(api.codeExpression(ordered,false,false,false,'go')), 'read(9007199254740993, 2)')
+  assert.equal(text(api.codeExpression(ordered,false,false,false,'java')), 'read(9007199254740993, 2);')
+})
+
+test('long Python and JavaScript values do not split a surrogate pair', () => {
+  const value = 'a'.repeat(50) + '😀' + 'z'.repeat(60)
+  for (const lang of ['python','javascript']) {
+    const expression = api.codeExpression(api.codeCall({name:'read',argsRaw:JSON.stringify({value})}),false,false,false,lang)
+    assert.ok(text(expression).includes('😀…'), lang)
+    assert.ok(!text(expression).includes('\\ud83d'), lang)
+  }
+})
+
+test('host and structured failure counts remain distinct', () => {
+  const calls = new Map([['ok',{kind:'tool-result',isError:false}],['fail',{kind:'tool-result',isError:true}]])
+  assert.equal(api.codeStats(calls,new Map([['ok','error'],['fail','error']])), '已加载调用 2 · 已记录失败 1 · 宿主标记失败 1')
 })
 
 

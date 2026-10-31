@@ -2,6 +2,12 @@
 
 Version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5; other releases are not declared compatible. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2.
 
+## Local audit fixes / 本地审查修复（2026-10-31）
+
+The local candidate preserves recorded argument text, falls back for lossy object-style formatting and ambiguous native file actions, reports host-only failure indications separately, and warns if settings storage fails. Its client SHA-256 is `1936e17281677e9f8a282422db3bf412c4829e923d3308423337e18d8fe6ca88`. On macOS, 54 unit tests and 46 synthetic Chromium browser cases passed. A separate rc.5 Web host with the locally customized Claude Style 0.19.6 runtime passed 23 synthetic function checks; a clean rc.5 Web host passed six synthetic streaming checks. No model or tool ran. A Windows-style path was exercised only in a synthetic browser fixture, not on Windows Desktop.
+
+In one 220-call synthetic fixture, a status-only update read seven row rectangles, compared with 227 on the previously installed runtime; both retained the status marker. This is a targeted operation count, not a native Desktop latency or FPS result. The adaptive conversion batch still cannot guarantee a maximum frame duration for a single expensive row. Native Desktop sustained generation and performance, Windows/Linux, and other themes remain unverified.
+
 ## Unreleased Go task-function display / Go 任务函数展示
 
 Go summaries show primitive positional values in recorded order, with `nil` for recorded null and raw named arguments available separately. Multi-line calls use trailing commas. Composite or incomplete arguments, unsafe strings, and unsuitable tool names retain the native summary. Separate visual blocks group recorded child calls; they do not establish an actual Go signature or execution order. Python remains the default and existing language preferences are preserved.

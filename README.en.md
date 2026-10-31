@@ -97,6 +97,8 @@ Within the task-function view, expanded native tool code uses the same font size
 
 Long histories convert progressively, prioritizing calls near the viewport; unconverted rows retain their native summaries. The minimap fills in as conversion progresses, while counts use the loaded structured records.
 
+When the host marks a call as failed but its structured tool result records success, the count is shown separately as a host-marked failure; no exit code is inferred. Python, JavaScript, C and C++ views use an ellipsis when numbers or duplicate keys cannot be represented without changing the record. The argument disclosure preserves the raw recorded text, and an ambiguous native file action retains its native summary. Very long disclosures still refer to the original call details.
+
 Choose **Trailing braces** under Code layout to retain `() {`, normal-flow closing rows, subtle scope guides and pair matching. Existing styles and visual preferences remain intact; the new `codeLayout` field defaults to `function`.
 
 ![Optional trailing braces](docs/images/code.png)
@@ -118,6 +120,8 @@ Botanical Advanced settings include an opt-in **植物滚动优化** (botanical 
 ## Data and permissions
 
 The function layout reads the current UI’s already-loaded Chat projection without loading more history. Calls with recorded children appear as nested scopes; leaf calls remain ordinary calls. These scopes visualize execution relationships and are not actual function definitions or executable code. A minimap navigates loaded, visible calls; dense marks are binned by position, prioritizing failures and running calls. Short calls remain on one line; longer calls or narrow rows expand to one argument per line. The heading counts loaded calls, recorded failures, and, when present, interrupted and unfinished calls, including nested calls. Completed calls show elapsed time only when both recorded timestamps are available. A read-only virtual tab labels each task; independent scope controls fold child calls without changing native result disclosure. Hover or keyboard focus highlights rows and indent guides, and recorded error messages or types are shown when available; otherwise the first result line is labelled as a result excerpt, not a cause. A failure list navigates loaded calls and unfolds plugin-owned scopes when possible; unavailable calls are marked. Collapsed scopes count recorded failed descendants, excluding interruptions. Failed, interrupted, and unknown outcomes are displayed and counted separately; in-flight calls remain unfinished. Unknown requires an explicit host indication or a result without a valid success/error flag. The verified host does not provide a dedicated unknown state. The plugin reads rendered chat structure and element sizes, and adds owned SVG, code expressions or CSS decorations. It registers no model tools, executes no commands and sends no network requests. Preferences stay in the current interface's `localStorage` under `dsh.process-tree.v1`. It does not change session content or read API keys. Uninstalling retains preferences; use the settings reset control to restore defaults.
+
+If local storage cannot be read or written, settings show a warning. After storage recovers, another change retries the save.
 
 ## Remove
 

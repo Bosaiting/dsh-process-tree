@@ -142,6 +142,117 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.deepEqual(errors,[]);return {first};
       }finally{await context.close()}
     });
+    await test('function file arguments preserve abbreviated home-path actions',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:true});
+      try {
+        await page.evaluate(()=>{
+          const child=document.querySelector('[data-chat-call-id="g0-1"] [data-disclosure-row]');
+          child.querySelector('span').innerHTML='<span>读取</span> · <button type="button">~/Desktop/project/locale/zh.json</button>';
+          window.fileClicks=0;child.querySelector('button').addEventListener('click',event=>{event.stopPropagation();fileClicks++});
+          window.homeRoot={callId:'g0-0',name:'run_code',argsRaw:'{}',subCalls:[{callId:'g0-1',name:'read',argsRaw:JSON.stringify({file_path:'/Users/example/Desktop/project/locale/zh.json'}),subCalls:[]}]};
+          api.setCodeSource({sync(){},read(){return {key:'home-path',nodes:new Map([['g0-0',{kind:'tool-call',data:{root:homeRoot}}]])}}});
+          for(const view of instances){view.structureDirty=true;view.schedule(17)}
+        });
+        await page.evaluate(()=>frames(10));
+        const child=page.locator('[data-chat-call-id="g0-1"]');
+        assert.equal(await child.locator('.dpt-code-expression').count(),1);
+        assert.match(await child.locator('.dpt-code-expression').innerText(),/^read\(file_path=/);
+        await child.locator('.dpt-code-link').click();
+        assert.equal(await page.evaluate(()=>fileClicks),1);
+        for(const language of ['javascript','c','cpp','java','go']) {
+          await page.evaluate(language=>api.change({codeLanguage:language}),language);
+          await page.evaluate(()=>frames(8));
+          assert.equal(await child.locator('.dpt-code-expression').count(),1,language);
+          await child.locator('.dpt-code-link').click();
+        }
+        assert.equal(await page.evaluate(()=>fileClicks),6);
+        await page.evaluate(()=>{
+          homeRoot.subCalls[0].argsRaw=JSON.stringify({file_path:'C:\\Users\\example\\Desktop\\project\\locale\\zh.json'});
+          api.change({codeLanguage:'python'});for(const view of instances)view.schedule(65);
+        });
+        await page.evaluate(()=>frames(10));
+        assert.equal(await child.locator('.dpt-code-expression').count(),1);
+        await child.locator('.dpt-code-link').click();
+        assert.equal(await page.evaluate(()=>fileClicks),7);
+        await page.evaluate(()=>{
+          const header=document.querySelector('[data-chat-call-id="g0-1"] [data-disclosure-row]');
+          header.querySelector('button:not([data-dpt-owned])').textContent='~/Desktop/project/other.json';
+          api.change({codeLanguage:'python'});
+        });
+        await page.evaluate(()=>frames(10));
+        assert.equal(await child.locator('.dpt-code-expression').count(),0,'unmatched native action must retain its native summary');
+        assert.equal(await child.locator('.dpt-code-link').count(),0);
+        assert.deepEqual(errors,[]);
+      } finally { await context.close() }
+    });
+    await test('function view retains raw arguments and refuses ambiguous file actions',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:true});
+      try {
+        await page.evaluate(()=>{
+          const header=document.querySelector('[data-chat-call-id="g0-1"] [data-disclosure-row]');
+          header.querySelector('span').innerHTML='<span>copy</span> · <button type="button">file.txt</button>';
+          window.fileClicks=0;header.querySelector('button').addEventListener('click',event=>{event.stopPropagation();fileClicks++});
+          window.auditRoot={callId:'g0-0',name:'run_code',argsRaw:'{}',subCalls:[{callId:'g0-1',name:'copy',argsRaw:'{"path":"/one/file.txt","target_file":"/two/file.txt"}',subCalls:[]}]};
+          api.setCodeSource({sync(){},read(){return {key:'audit',nodes:new Map([['g0-0',{kind:'tool-call',data:{root:auditRoot}}]])}}});
+          for(const view of instances){view.structureDirty=true;view.schedule(17)}
+        });
+        await page.evaluate(()=>frames(10));
+        const child=page.locator('[data-chat-call-id="g0-1"]');
+        assert.equal(await child.locator('.dpt-code-expression').count(),0);
+        await child.locator('button:not([data-dpt-owned])').click();
+        assert.equal(await page.evaluate(()=>fileClicks),1);
+        await page.evaluate(()=>{
+          const header=document.querySelector('[data-chat-call-id="g0-1"] [data-disclosure-row]');header.querySelector('button').remove();
+          auditRoot={...auditRoot,subCalls:[{callId:'g0-1',name:'inspect',argsRaw:'{"n":9007199254740993,"v":1e400,"n":2}',subCalls:[]}]};
+          for(const view of instances)view.schedule(65);
+        });
+        await page.evaluate(()=>frames(10));
+        assert.match(await child.locator('.dpt-code-expression').innerText(),/inspect\(…\)/);
+        await child.locator('.dpt-code-more').click();
+        assert.equal(await child.locator('.dpt-code-arguments').innerText(),'{"n":9007199254740993,"v":1e400,"n":2}');
+        assert.deepEqual(errors,[]);
+      } finally { await context.close() }
+    });
+    await test('function stats distinguish host failure from structured tool failure',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:1,nested:false});
+      try {
+        await page.evaluate(()=>{
+          document.querySelector('[data-chat-call-id="g0-0"] [data-state]').dataset.state='error';
+          const root={callId:'g0-0',kind:'tool-result',isError:false,call:{name:'bash',argsRaw:'{"command":"exit 1"}'},subCalls:[]};
+          api.setCodeSource({sync(){},read(){return {key:'host-failure',nodes:new Map([['g0-0',{kind:'tool-call',data:{root}}]])}}});
+          for(const view of instances){view.structureDirty=true;view.schedule(17)}
+        });
+        await page.evaluate(()=>frames(10));
+        assert.equal(await page.locator('.dpt-function-stats').innerText(),'已加载调用 1 · 已记录失败 0 · 宿主标记失败 1');
+        assert.equal(await page.locator('.dpt-failure-count').count(),0);
+        assert.deepEqual(errors,[]);
+      } finally { await context.close() }
+    });
+    await test('settings report storage failures and retry after recovery',async()=>{
+      const {page,context,errors}=await fixture(browser,{calls:1});
+      try {
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');document.body.append(mount);window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+          window.originalSetItem=Storage.prototype.setItem;
+          Storage.prototype.setItem=function(){throw new DOMException('quota','QuotaExceededError')};
+        });
+        await page.evaluate(()=>frames(8));
+        await page.getByRole('radio',{name:/代码块/}).click();
+        await page.getByRole('alert').waitFor({state:'visible'});
+        assert.match(await page.getByRole('alert').innerText(),/无法读取或保存/);
+        assert.equal(await page.evaluate(()=>!!window[Symbol.for('dsh.process-tree.pending-settings')]),true);
+        await page.evaluate(()=>{Storage.prototype.setItem=originalSetItem});
+        await page.getByRole('radio',{name:/安静线条/}).click();
+        await page.getByRole('alert').waitFor({state:'hidden'});
+        assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')).treeStyle),'quiet');
+        assert.equal(await page.evaluate(()=>!!window[Symbol.for('dsh.process-tree.pending-settings')]),false);
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});
+        assert.deepEqual(errors,[]);
+      } finally { await context.close() }
+    });
     await test('function code uses genuine calls, folds full arguments, preserves native actions and releases sources',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:3,nested:true});
       try{
@@ -586,6 +697,57 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.ok((await map.boundingBox()).height>0);
         assert.deepEqual(errors,[]);return {count};
       }finally{await context.close()}
+    });
+    await test('function minimap reuses row geometry for status-only updates',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:220,nested:false,cap:220});
+      try {
+        await page.evaluate(()=>{
+          const observable=value=>({value,listeners:new Set(),getSnapshot(){return this.value},subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},publish(v){this.value=v;for(const f of this.listeners)f()}});
+          window.auditNodes=new Map();
+          for(let i=0;i<220;i++)auditNodes.set('g0-'+i,{kind:'tool-call',data:{root:{callId:'g0-'+i,kind:'tool-result',isError:false,call:{name:'read',argsRaw:'{}'},subCalls:[]}}});
+          window.auditChat=observable({nodes:auditNodes});const current=observable({key:'geometry',hooks:{chat:auditChat}});
+          api.setCodeSource(api.createCodeSource(current,{list:{getSnapshot:()=>({byId:{geometry:{title:'Geometry'}}})}}));
+        });
+        await page.waitForFunction(()=>document.querySelectorAll('.dpt-code-expression').length===220 && ![...instances][0].functionBatch);
+        await page.evaluate(()=>frames(10));
+        const reads=await page.evaluate(async()=>{
+          let count=0;const original=Element.prototype.getBoundingClientRect;
+          Element.prototype.getBoundingClientRect=function(...args){if(this.matches?.('[data-disclosure-row]'))count++;return original.apply(this,args)};
+          const old=auditNodes.get('g0-180').data.root;
+          auditNodes.set('g0-180',{kind:'tool-call',data:{root:{...old,isError:true}}});auditChat.publish({nodes:new Map(auditNodes)});
+          await frames(10);Element.prototype.getBoundingClientRect=original;return count;
+        });
+        assert.ok(reads<160,'status update remeasured too many headers: '+reads);
+        assert.ok(await page.locator('.dpt-map-mark[data-state="error"]').count()>0);
+        assert.deepEqual(errors,[]);return {reads};
+      } finally { await context.close() }
+    });
+    await test('function minimap viewport tracks each scroll event without an extra frame',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:220,nested:false,cap:220});
+      try {
+        const samples=await page.evaluate(async()=>{
+          const scroller=document.querySelector('[data-step-process-body]');
+          const content=document.querySelector('[data-step-process-content]');
+          const nav=document.querySelector('.dpt-minimap-anchor');
+          const viewport=document.querySelector('.dpt-map-viewport');
+          const values=[];
+          for(const offset of [900,2300,4100,1300,0]) {
+            await new Promise(resolve=>{
+              scroller.addEventListener('scroll',()=>{
+                const rect=content.getBoundingClientRect(), clip=scroller.getBoundingClientRect();
+                const scale=rect.width/content.offsetWidth;
+                const expected=Math.max(0,Math.min(100,(Math.max(clip.top,nav.getBoundingClientRect().bottom)-rect.top)/scale/content.offsetHeight*100));
+                values.push({expected,actual:parseFloat(viewport.style.top),offset:scroller.scrollTop});
+                resolve();
+              },{once:true});
+              scroller.scrollTop=offset;
+            });
+          }
+          return values;
+        });
+        for(const sample of samples) assert.ok(Math.abs(sample.actual-sample.expected)<0.03,JSON.stringify(sample));
+        assert.deepEqual(errors,[]);return {samples};
+      } finally { await context.close() }
     });
     await test('function code preserves native summaries when structured data is absent or belongs to another session',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:false});
