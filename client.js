@@ -1136,8 +1136,17 @@ window.__ModuleLoader__.load({
 [data-dpt-function-comment-label]::before { content: "# " / ""; white-space: pre; color: var(--dpt-code-comment); font: inherit; flex: none; }
 .dpt-host:is([data-dpt-code-language="javascript"], [data-dpt-code-language="c"], [data-dpt-code-language="cpp"], [data-dpt-code-language="java"], [data-dpt-code-language="go"]) [data-dpt-function-comment-label]::before { content: "// " / ""; }
 /* Go uses a separate visual block, never an apparent call-followed-by-block syntax. */
+.dpt-host[data-dpt-code-language="go"] [data-dpt-function-brace-scope] {
+  --dpt-go-scope-guide: color-mix(in srgb, var(--dpt-code-text) calc(var(--dpt-ink-mix, 38%) * .4), transparent);
+  background-image: linear-gradient(var(--dpt-go-scope-guide), var(--dpt-go-scope-guide));
+  background-position: 6px 0; background-size: clamp(.75px, var(--dpt-code-line-width, 1px), 1.3px) 100%; background-repeat: no-repeat;
+}
+.dpt-host[data-dpt-code-language="go"] [data-dpt-function-brace-scope]:is(:has([data-dpt-function-line]:hover), :focus-within) {
+  --dpt-go-scope-guide: color-mix(in srgb, var(--dpt-code-keyword) 65%, transparent);
+}
 .dpt-host[data-dpt-code-language="go"] [data-dpt-function-brace-scope]::before {
   content: "{  // 子调用（记录层级）" / ""; display: block; margin-left: calc(-1 * var(--dpt-code-indent) + 2px);
+  position: static; border-left: 0;
   color: var(--dpt-code-comment); font: 400 var(--dpt-code-size)/26px var(--dpt-code-font);
 }
 .dpt-host[data-dpt-code-language] [data-dpt-function-brace-scope]::after {

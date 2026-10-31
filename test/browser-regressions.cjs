@@ -89,6 +89,34 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
 (async()=>{
   const browser=await chromium.launch({headless:true,...(process.env.DSH_CHROMIUM_EXECUTABLE?{executablePath:process.env.DSH_CHROMIUM_EXECUTABLE}:{})});
   try{
+    await test('Go long nested calls reserve a separate scope line during native scrolling',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:true,cap:140});
+      try {
+        await page.evaluate(()=>{
+          document.querySelector('[data-chat-flow]').style.width='390px';
+          const root={callId:'g0-0',name:'read',argsRaw:JSON.stringify({path:'long-directory/'.repeat(18)+'source.go'}),subCalls:[{callId:'g0-1',name:'read',argsRaw:JSON.stringify({path:'child.go'}),subCalls:[]}]};
+          api.setCodeSource({sync(){},read(){return {key:'go-layout',nodes:new Map([['g0-0',{kind:'tool-call',data:{root}}]])}}});
+          api.change({codeLanguage:'go'});
+          for(const view of instances){view.structureDirty=true;view.schedule(17)}
+        });
+        await page.waitForSelector('[data-dpt-function-brace-scope]');await page.evaluate(()=>frames(12));
+        const root=page.locator('[data-chat-call-id="g0-0"]'),scope=root.locator('[data-dpt-function-brace-scope]').first();
+        assert.equal(await root.locator('.dpt-code-expression').first().getAttribute('data-multiline'),'');
+        const check=async()=>{
+          const v=await scope.evaluate(e=>{const marker=getComputedStyle(e,'::before'),child=e.querySelector('[data-chat-call-id]'),a=e.getBoundingClientRect(),b=child.getBoundingClientRect();return {position:marker.position,lineHeight:parseFloat(marker.lineHeight),scopeTop:a.top,childTop:b.top}});
+          assert.equal(v.position,'static','scope marker must participate in layout');
+          assert.ok(v.childTop-v.scopeTop>=v.lineHeight,JSON.stringify(v));
+        };
+        await check();
+        const body=page.locator('[data-step-process-body]');
+        await body.evaluate(e=>e.scrollTop=100);await page.evaluate(()=>frames(3));await check();
+        await body.hover();await page.mouse.wheel(0,80);await page.evaluate(()=>frames(3));await check();
+        await root.locator('.dpt-scope-toggle').first().click();await page.evaluate(()=>frames(4));
+        assert.equal(await scope.isVisible(),false);
+        await root.locator('.dpt-scope-toggle').first().click();await page.evaluate(()=>frames(4));await check();
+        assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
     await test('long function conversion yields, follows live updates and cancels cleanly',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:500,nested:false,cap:300});
       try {
