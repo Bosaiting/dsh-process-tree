@@ -2,23 +2,25 @@
 
 The current source does not declare an `engines.dsh` restriction or DSH peer-version requirements. This removes the version gate; it does not establish compatibility with untested host releases. Published version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2; previously published metadata is unchanged.
 
-## Local web-fetch display fix / 本地网页获取展示修复（2026-10-31）
+The candidate checks below are historical snapshots from development before the 0.11.0 release. Their test counts, hashes, host versions and limitations apply only to the specific candidate tested, not to later releases. Where a candidate was superseded, the later entry or release notes describe the final behavior.
+
+## Historical web-fetch display candidate / 网页获取展示历史候选（2026-10-31）
 
 The code view matches a recorded HTTP(S) URL to its exact native anchor and delegates activation to that anchor. Changed, unsupported or ambiguous destinations retain the native row, and clicks recheck the mapping. On macOS, 61 unit tests and 48 synthetic Chromium browser cases passed. A separate isolated rc.5 Web host using the locally customized Claude Style theme displayed a synthetic nested `web_fetch` call as code and preserved the native link and result disclosure; no model, tool or external URL was accessed. Client SHA-256: `ea1684c3aef0b7dc4a520a29acb7519aef241eb921c62b5b48ee93c6314e4168`. Native Desktop visual acceptance and other host versions remain unverified.
 
-## Local IDE colour presets / 本地 IDE 配色方案（2026-10-31）
+## Historical IDE colour presets candidate / IDE 配色方案历史候选（2026-10-31）
 
 The local candidate retains legacy light/dark colours and adds independent VS Code, JetBrains, Catppuccin and Dracula-inspired presets, with optional code-area backgrounds. Existing colours migrate into the VS Code profiles. Editing only colours, presets or background changes CSS variables without rebuilding call rows. Native file-label mutations still invalidate their mappings, and a suspended code view retains its background.
 
 On macOS, 59 unit tests and 47 synthetic Chromium browser cases passed. An isolated rc.5 Web host with the locally customized Claude Style 0.19.6 runtime passed 25 synthetic checks, including migration and all new presets in both preview themes. A first host run read the C++ tab before the asynchronous update completed; the test was changed to wait for the observed tab and the full rerun passed. No model or tool ran. Client SHA-256: `fa70485679292ab87249e6e75d79e2d14200c7a5e42f729f686d0e01fba9d985`. These checks do not establish native Desktop visual acceptance, sustained live generation, native frame rates, or Windows/Linux compatibility.
 
-## Local audit fixes / 本地审查修复（2026-10-31）
+## Historical audit candidate / 审查修复历史候选（2026-10-31）
 
 The local candidate preserves recorded argument text, falls back for lossy object-style formatting and ambiguous native file actions, reports host-only failure indications separately, and warns if settings storage fails. Its client SHA-256 is `1936e17281677e9f8a282422db3bf412c4829e923d3308423337e18d8fe6ca88`. On macOS, 54 unit tests and 46 synthetic Chromium browser cases passed. A separate rc.5 Web host with the locally customized Claude Style 0.19.6 runtime passed 23 synthetic function checks; a clean rc.5 Web host passed six synthetic streaming checks. No model or tool ran. A Windows-style path was exercised only in a synthetic browser fixture, not on Windows Desktop.
 
 In one 220-call synthetic fixture, a status-only update read seven row rectangles, compared with 227 on the previously installed runtime; both retained the status marker. This is a targeted operation count, not a native Desktop latency or FPS result. The adaptive conversion batch still cannot guarantee a maximum frame duration for a single expensive row. Native Desktop sustained generation and performance, Windows/Linux, and other themes remain unverified.
 
-## Unreleased Go task-function display / Go 任务函数展示
+## Historical candidate: Go task-function display / Go 任务函数展示
 
 Go summaries show primitive positional values in recorded order, with `nil` for recorded null and raw named arguments available separately. Multi-line calls use trailing commas. Composite or incomplete arguments, unsafe strings, and unsuitable tool names retain the native summary. Separate visual blocks group recorded child calls; they do not establish an actual Go signature or execution order. Python remains the default and existing language preferences are preserved.
 
@@ -26,7 +28,7 @@ On macOS arm64, 51 unit and 40 Chromium fixture cases passed, with an additional
 
 Sequential headless Chromium samples with 1,000 synthetic calls took 750 ms for initial Go conversion, 701 ms for Go to Python, and 702 ms for Python to Go. These are single samples including fixture scanning, not native Desktop performance measurements.
 
-## Unreleased Java positional display / Java 位置参数展示
+## Historical candidate: Java positional display / Java 位置参数展示
 
 Java task-function summaries show primitive values in recorded order, without assuming a real method signature. The raw recorded arguments remain available from a separate disclosure; very long disclosures use the existing display limit and direct users to native details. Composite or incomplete arguments and names unsuitable as Java identifiers retain the native summary. Python, JavaScript, C and C++ display settings are preserved.
 
@@ -34,13 +36,13 @@ On macOS arm64, 50 unit and 39 Chromium fixture cases passed, and 960 Python/Jav
 
 Sequential headless Chromium samples with 1,000 synthetic calls took 756 ms for initial Java conversion, 702 ms to switch Java to Python, and 702 ms to switch Python to Java. These single samples include fixture scanning and do not establish native Desktop performance.
 
-## Unreleased expanded tool-code font / 展开的工具代码字号
+## Historical candidate: expanded tool-code font / 展开的工具代码字号
 
 In task-function view, only the native code text inside a tool call is sized to match the function summary. Syntax highlighting and native copy and wrap controls are retained; unrelated code blocks and other layouts are not targeted.
 
 On macOS arm64, an isolated rc.5 Web host using the user's locally customized Claude Style 0.19.3 reproduced the mismatch with the previous runtime (13px summary versus 15px code). The updated runtime passed four focused checks both with that theme and in a clean no-theme profile: matching size in light/dark media modes, following a changed 17px summary size, preserved token colours/copy/wrap, and native folding plus an unrelated code block. A first themed folding check sampled before its transition finished; waiting for the native hidden state corrected the test. All records were synthetic; no model or tool was run. Client SHA-256: `6a400b02d6d55c386e66cf9f17fb4f0cb7e2180fd8cf18821231d5f950864bb8`. Native Desktop runtime and other desktop platforms were not verified by these tests.
 
-## Unreleased Java task-function display / Java 任务函数展示
+## Historical candidate: Java task-function display / Java 任务函数展示
 
 The preceding Java candidate added `.java` virtual tabs and visible recorded `name = value` labels. That presentation has since been replaced by the positional view. Its equals signs were read-only presentation, not Java named arguments or assignments; JSON values and null were not assigned invented types. Python, JavaScript, C and C++ preferences remained intact.
 
@@ -48,7 +50,7 @@ On macOS arm64, 50 unit cases and 38 Chromium fixture cases passed; 960 Python/J
 
 In sequential headless Chromium samples with 1,000 synthetic calls, initial Java conversion took 749 ms, switching Java to C++ took 699 ms, and switching Python to Java took 720 ms. These are single samples and include per-frame fixture scanning; they are not native Desktop frame rates or performance guarantees.
 
-## Unreleased C++ task-function display / C++ 任务函数展示
+## Historical candidate: C++ task-function display / C++ 任务函数展示
 
 The current source adds C++ to the function layout, sharing C-style arguments and scope rendering with separate C++ keyword validation, a `.cpp` tab and `void task_01()` heading. Composite values and null remain labelled records; nesting is illustrative, not executable C++. Python, JavaScript and C language preferences remain intact.
 
@@ -56,7 +58,7 @@ On macOS arm64, 49 unit cases and 38 Chromium fixture cases passed; 720 Python/J
 
 In sequential headless Chromium samples with 1,000 synthetic calls, initial C++ conversion took 739 ms, switching C++ to C took 697 ms, and switching C to C++ took 703 ms. These are single samples and include per-frame fixture scanning; they are not native Desktop frame rates or performance guarantees.
 
-## Unreleased C task-function display / C 任务函数展示
+## Historical candidate: C task-function display / C 任务函数展示
 
 The current source adds C to the function layout while preserving Python and JavaScript selections. C parameter names are comments, composite values are labelled JSON, and null is explicitly labelled without guessing a pointer type. Scope braces show recorded nesting; this is not executable C. The standalone trailing-braces layout remains independent.
 
@@ -64,7 +66,7 @@ On macOS arm64, 48 unit cases and 38 Chromium fixture cases passed; 480 Python/J
 
 In sequential headless Chromium samples with 1,000 synthetic calls, initial C conversion took 771 ms, switching C to JavaScript took 699 ms, and switching Python to C took 703 ms. These are single samples and include per-frame fixture scanning; they are not native Desktop frame rates or performance guarantees.
 
-## Unreleased JavaScript task-function display / JavaScript 任务函数展示
+## Historical candidate: JavaScript task-function display / JavaScript 任务函数展示
 
 The preceding candidate added a Python/JavaScript language preference to the function layout; the default and legacy fallback remain Python. The JavaScript object and scope braces visualize recorded arguments and nesting, not executable source or a callback. The separate trailing-braces layout remains independent. No TypeScript option is claimed.
 

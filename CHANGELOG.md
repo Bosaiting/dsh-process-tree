@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Correct the README versioned installation examples and identify earlier compatibility checks as historical snapshots.
+
 ## 0.11.1
 
 - Fix overlapping Go child-scope labels on long calls while preserving scope guides, scrolling and folding.

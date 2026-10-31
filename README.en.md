@@ -95,14 +95,14 @@ Restart when prompted. Index sources belong to a profile and must be added separ
 dsh plugin --profile web add dsh-process-tree@latest
 
 # Or install a pinned version
-dsh plugin --profile web add dsh-process-tree@0.11.0
+dsh plugin --profile web add dsh-process-tree@0.11.1
 ```
 
 For offline installation, download the npm package first and use the resulting filename:
 
 ```sh
-npm pack dsh-process-tree@0.11.0
-dsh plugin --profile web add ./dsh-process-tree-0.11.0.tgz
+npm pack dsh-process-tree@0.11.1
+dsh plugin --profile web add ./dsh-process-tree-0.11.1.tgz
 ```
 
 Restart the corresponding DSH instance. Use the plugin manager for Desktop; the verified macOS Desktop also provides a bundled CLI for the `desktop` profile. Do not edit the Desktop application installation directory directly.
@@ -132,7 +132,7 @@ The three tree styles support separate light and dark running/error colours. Lin
 
 ## Compatibility and data
 
-Version 0.11.0 does not block installation or loading by DSH version. This does not mean future releases have been tested. rc.5 passed isolated Web-host checks; sustained native Desktop operation and Windows/Linux remain among the unverified areas. Older published 0.8.2 retains its original RC2/RC5 restriction. See [compatibility](docs/COMPATIBILITY.md) for evidence and limits.
+Version 0.11.1 does not block installation or loading by DSH version. This does not mean future releases have been tested. rc.5 passed isolated Web-host checks; sustained native Desktop operation and Windows/Linux remain among the unverified areas. Older published 0.8.2 retains its original RC2/RC5 restriction. See [compatibility](docs/COMPATIBILITY.md) for evidence and limits.
 
 The plugin reads rendered chat structure, element dimensions and the current session's already-loaded Chat projection without loading extra history. It registers no model tools, runs no commands and sends no network requests. Preferences are stored in the current interface's `localStorage` (`dsh.process-tree.v1`); uninstalling leaves them intact. If storage fails, settings display a warning and another change retries after recovery.
 
