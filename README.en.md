@@ -38,7 +38,7 @@ The state image was captured from a dedicated Desktop demo. The style and compar
 
 ## Install
 
-The current source does not restrict installation or loading by DSH version. Tested hosts and unverified platforms are recorded separately in [compatibility](docs/COMPATIBILITY.md); removing the gate does not mean future releases have been tested. Published version 0.8.2 still declares **DSH 0.2.1-rc.2 and 0.2.1-rc.5**. rc.5 passed isolated Web-host checks and a macOS Desktop spot check; Windows, Linux and other Desktop configurations remain unverified. The earlier npm 0.8.0 release declares rc.2 only; check the compatibility of the selected published version or use the pinned GitHub installation below.
+Version 0.11.0 does not restrict installation or loading by DSH version. Tested hosts and unverified platforms are recorded separately in [compatibility](docs/COMPATIBILITY.md); removing the gate does not mean future releases have been tested. Older version 0.8.2 still declares **DSH 0.2.1-rc.2 and 0.2.1-rc.5**. rc.5 passed isolated Web-host checks and a macOS Desktop spot check; Windows, Linux and other Desktop configurations remain unverified. The earlier npm 0.8.0 release declares rc.2 only.
 
 ### Install through Discover
 
@@ -63,10 +63,10 @@ npm view dsh-process-tree version engines
 dsh plugin --profile web add dsh-process-tree@latest
 ```
 
-Install the rc.5-compatible pinned version from GitHub:
+Install a pinned version from npm:
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.2"
+dsh plugin --profile web add dsh-process-tree@0.11.0
 ```
 
 Alternatively, download the npm package and install it locally:

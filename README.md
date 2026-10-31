@@ -62,11 +62,11 @@ Go 风格使用 `.go` 虚拟标签、`func` 标题和位置参数；原始参数
 
 ## 安装
 
-当前源码为 0.10.0，包含任务函数与大括号两种代码形态；下方公开安装示例仍固定为 0.8.2，安装前请核对所选版本。
+0.11.0 包含任务函数与大括号两种代码形态，以及多组可独立选择的 IDE 配色。
 
 当前源码不再通过 DSH 版本号限制安装或加载。已验证版本和未验证的平台仍分别记录在[兼容性记录](docs/COMPATIBILITY.md)中；移除门槛不代表已经验证未来版本。
 
-0.8.2 声明支持 **DSH 0.2.1-rc.2 和 0.2.1-rc.5**。rc.5 已通过隔离 Web 宿主测试及 macOS 桌面版抽查；Windows、Linux 和其他桌面配置尚未验证。早期 npm 0.8.0 仅声明支持 rc.2；请核对所选版本的兼容范围，或使用下方 GitHub 固定版本。详见[兼容性记录](docs/COMPATIBILITY.md)。
+旧版 0.8.2 声明支持 **DSH 0.2.1-rc.2 和 0.2.1-rc.5**。rc.5 已通过隔离 Web 宿主测试及 macOS 桌面版抽查；Windows、Linux 和其他桌面配置尚未验证。早期 npm 0.8.0 仅声明支持 rc.2。详见[兼容性记录](docs/COMPATIBILITY.md)。
 
 ### 通过 Discover 安装
 
@@ -91,10 +91,10 @@ npm view dsh-process-tree version engines
 dsh plugin --profile web add dsh-process-tree@latest
 ```
 
-从 GitHub 安装兼容 rc.5 的固定版本：
+也可以从 npm 安装固定版本：
 
 ```sh
-dsh plugin --profile web add "github:Bosaiting/dsh-process-tree#v0.8.2"
+dsh plugin --profile web add dsh-process-tree@0.11.0
 ```
 
 也可以先下载 npm 包，再从本地安装：
