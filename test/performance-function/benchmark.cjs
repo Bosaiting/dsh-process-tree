@@ -6,6 +6,9 @@ const sourcePath = process.env.DSH_CLIENT_SOURCE || path.join(__dirname, '../../
 let source = fs.readFileSync(sourcePath, 'utf8').replace('DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX,', `DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX, CSS, TreeView, createManager,
 change: patch => {SETTINGS=normalize({...SETTINGS,...patch});queueLineVars();for(const view of watchedViews.values())view.syncSettings()},`)
 const rows = Number(process.env.DPT_ROWS || 1000)
+const language = ['python','javascript','c','cpp','java','go'].includes(process.env.DPT_LANGUAGE) ? process.env.DPT_LANGUAGE : 'python'
+const switchLanguage = process.env.DPT_SWITCH_LANGUAGE === '1'
+const switchTarget = ['python','javascript','c','cpp','java','go'].includes(process.env.DPT_SWITCH_TARGET) ? process.env.DPT_SWITCH_TARGET : (language === 'python' ? 'javascript' : 'python')
 const react = path.join(path.dirname(require.resolve('react/package.json')), 'umd/react.development.js')
 ;(async () => {
   const browser = await chromium.launch({headless:true})
@@ -15,7 +18,7 @@ const react = path.join(path.dirname(require.resolve('react/package.json')), 'um
   await page.addScriptTag({path:react})
   await page.addScriptTag({content:source})
   await page.evaluate(() => {window.spec.factory(name=>{if(name==='react')return React;throw Error(name)})})
-  const result = await page.evaluate(async (rows) => {
+  const result = await page.evaluate(async ({rows, language, switchLanguage, switchTarget}) => {
     const observable=value=>({value,listeners:new Set(),getSnapshot(){return this.value},subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn)},publish(v){this.value=v;for(const f of this.listeners)f()}})
     const content=document.querySelector('[data-step-process-content]'), nodes=new Map()
     const fragment=document.createDocumentFragment()
@@ -28,7 +31,7 @@ const react = path.join(path.dirname(require.resolve('react/package.json')), 'um
     content.append(fragment)
     const chat=observable({nodes}),current=observable({key:'bench',hooks:{chat}})
     api.setCodeSource(api.createCodeSource(current,{list:{getSnapshot:()=>({byId:{bench:{title:'Benchmark'}}})}}))
-    api.change({treeStyle:'code',codeLayout:'function',...api.STYLE_PRESETS.code,growthEnabled:false})
+    api.change({treeStyle:'code',codeLayout:'function',codeLanguage:language,...api.STYLE_PRESETS.code,growthEnabled:false})
     const times=[];const original=api.TreeView.prototype.syncFunctionDecorations
     api.TreeView.prototype.syncFunctionDecorations=function(...args){const t=performance.now();try{return original.apply(this,args)}finally{times.push(performance.now()-t)}}
     const t0=performance.now();window.manager=api.createManager();manager.start()
@@ -45,8 +48,21 @@ const react = path.join(path.dirname(require.resolve('react/package.json')), 'um
     nodes.set(id,{kind:'tool-call',data:{root:{...block,isError:true}}});chat.publish({nodes:new Map(nodes)})
     await new Promise(r=>setTimeout(r,500))
     const updateTimes=times.slice(before)
-    return {rows,first,all,frames,maxGap,longTasks:longTasks.filter(x=>x>=50),syncCalls:times.length,initialSync:times.slice(0,before),updateSync:updateTimes,updateObserved:content.querySelector('[data-chat-call-id="'+id+'"] [data-dpt-function-failed]')!==null,settledAt:settled-t0}
-  },rows)
+    const updateObserved=content.querySelector('[data-chat-call-id="'+id+'"] [data-dpt-function-failed]')!==null
+    let switchResult=null
+    if (switchLanguage && all !== null) {
+      const target=switchTarget, t=performance.now(); let previous=t, maxSwitchGap=0, switchFrames=0, done=null
+      const previousExpressions=[...content.querySelectorAll('.dpt-code-expression')]
+      api.change({codeLanguage:target})
+      while(performance.now()-t<30000){
+        await new Promise(requestAnimationFrame);const now=performance.now();maxSwitchGap=Math.max(maxSwitchGap,now-previous);previous=now;switchFrames++
+        const expressions=[...content.querySelectorAll('.dpt-code-expression')]
+        if(expressions.length===rows && content.dataset.dptCodeLanguage===target && expressions.every((e,i)=>target===language || e!==previousExpressions[i])){done=now-t;break}
+      }
+      switchResult={target,done,frames:switchFrames,maxGap:maxSwitchGap}
+    }
+    return {rows,language,first,all,frames,maxGap,longTasks:longTasks.filter(x=>x>=50),syncCalls:times.length,initialSync:times.slice(0,before),updateSync:updateTimes,updateObserved,settledAt:settled-t0,switchResult}
+  },{rows,language,switchLanguage,switchTarget})
   console.log(JSON.stringify(result))
   await browser.close()
 })().catch(e=>{console.error(e);process.exitCode=1})

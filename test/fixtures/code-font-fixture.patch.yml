@@ -1,0 +1,3 @@
+- insert:
+    - id: process-tree-code-font-fixture
+      name: ./code-font-session-seed.mjs

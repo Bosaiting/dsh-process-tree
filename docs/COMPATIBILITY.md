@@ -2,6 +2,60 @@
 
 Version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5; other releases are not declared compatible. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2.
 
+## Unreleased Go task-function display / Go 任务函数展示
+
+Go summaries show primitive positional values in recorded order, with `nil` for recorded null and raw named arguments available separately. Multi-line calls use trailing commas. Composite or incomplete arguments, unsafe strings, and unsuitable tool names retain the native summary. Separate visual blocks group recorded child calls; they do not establish an actual Go signature or execution order. Python remains the default and existing language preferences are preserved.
+
+On macOS arm64, 51 unit and 40 Chromium fixture cases passed, with an additional settings persistence check; 1,920 Python/JavaScript/C/C++/Java formatter comparisons matched the previously installed runtime. An isolated rc.5 Web host using the locally customized Claude Style theme passed 23 compatibility checks and a focused native-fallback check. Synthetic records were used without running a model or tool. Client SHA-256: `8ac15b20850921409cb354102d8a630d75a6ff0239aaf5bc01d9615159169964`. Native Desktop behavior, Go compilation, sustained live generation and other platforms were not verified.
+
+Sequential headless Chromium samples with 1,000 synthetic calls took 750 ms for initial Go conversion, 701 ms for Go to Python, and 702 ms for Python to Go. These are single samples including fixture scanning, not native Desktop performance measurements.
+
+## Unreleased Java positional display / Java 位置参数展示
+
+Java task-function summaries show primitive values in recorded order, without assuming a real method signature. The raw recorded arguments remain available from a separate disclosure; very long disclosures use the existing display limit and direct users to native details. Composite or incomplete arguments and names unsuitable as Java identifiers retain the native summary. Python, JavaScript, C and C++ display settings are preserved.
+
+On macOS arm64, 50 unit and 39 Chromium fixture cases passed, and 960 Python/JavaScript/C/C++ formatter comparisons matched the previously installed runtime. An isolated rc.5 Web host passed the 22-check function compatibility sequence and focused native-fallback checks with both a clean profile and the user's locally customized Claude Style theme. The expanded-code font regression passed four checks in the clean profile. Fixtures used synthetic records; no model or tool was run. Client SHA-256: `51131387f5369e830e0d78895fb14fe4f39e485affdc72239471e1283ba5e843`. Native Desktop behavior and sustained live generation were not verified.
+
+Sequential headless Chromium samples with 1,000 synthetic calls took 756 ms for initial Java conversion, 702 ms to switch Java to Python, and 702 ms to switch Python to Java. These single samples include fixture scanning and do not establish native Desktop performance.
+
+## Unreleased expanded tool-code font / 展开的工具代码字号
+
+In task-function view, only the native code text inside a tool call is sized to match the function summary. Syntax highlighting and native copy and wrap controls are retained; unrelated code blocks and other layouts are not targeted.
+
+On macOS arm64, an isolated rc.5 Web host using the user's locally customized Claude Style 0.19.3 reproduced the mismatch with the previous runtime (13px summary versus 15px code). The updated runtime passed four focused checks both with that theme and in a clean no-theme profile: matching size in light/dark media modes, following a changed 17px summary size, preserved token colours/copy/wrap, and native folding plus an unrelated code block. A first themed folding check sampled before its transition finished; waiting for the native hidden state corrected the test. All records were synthetic; no model or tool was run. Client SHA-256: `6a400b02d6d55c386e66cf9f17fb4f0cb7e2180fd8cf18821231d5f950864bb8`. Native Desktop runtime and other desktop platforms were not verified by these tests.
+
+## Unreleased Java task-function display / Java 任务函数展示
+
+The preceding Java candidate added `.java` virtual tabs and visible recorded `name = value` labels. That presentation has since been replaced by the positional view. Its equals signs were read-only presentation, not Java named arguments or assignments; JSON values and null were not assigned invented types. Python, JavaScript, C and C++ preferences remained intact.
+
+On macOS arm64, 50 unit cases and 38 Chromium fixture cases passed; 960 Python/JavaScript/C/C++ formatter comparisons matched the previously installed runtime. A clean isolated rc.5 Web host with synthetic Session/PTC records passed 22 checks, including Java preview, nesting, folding, failure navigation, file actions and persisted language after reload. A first host attempt completed the Java interaction checks but hung before finishing the final fold/reload check and was interrupted; a subsequent run passed the full sequence after bounding and instrumenting the test. No model or tool was run. Client SHA-256: `0f496e5aece4fe1ee780d5b892ab7ed96c3992508dfaa236cda92750d5354164`. Native Desktop runtime, sustained live generation and Windows/Linux Desktop were not validated by these checks.
+
+In sequential headless Chromium samples with 1,000 synthetic calls, initial Java conversion took 749 ms, switching Java to C++ took 699 ms, and switching Python to Java took 720 ms. These are single samples and include per-frame fixture scanning; they are not native Desktop frame rates or performance guarantees.
+
+## Unreleased C++ task-function display / C++ 任务函数展示
+
+The current source adds C++ to the function layout, sharing C-style arguments and scope rendering with separate C++ keyword validation, a `.cpp` tab and `void task_01()` heading. Composite values and null remain labelled records; nesting is illustrative, not executable C++. Python, JavaScript and C language preferences remain intact.
+
+On macOS arm64, 49 unit cases and 38 Chromium fixture cases passed; 720 Python/JavaScript/C formatter comparisons matched the previously installed runtime. A clean isolated rc.5 Web host with synthetic Session/PTC records passed 21 checks, including C++ preview, nesting, folding, failure navigation, file actions and persisted language after reload. No model or tool was run. Client SHA-256: `3e587ee31758c4cce0ae4d56a5057445016c43d34f2cce2a94a890da8294357e`. Native Desktop runtime, sustained live generation and Windows/Linux Desktop were not validated by these checks.
+
+In sequential headless Chromium samples with 1,000 synthetic calls, initial C++ conversion took 739 ms, switching C++ to C took 697 ms, and switching C to C++ took 703 ms. These are single samples and include per-frame fixture scanning; they are not native Desktop frame rates or performance guarantees.
+
+## Unreleased C task-function display / C 任务函数展示
+
+The current source adds C to the function layout while preserving Python and JavaScript selections. C parameter names are comments, composite values are labelled JSON, and null is explicitly labelled without guessing a pointer type. Scope braces show recorded nesting; this is not executable C. The standalone trailing-braces layout remains independent.
+
+On macOS arm64, 48 unit cases and 38 Chromium fixture cases passed; 480 Python/JavaScript formatter comparisons matched the previously installed runtime. A clean isolated rc.5 Web host with synthetic Session/PTC records passed 20 checks, including C preview, nesting, folding, failure navigation, file actions and saved language after reload. The first two host attempts exposed test assumptions about an ambiguous close button and narrow-layout line wrapping; the corrected checks passed without a runtime change. No model or tool was run. Client SHA-256: `955362aba60a0793cdc9e9953bc57ce4d6947aa2903bb8f68e328aceb392fe7d`. These checks do not establish native Desktop runtime behavior, sustained live generation, or Windows/Linux Desktop support.
+
+In sequential headless Chromium samples with 1,000 synthetic calls, initial C conversion took 771 ms, switching C to JavaScript took 699 ms, and switching Python to C took 703 ms. These are single samples and include per-frame fixture scanning; they are not native Desktop frame rates or performance guarantees.
+
+## Unreleased JavaScript task-function display / JavaScript 任务函数展示
+
+The preceding candidate added a Python/JavaScript language preference to the function layout; the default and legacy fallback remain Python. The JavaScript object and scope braces visualize recorded arguments and nesting, not executable source or a callback. The separate trailing-braces layout remains independent. No TypeScript option is claimed.
+
+On macOS arm64, 46 unit cases and 38 Chromium fixture cases passed. Python formatter output matched the preceding source in 240 combinations of names, values, incomplete records and scope/wrapping states. A clean isolated rc.5 Web host with synthetic Session/PTC events passed 19 checks including JavaScript switching, preview, nesting, folding, failure navigation, file actions and saved settings. No model or tool was run. Client SHA-256: `4a9f4ae36de8aeb940d82ad0136da1eb6d6f3166c3b9f4b24407096eed2fddac`. Native Desktop runtime, sustained live generation and Windows/Linux Desktop were not validated by these checks.
+
+In separate sequential headless Chromium samples with 1,000 synthetic calls, initial conversion took 770 ms for Python and 752 ms for JavaScript; switching after conversion took 701 ms and 703 ms respectively. The fixture scans every expression each frame and includes its own overhead. These are single synthetic samples, not native Desktop frame rates or performance guarantees.
+
 ## 0.10.0 task functions / 任务函数
 
 Code blocks now have a default `function` layout and an optional `braces` layout. The function layout borrows `uiSession.adapter.current` and its existing `hooks.chat` source in the verified rc.2/rc.5 clients. It reads native-flow-keyed nodes and recursive `data.root.subCalls`, never writes Session events, retains a Session, requests a model or loads history. Context is used only for matched current-session rows. Unsupported/custom summaries retain native presentation; special controls are not hidden without a safe action mapping.

@@ -18,6 +18,13 @@ The initial times include manager setup and host-shaped DOM work, not only the
 plugin conversion method. An unfinished conversion after 30 seconds is reported
 as `all: null`.
 
+Set `DPT_LANGUAGE=javascript`, `DPT_LANGUAGE=c`, `DPT_LANGUAGE=cpp`, `DPT_LANGUAGE=java`, or `DPT_LANGUAGE=go` to measure initial rendering,
+and `DPT_SWITCH_LANGUAGE=1` to measure a switch after the initial conversion
+and update. `DPT_SWITCH_TARGET` can specify `python`, `javascript`, `c`, `cpp`, `java`, or `go`.
+The switch measurement polls all fixture
+expressions each frame, so it includes measurement overhead. Keep
+comparisons sequential on the same machine and retain unfinished `null` values.
+
 The recorded [2026-10-31 comparison](results-2026-10-31.json) contains three
 alternating 1,000-call samples and one 5,000-call sample per version. With
 1,000 calls, first expression appeared in 37–39 ms after batching, versus

@@ -1,0 +1,3 @@
+- insert:
+    - id: process-tree-java-fallback-fixture
+      name: ./java-fallback-session-seed.mjs

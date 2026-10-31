@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Add a Go task-function display with positional primitive arguments, Go string and multiline rules, raw-argument access, separate visual child blocks, and conservative native fallback. Preserve all existing language settings.
+
+- Render Java simple arguments as positional values in the original recorded order, with a disclosure for raw named arguments. Keep native summaries for composite, incomplete and unsupported calls while retaining scope controls and raw-argument access.
+- Match expanded native tool-code font size to the call summary in task-function view, without changing native syntax highlighting, copy, or wrap controls.
+- The earlier Java candidate used visible `name = value` labels; the positional view above supersedes that presentation.
+- Add a C++ task-function display with C++ keyword handling and a `.cpp` virtual tab, sharing C-style argument, string and scope rendering while retaining existing language selections.
+- Add a C-style task-function display, with argument-name comments, explicit JSON and null markers, safe string and comment escaping, and shared visual scope braces. Preserve Python and JavaScript selections and syntax.
+- Extract task-function language formatting and add a JavaScript display option. Existing preferences default to Python; the separate trailing-braces layout is unchanged.
+- Show recorded named arguments as objects and child scopes as visual brace groups without inventing callbacks. Preserve native actions, statuses, folding and progressive long-history rendering across language switches.
+
 ## 0.10.3
 
 - Fix the light-theme function colour left brown by the dark-only yellow adjustment. Change only that swatch to a more yellow gold; retain the dark palette and all other settings and behaviour.

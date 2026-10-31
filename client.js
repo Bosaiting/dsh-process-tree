@@ -159,6 +159,7 @@ window.__ModuleLoader__.load({
   const DEFAULTS = Object.freeze({
     treeStyle: 'classic',
     codeLayout: 'function',
+    codeLanguage: 'python',
     intensity: 'standard',
     botanicalStyle: false,
     botanicalScrollOptimization: false,
@@ -223,6 +224,7 @@ window.__ModuleLoader__.load({
     return {
       treeStyle: source.treeStyle,
       codeLayout: source.codeLayout === 'braces' ? 'braces' : 'function',
+      codeLanguage: ['python', 'javascript', 'c', 'cpp', 'java', 'go'].includes(source.codeLanguage) ? source.codeLanguage : 'python',
       intensity: Object.hasOwn(INTENSITIES, source.intensity) ? source.intensity : defaults.intensity,
       // Derived; kept in storage so older plugin builds still read a value.
       botanicalStyle: source.treeStyle === 'botanical',
@@ -938,6 +940,7 @@ window.__ModuleLoader__.load({
 
 .dpt-function-heading { display: block; overflow: hidden; }
 .dpt-function-heading-body { display: inline-block; vertical-align: bottom; max-width: calc(100% - 3ch); overflow: hidden; text-overflow: ellipsis; }
+.dpt-host:is([data-dpt-code-language="c"], [data-dpt-code-language="cpp"], [data-dpt-code-language="java"], [data-dpt-code-language="go"]) .dpt-function-heading-body { max-width: calc(100% - 8ch); }
 [data-dpt-function-line] { counter-increment: dpt-line; }
 [data-dpt-function-line]::before {
   content: counter(dpt-line) / "";
@@ -962,6 +965,11 @@ window.__ModuleLoader__.load({
   position: relative; min-height: max(24px, calc(26px + var(--dsh-row-leading, 0px)));
   font-family: var(--dpt-code-font); font-size: var(--dpt-code-size);
   overflow: visible;
+}
+/* Native tool code is separate from the function summary. Keep its font size
+   aligned even when an active theme applies an important rule to pre/code. */
+.dpt-host[data-dpt-code-layout="function"] [data-chat-call-id] [data-code-block-content] :is(pre, pre code) {
+  font-size: var(--dpt-code-size) !important;
 }
 .dpt-host[data-dpt-code-layout="function"] [data-subcalls] {
   margin: 2px 0 3px; padding-top: 2px; padding-left: var(--dpt-code-indent) !important;
@@ -1042,6 +1050,17 @@ window.__ModuleLoader__.load({
 [data-dpt-function-comment] { color: var(--dpt-code-comment) !important; }
 [data-dpt-function-comment-label] { gap: 0 !important; }
 [data-dpt-function-comment-label]::before { content: "# " / ""; white-space: pre; color: var(--dpt-code-comment); font: inherit; flex: none; }
+.dpt-host:is([data-dpt-code-language="javascript"], [data-dpt-code-language="c"], [data-dpt-code-language="cpp"], [data-dpt-code-language="java"], [data-dpt-code-language="go"]) [data-dpt-function-comment-label]::before { content: "// " / ""; }
+/* Go uses a separate visual block, never an apparent call-followed-by-block syntax. */
+.dpt-host[data-dpt-code-language="go"] [data-dpt-function-brace-scope]::before {
+  content: "{  // 子调用（记录层级）" / ""; display: block; margin-left: calc(-1 * var(--dpt-code-indent) + 2px);
+  color: var(--dpt-code-comment); font: 400 var(--dpt-code-size)/26px var(--dpt-code-font);
+}
+.dpt-host[data-dpt-code-language] [data-dpt-function-brace-scope]::after {
+  content: "}" / ""; display: block; margin-left: calc(-1 * var(--dpt-code-indent) + 2px);
+  color: var(--dpt-code-pair1); font: 400 var(--dpt-code-size)/26px var(--dpt-code-font);
+}
+.dpt-function-footer { position: relative; color: var(--dpt-code-pair1); font: 400 var(--dpt-code-size)/26px var(--dpt-code-font); }
 [data-dpt-function-caption] { display: none !important; }
 [data-dpt-function-comment-label] > [data-shimmer-decoration] { display: none !important; }
 .dpt-host[data-dpt-code-layout="function"] [data-dpt-function-comment] [data-shimmer] > [aria-hidden="true"][inert] { display: none !important; }
@@ -1093,9 +1112,20 @@ window.__ModuleLoader__.load({
 
   const PYTHON_WORDS = new Set('False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield'.split(' '))
   const codeIdentifier = value => typeof value === 'string' && /^[\p{L}_][\p{L}\p{N}_]*$/u.test(value) && !PYTHON_WORDS.has(value)
-  function codeFunctionName(title, turn) {
+  const JS_WORDS = new Set('await break case catch class const continue debugger default delete do else enum export extends false finally for function if implements import in instanceof interface let new null package private protected public return static super switch this throw true try typeof var void while with yield'.split(' '))
+  const jsIdentifier = value => typeof value === 'string' && /^[$_\p{ID_Start}][$_\u200c\u200d\p{ID_Continue}]*$/u.test(value) && !JS_WORDS.has(value)
+  const C_WORDS = new Set('auto break case char const continue default do double else enum extern float for goto if inline int long register restrict return short signed sizeof static struct switch typedef union unsigned void volatile while _Alignas _Alignof _Atomic _Bool _Complex _Generic _Imaginary _Noreturn _Static_assert _Thread_local alignas alignof bool constexpr false nullptr static_assert thread_local true typeof typeof_unqual'.split(' '))
+  const cIdentifier = value => typeof value === 'string' && /^[A-Za-z_][A-Za-z0-9_]*$/.test(value) && !C_WORDS.has(value)
+  const CPP_WORDS = new Set('alignas alignof and and_eq asm auto bitand bitor bool break case catch char char8_t char16_t char32_t class compl concept const consteval constexpr constinit const_cast continue co_await co_return co_yield decltype default delete do double dynamic_cast else enum explicit export extern false float for friend goto if inline int long mutable namespace new noexcept not not_eq nullptr operator or or_eq private protected public register reinterpret_cast requires return short signed sizeof static static_assert static_cast struct switch template this thread_local throw true try typedef typeid typename union unsigned using virtual void volatile wchar_t while xor xor_eq'.split(' '))
+  const cppIdentifier = value => typeof value === 'string' && /^[A-Za-z_][A-Za-z0-9_]*$/.test(value) && !CPP_WORDS.has(value)
+  const JAVA_WORDS = new Set('abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while true false null _'.split(' '))
+  const javaIdentifier = value => typeof value === 'string' && /^[$_\p{L}][$_\p{L}\p{N}\p{M}]*$/u.test(value) && !JAVA_WORDS.has(value)
+  const GO_WORDS = new Set('break default func interface select case defer go map struct chan else goto package switch const fallthrough if range type continue for import return var true false nil'.split(' '))
+  const goIdentifier = value => typeof value === 'string' && value !== '_' && /^[\p{L}_][\p{L}\p{Nd}_]*$/u.test(value) && !GO_WORDS.has(value)
+  function codeFunctionName(title, turn, language = 'python') {
     const name = typeof title === 'string' ? title.trim().replace(/[^\p{L}\p{N}_]+/gu, '_').replace(/^_+|_+$/g, '') : ''
-    return name && name.length <= 24 && codeIdentifier(name) ? name : 'task_' + String(turn || 1).padStart(2, '0')
+    const identifier = language === 'javascript' ? jsIdentifier : language === 'c' ? cIdentifier : language === 'cpp' ? cppIdentifier : language === 'java' ? javaIdentifier : language === 'go' ? goIdentifier : codeIdentifier
+    return name && name.length <= 24 && identifier(name) ? name : 'task_' + String(turn || 1).padStart(2, '0')
   }
   const parsedCodeCalls = new WeakMap()
   function codeCall(block) {
@@ -1115,12 +1145,12 @@ window.__ModuleLoader__.load({
   function codeString(value) {
     return JSON.stringify(value).replace(/[\u007f-\u009f\u2028-\u202e\u2066-\u2069]/g, c => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
   }
-  function codeValue(value, key, depth = 0) {
+  function codeValue(value, key, depth = 0, language = 'python') {
     if (typeof value === 'string') {
       const short = value.length > 54 ? value.slice(0, 51) + '…' : value
       return { tokens: [token('string', codeString(short), key, value)], clipped: short !== value }
     }
-    if (value === null || typeof value === 'boolean') return { tokens: [token('keyword', value === null ? 'None' : value ? 'True' : 'False')], clipped: false }
+    if (value === null || typeof value === 'boolean') return { tokens: [token('keyword', language === 'javascript' ? String(value) : value === null ? 'None' : value ? 'True' : 'False')], clipped: false }
     if (typeof value === 'number') return { tokens: [token('number', value)], clipped: false }
     if (depth >= 2) return { tokens: [token('comment', '…')], clipped: true }
     const array = Array.isArray(value), entries = array ? value.map((v, i) => [i, v]) : Object.entries(value)
@@ -1128,13 +1158,13 @@ window.__ModuleLoader__.load({
     entries.slice(0, 3).forEach(([name, item], index) => {
       if (index) tokens.push(token('text', ', '))
       if (!array) tokens.push(token('string', codeString(name)), token('text', ': '))
-      const inner = codeValue(item, null, depth + 1); tokens.push(...inner.tokens); clipped ||= inner.clipped
+      const inner = codeValue(item, null, depth + 1, language); tokens.push(...inner.tokens); clipped ||= inner.clipped
     })
     if (entries.length > 3) tokens.push(token('comment', ', …'))
     tokens.push(token('text', array ? ']' : '}'))
     return { tokens, clipped }
   }
-  function codeExpression(call, multiline = false, scope = false, collapsed = false) {
+  function pythonExpression(call, multiline = false, scope = false, collapsed = false) {
     const names = call.name.split('.'), tokens = names.every(codeIdentifier)
       ? [token('function', call.name)] : [token('text', 'tools['), token('string', codeString(call.name)), token('text', ']')]
     if (scope) tokens.unshift(token('keyword', 'def '))
@@ -1160,6 +1190,216 @@ window.__ModuleLoader__.load({
     tokens.push(token('pair', ')'))
     if (scope) tokens.push(token('text', ':'), ...(collapsed ? [token('comment', ' …')] : []))
     return { tokens, clipped, more }
+  }
+  function javascriptExpression(call, multiline = false, scope = false, collapsed = false) {
+    const names = call.name.split('.')
+    const tokens = names.every(jsIdentifier)
+      ? [token('function', call.name)] : [token('text', 'tools['), token('string', codeString(call.name)), token('text', ']')]
+    tokens.push(token('pair', '('))
+    let clipped = !call.valid, more = false
+    if (!call.valid) tokens.push(token('comment', '…'))
+    else {
+      const entries = Object.entries(call.args), limit = 100
+      tokens.push(token('pair', '{'))
+      entries.slice(0, limit).forEach(([key, value], index) => {
+        if (multiline) tokens.push(token('text', index ? ',\n    ' : '\n    '))
+        else if (index) tokens.push(token('text', ', '))
+        tokens.push(jsIdentifier(key) ? token('parameter', key) : token('string', codeString(key)), token('text', ': '))
+        const inner = codeValue(value, key, 0, 'javascript'); tokens.push(...inner.tokens); clipped ||= inner.clipped
+      })
+      more = entries.length > limit; clipped ||= more
+      if (more) tokens.push(token('text', multiline ? ',\n    ' : ', '), token('more', '…'))
+      if (multiline && entries.length) tokens.push(token('text', '\n'))
+      tokens.push(token('pair', '}'))
+    }
+    tokens.push(token('pair', ')'), token('text', ';'))
+    // The following block is a visual grouping of recorded subcalls, not a callback.
+    if (scope) tokens.push(token('text', ' '), token('pair', '{'), ...(collapsed ? [token('comment', ' … '), token('pair', '}')] : []))
+    return { tokens, clipped, more }
+  }
+  // C-style strings use fixed-width octal for control bytes, so a following
+  // digit cannot extend an escape. The view is still a record, not C source.
+  function cString(value) {
+    let result = '"'
+    for (const ch of value) {
+      const n = ch.codePointAt(0)
+      if (ch === '"' || ch === '\\') result += '\\' + ch
+      else if (n < 32 || n === 127) result += ({ 9: '\\t', 10: '\\n', 13: '\\r' })[n] || '\\' + n.toString(8).padStart(3, '0')
+      else if (n >= 0x80 && n <= 0x9f || n >= 0x2028 && n <= 0x202e || n >= 0x2066 && n <= 0x2069 || n >= 0xd800 && n <= 0xdfff) result += '\\u' + n.toString(16).padStart(4, '0')
+      else result += ch
+    }
+    return result + '"'
+  }
+  function cCommentName(value, identifier = cIdentifier) {
+    return (identifier(value) ? value : codeString(value)).replaceAll('*/', '\\u002a/')
+  }
+  function cExpression(call, multiline = false, scope = false, collapsed = false, identifier = cIdentifier) {
+    const tokens = identifier(call.name)
+      ? [token('function', call.name)]
+      : [token('comment', '/* 工具: ' + cCommentName(call.name, identifier) + ' */ ')]
+    tokens.push(token('pair', '('))
+    let clipped = !call.valid, more = false
+    if (!call.valid) tokens.push(token('comment', '…'))
+    else {
+      const entries = Object.entries(call.args), limit = 100
+      entries.slice(0, limit).forEach(([key, value], index) => {
+        if (multiline) tokens.push(token('text', index ? ',\n    ' : '\n    '))
+        else if (index) tokens.push(token('text', ', '))
+        tokens.push(token('comment', '/* ' + cCommentName(key, identifier) + (value !== null && typeof value === 'object' ? ': JSON' : '') + ' */ '))
+        if (value === null) tokens.push(token('comment', '/* null */'))
+        else if (typeof value === 'string') {
+          const chars = Array.from(value), short = chars.length > 54 ? chars.slice(0, 51).join('') + '…' : value
+          tokens.push(token('string', cString(short), key, value)); clipped ||= short !== value
+        } else if (typeof value === 'object') {
+          const inner = codeValue(value, key, 0, 'javascript'); tokens.push(...inner.tokens); clipped ||= inner.clipped
+        } else tokens.push(token(typeof value === 'number' ? 'number' : 'keyword', String(value)))
+      })
+      more = entries.length > limit; clipped ||= more
+      if (more) tokens.push(token('text', multiline ? ',\n    ' : ', '), token('more', '…'))
+      if (multiline && entries.length) tokens.push(token('text', '\n'))
+    }
+    tokens.push(token('pair', ')'), token('text', ';'))
+    if (scope) tokens.push(token('text', ' '), token('pair', '{'), ...(collapsed ? [token('comment', ' … '), token('pair', '}')] : []))
+    return { tokens, clipped, more }
+  }
+  // Preserve the recorded order (including numeric-looking and duplicate keys),
+  // rather than Object.entries' property ordering or JSON number conversion.
+  const javaArgumentCache = new WeakMap()
+  const goArgumentCache = new WeakMap()
+  const javaArguments = call => positionalArguments(call, javaIdentifier, javaArgumentCache)
+  const goArguments = call => positionalArguments(call, goIdentifier, goArgumentCache, true)
+  function positionalArguments(call, identifier, cache, go = false) {
+    if (cache.has(call)) return cache.get(call)
+    let result = null
+    if (call.valid && identifier(call.name)) try {
+      const raw = call.raw; let i = 0
+      const ws = () => { while (i < raw.length && /\s/.test(raw[i])) i++ }
+      const stringEnd = () => {
+        if (raw[i++] !== '"') throw Error('expected string')
+        while (i < raw.length) { const ch = raw[i++]; if (ch === '\\') i++; else if (ch === '"') return i }
+        throw Error('unterminated string')
+      }
+      ws(); if (raw[i++] !== '{') throw Error('expected object')
+      const entries = []; ws()
+      while (raw[i] !== '}') {
+        const keyStart = i; stringEnd(); const key = JSON.parse(raw.slice(keyStart, i)); ws()
+        if (raw[i++] !== ':') throw Error('expected colon')
+        ws(); const valueStart = i
+        if (raw[i] === '{' || raw[i] === '[') throw Error('complex value')
+        if (raw[i] === '"') stringEnd()
+        else while (i < raw.length && raw[i] !== ',' && raw[i] !== '}') i++
+        const spelling = raw.slice(valueStart, i).trim(), value = JSON.parse(spelling)
+        if (typeof value === 'number' && !Number.isFinite(value)) throw Error('non-finite number')
+        if (go && typeof value === 'string' && /[\uD800-\uDFFF]/u.test(value)) throw Error('unpaired surrogate')
+        entries.push({ key, value, spelling }); ws()
+        if (raw[i] === ',') { i++; ws() } else if (raw[i] !== '}') throw Error('expected comma')
+      }
+      result = entries
+    } catch (_) { /* incomplete, complex or unsupported: keep native summary */ }
+    cache.set(call, result)
+    return result
+  }
+  function javaExpression(call, multiline = false, scope = false, collapsed = false) {
+    const entries = javaArguments(call)
+    if (!entries) return { tokens: [], clipped: false, more: false, fallback: true }
+    const tokens = [token('function', call.name)]
+    tokens.push(token('pair', '('))
+    let clipped = false, more = false
+    {
+      const limit = 100
+      entries.slice(0, limit).forEach(({ key, value, spelling }, index) => {
+        if (multiline) tokens.push(token('text', index ? ',\n    ' : '\n    '))
+        else if (index) tokens.push(token('text', ', '))
+        if (typeof value === 'string') {
+          const chars = Array.from(value), short = chars.length > 54 ? chars.slice(0, 51).join('') + '…' : value
+          tokens.push(token('string', cString(short), key, value)); clipped ||= short !== value
+        } else tokens.push(token(typeof value === 'number' ? 'number' : 'keyword', typeof value === 'number' ? spelling : String(value)))
+      })
+      more = entries.length > limit; clipped ||= more
+      if (more) tokens.push(token('text', multiline ? ',\n    ' : ', '), token('more', '…'))
+      if (multiline && entries.length) tokens.push(token('text', '\n'))
+    }
+    tokens.push(token('pair', ')'), token('text', ';'))
+    if (scope) tokens.push(token('text', ' '), token('pair', '{'), ...(collapsed ? [token('comment', ' … '), token('pair', '}')] : []))
+    return { tokens, clipped, more, argumentCount: entries.length }
+  }
+  // Go interpreted strings share these control escapes; unpaired surrogates
+  // are rejected by goArguments instead of emitting invalid Unicode escapes.
+  const goString = value => cString(value)
+  function goExpression(call, multiline = false, scope = false, collapsed = false) {
+    const entries = goArguments(call)
+    if (!entries) return { tokens: [], clipped: false, more: false, fallback: true }
+    const tokens = [token('function', call.name), token('pair', '(')]
+    let clipped = false
+    const limit = 100, more = entries.length > limit
+    entries.slice(0, limit).forEach(({ key, value, spelling }, index) => {
+      if (multiline) tokens.push(token('text', index ? ',\n    ' : '\n    '))
+      else if (index) tokens.push(token('text', ', '))
+      if (typeof value === 'string') {
+        const chars = Array.from(value), short = chars.length > 54 ? chars.slice(0, 51).join('') + '…' : value
+        tokens.push(token('string', goString(short), key, value)); clipped ||= short !== value
+      } else tokens.push(token(typeof value === 'number' ? 'number' : 'keyword', typeof value === 'number' ? spelling : value === null ? 'nil' : String(value)))
+    })
+    if (more) { tokens.push(token('text', multiline ? ',\n    ' : ', '), token('more', '…')); clipped = true }
+    if (multiline && entries.length) tokens.push(token('text', more ? '\n' : ',\n'))
+    tokens.push(token('pair', ')'))
+    if (scope && collapsed) tokens.push(token('comment', ' // 子调用已折叠'))
+    return { tokens, clipped, more, argumentCount: entries.length }
+  }
+  const shortWorkspace = cwd => cwd.length > 30 ? '…/' + (cwd.replaceAll('\\', '/').split('/').filter(Boolean).at(-1) || cwd).slice(-27) : cwd
+  const CODE_LANGUAGES = Object.freeze({
+    python: Object.freeze({
+      extension: '.py', expression: pythonExpression,
+      heading(name, cwd) {
+        const body = [token('keyword', 'def '), token('function', name), token('pair', '(')]
+        if (typeof cwd === 'string' && cwd) body.push(token('parameter', 'workspace'), token('text', '='), token('string', codeString(shortWorkspace(cwd))))
+        return { body, end: [token('pair', ')'), token('text', ':')] }
+      },
+    }),
+    javascript: Object.freeze({
+      extension: '.js', expression: javascriptExpression, scopedBraces: true,
+      heading(name, cwd) {
+        const end = [token('pair', ')'), token('text', ' {')]
+        if (typeof cwd === 'string' && cwd) end.push(token('comment', ' // workspace: ' + codeString(shortWorkspace(cwd))))
+        return { body: [token('keyword', 'function '), token('function', name), token('pair', '(')], end }
+      },
+    }),
+    c: Object.freeze({
+      extension: '.c', expression: cExpression, scopedBraces: true,
+      heading(name, cwd) {
+        const end = [token('keyword', 'void'), token('pair', ')'), token('text', ' {')]
+        if (typeof cwd === 'string' && cwd) end.push(token('comment', ' // workspace: ' + cString(shortWorkspace(cwd))))
+        return { body: [token('keyword', 'void '), token('function', name), token('pair', '(')], end }
+      },
+    }),
+    cpp: Object.freeze({
+      extension: '.cpp', scopedBraces: true,
+      expression: (call, multiline, scope, collapsed) => cExpression(call, multiline, scope, collapsed, cppIdentifier),
+      heading(name, cwd) {
+        const end = [token('pair', ')'), token('text', ' {')]
+        if (typeof cwd === 'string' && cwd) end.push(token('comment', ' // workspace: ' + cString(shortWorkspace(cwd))))
+        return { body: [token('keyword', 'void '), token('function', name), token('pair', '(')], end }
+      },
+    }),
+    java: Object.freeze({
+      extension: '.java', expression: javaExpression, scopedBraces: true,
+      heading(name, cwd) {
+        const end = [token('pair', ')'), token('text', ' {')]
+        if (typeof cwd === 'string' && cwd) end.push(token('comment', ' // workspace: ' + cString(shortWorkspace(cwd))))
+        return { body: [token('keyword', 'void '), token('function', name), token('pair', '(')], end }
+      },
+    }),
+    go: Object.freeze({
+      extension: '.go', expression: goExpression, scopedBraces: true,
+      heading(name, cwd) {
+        const end = [token('pair', ')'), token('text', ' {')]
+        if (typeof cwd === 'string' && cwd) end.push(token('comment', ' // workspace: ' + cString(shortWorkspace(cwd))))
+        return { body: [token('keyword', 'func '), token('function', name), token('pair', '(')], end }
+      },
+    }),
+  })
+  function codeExpression(call, multiline = false, scope = false, collapsed = false, language = 'python') {
+    return (CODE_LANGUAGES[language] || CODE_LANGUAGES.python).expression(call, multiline, scope, collapsed)
   }
   function codeDuration(block) {
     if (block?.kind !== 'tool-result' || block.error?.code === 'interrupted' ||
@@ -2600,6 +2840,8 @@ window.__ModuleLoader__.load({
       for (const status of this.functionNativeStates?.values() || []) status.remove()
       this.functionNativeStates?.clear()
       this.functionHeader?.remove()
+      this.functionFooter?.remove()
+      this.functionFooter = null
       this.functionStats?.remove()
       this.functionFailureList?.remove()
       this.functionFailureList = null
@@ -2611,6 +2853,7 @@ window.__ModuleLoader__.load({
       this.functionBar?.remove()
       this.functionNav?.remove()
       this.functionBar = null
+      this.functionReadonly = null
       this.functionNav = null
       this.functionNavRows = null
       this.functionNavigationAt = 0
@@ -2624,10 +2867,13 @@ window.__ModuleLoader__.load({
         el.style.removeProperty('--dpt-code-number-x')
       }
       this.content.removeAttribute('data-dpt-code-layout')
+      this.content.removeAttribute('data-dpt-code-language')
+      for (const el of this.content.querySelectorAll('[data-dpt-function-brace-scope]')) el.removeAttribute('data-dpt-function-brace-scope')
     }
 
     releaseFunctionRow(record) {
-      record.expression?.remove(); record.panel?.remove(); record.status?.remove(); record.duration?.remove(); record.scopeToggle?.remove(); record.scopeFailures?.remove(); record.error?.remove()
+      record.expression?.remove(); record.more?.remove(); record.panel?.remove(); record.status?.remove(); record.duration?.remove(); record.scopeToggle?.remove(); record.scopeFailures?.remove(); record.error?.remove()
+      record.sub?.removeAttribute('data-dpt-function-brace-scope')
       record.label.removeAttribute('data-dpt-function-label')
     }
 
@@ -2635,7 +2881,7 @@ window.__ModuleLoader__.load({
       if (!panel || panel.dataset.dptFilled) return
       const call = record.panelCall
       if (!call) return
-      const raw = call.valid ? JSON.stringify(call.args, null, 2) : call.raw
+      const raw = ['java', 'go'].includes(record.panelLanguage) ? call.raw : call.valid ? JSON.stringify(call.args, null, 2) : call.raw
       panel.textContent = raw.length > 12000 ? raw.slice(0, 12000) + '\n…（参数较长，完整内容见原始调用详情）' : raw
       panel.dataset.dptFilled = ''
     }
@@ -2650,6 +2896,10 @@ window.__ModuleLoader__.load({
       this.functionBatch = null
       codeSource?.sync()
       attr(this.content, 'data-dpt-code-layout', 'function')
+      const language = SETTINGS.codeLanguage
+      const scopedBraces = !!CODE_LANGUAGES[language].scopedBraces
+      const positional = language === 'java' || language === 'go'
+      attr(this.content, 'data-dpt-code-language', language)
       const source = this.functionPreview || codeSource?.read() || {}
       const calls = new Map(), projectionParents = new Map()
       let ownsContext = !!source.calls
@@ -2704,11 +2954,11 @@ window.__ModuleLoader__.load({
       this.functionVersionKey = source.key
       const turn = Number(this.group?.dataset.chatTurn) || 1
       const contextKey = ownsContext ? source.key : null
-      if (!this.functionIdentity || this.functionIdentity.key !== contextKey) this.functionIdentity = {
-        key: contextKey, name: codeFunctionName(ownsContext ? source.context?.title : null, turn),
+      if (!this.functionIdentity || this.functionIdentity.key !== contextKey || this.functionIdentity.language !== language) this.functionIdentity = {
+        key: contextKey, language, name: codeFunctionName(ownsContext ? source.context?.title : null, turn, language),
       }
       const cwd = ownsContext ? source.context?.cwd : null
-      const headingSignature = this.functionIdentity.name + '\0' + (cwd || '')
+      const headingSignature = language + '\0' + this.functionIdentity.name + '\0' + (cwd || '')
       if (!this.functionHeader) {
         this.functionHeader = codeElement('div', 'dpt-function-header')
         this.functionHeader.setAttribute('data-dpt-function-line', '')
@@ -2717,12 +2967,14 @@ window.__ModuleLoader__.load({
       if (!this.functionBar) {
         this.functionBar = codeElement('div', 'dpt-function-bar')
         this.functionTab = codeElement('span', 'dpt-function-tab')
-        const readonly = codeElement('span', 'dpt-function-readonly')
-        readonly.textContent = '执行记录 · 只读'
-        readonly.title = '执行记录按展示顺序排列，子调用可能并行；函数作用域是示意'
-        this.functionBar.append(this.functionTab, readonly)
+        this.functionReadonly = codeElement('span', 'dpt-function-readonly')
+        this.functionBar.append(this.functionTab, this.functionReadonly)
         this.content.insertBefore(this.functionBar, this.content.firstChild)
       }
+      const readonlyLabel = positional ? '执行记录 · ' + (language === 'java' ? 'Java' : 'Go') + ' 风格' : '执行记录 · 只读'
+      const readonlyTitle = positional ? '只读示意；参数按记录顺序展示，并非真实方法签名。子调用可能并行。' : '执行记录按展示顺序排列，子调用可能并行；函数作用域是示意'
+      if (this.functionReadonly.textContent !== readonlyLabel) this.functionReadonly.textContent = readonlyLabel
+      if (this.functionReadonly.title !== readonlyTitle) this.functionReadonly.title = readonlyTitle
       if (!this.functionNav) {
         this.functionNav = codeElement('div', 'dpt-minimap-anchor')
         this.functionMap = codeElement('div', 'dpt-minimap')
@@ -2732,19 +2984,23 @@ window.__ModuleLoader__.load({
         this.functionNav.append(this.functionMap)
         this.content.insertBefore(this.functionNav, this.functionHeader)
       }
-      const tabName = this.functionIdentity.name + '.py'
+      if (scopedBraces) {
+        if (!this.functionFooter) {
+          this.functionFooter = codeElement('div', 'dpt-function-footer')
+          this.functionFooter.setAttribute('data-dpt-function-line', '')
+          this.functionFooter.textContent = '}'
+        }
+        if (this.functionFooter !== this.content.lastElementChild) this.content.append(this.functionFooter)
+      } else { this.functionFooter?.remove(); this.functionFooter = null }
+      const tabName = this.functionIdentity.name + CODE_LANGUAGES[language].extension
       if (this.functionTab.textContent !== tabName) { this.functionTab.textContent = tabName; this.functionTab.title = '虚拟标签：' + tabName }
       if (this.functionHeadingSignature !== headingSignature || !this.functionHeader.childNodes.length) {
         const heading = codeElement('span', 'dpt-function-heading')
         const body = codeElement('span', 'dpt-function-heading-body')
-        const tokens = [token('keyword', 'def '), token('function', this.functionIdentity.name), token('pair', '(')]
-        if (typeof cwd === 'string' && cwd) {
-          const short = cwd.length > 30 ? '…/' + (cwd.replaceAll('\\', '/').split('/').filter(Boolean).at(-1) || cwd).slice(-27) : cwd
-          tokens.push(token('parameter', 'workspace'), token('text', '='), token('string', codeString(short)))
-        }
-        appendCodeTokens(body, tokens)
+        const headingTokens = CODE_LANGUAGES[language].heading(this.functionIdentity.name, cwd)
+        appendCodeTokens(body, headingTokens.body)
         heading.append(body)
-        appendCodeTokens(heading, [token('pair', ')'), token('text', ':')])
+        appendCodeTokens(heading, headingTokens.end)
         heading.title = typeof cwd === 'string' && cwd ? 'workspace=' + codeString(cwd) : this.functionIdentity.name
         this.functionHeader.replaceChildren(heading)
         this.functionHeadingSignature = headingSignature
@@ -2863,7 +3119,7 @@ window.__ModuleLoader__.load({
           if (folded) attr(sub, 'data-dpt-function-folded', '')
           else sub.removeAttribute('data-dpt-function-folded')
         }
-        const collapsed = scope && (folded || !!sub && !measure.subVisible)
+        const collapsed = scope && (folded || !!sub && !measure.subVisible || scopedBraces && !sub)
         const label = codeTitle(header)
         const showNativeOutcome = () => {
           if (!['error', 'stopped', 'unknown'].includes(outcome)) { nextNative.get(header)?.remove(); nextNative.delete(header); return }
@@ -2875,34 +3131,82 @@ window.__ModuleLoader__.load({
           if (status.textContent !== text) status.textContent = text
           nextNative.set(header, status)
         }
+        const showPositionalNativeFallback = () => {
+          let record = previous.get(header)
+          const wasPanelOpen = !!record?.panel && !record.panel.hidden
+          if (record && (!record.native || record.label !== label)) { this.releaseFunctionRow(record); record = null }
+          if (!record) record = { native: true, label, links: [], header }
+          record.callId = entry.callId
+          if (record.sub !== sub) record.sub?.removeAttribute('data-dpt-function-brace-scope')
+          record.sub = sub
+          if (sub) sub.removeAttribute('data-dpt-function-brace-scope')
+          if (scope && sub) {
+            if (!record.scopeToggle) { record.scopeToggle = codeElement('button', 'dpt-scope-toggle'); record.scopeToggle.type = 'button'; header.append(record.scopeToggle) }
+            attr(record.scopeToggle, 'aria-expanded', String(!folded))
+            attr(record.scopeToggle, 'aria-label', (folded ? '展开' : '折叠') + '子调用')
+            record.scopeToggle.title = folded ? '展开子调用' : '折叠子调用'
+            const glyph = folded ? '▸' : '▾'
+            if (record.scopeToggle.textContent !== glyph) record.scopeToggle.textContent = glyph
+          } else { record.scopeToggle?.remove(); record.scopeToggle = null }
+          const nestedFailures = folded ? codeDescendantFailures(block) : 0
+          if (nestedFailures) {
+            if (!record.scopeFailures) { record.scopeFailures = codeElement('button', 'dpt-scope-failures'); record.scopeFailures.type = 'button'; header.append(record.scopeFailures) }
+            const text = '含 ' + nestedFailures + ' 个失败'
+            if (record.scopeFailures.textContent !== text) record.scopeFailures.textContent = text
+            attr(record.scopeFailures, 'aria-label', '展开含有 ' + nestedFailures + ' 个已记录失败子调用的作用域')
+          } else { record.scopeFailures?.remove(); record.scopeFailures = null }
+          if (call.raw) {
+            if (!record.more) {
+              record.more = codeElement('button', 'dpt-code-more'); record.more.type = 'button'; record.more.textContent = '参数 ···'
+              attr(record.more, 'aria-label', wasPanelOpen ? '收起完整参数' : '展开完整参数'); attr(record.more, 'aria-expanded', String(wasPanelOpen)); header.append(record.more)
+              record.panel = codeElement('pre', 'dpt-code-arguments'); record.panel.id = 'dpt-args-' + this.layerId + '-' + hash(entry.key); record.panel.hidden = !wasPanelOpen
+              record.panel.setAttribute('role', 'region'); record.panel.setAttribute('aria-label', call.name + ' 完整参数')
+              attr(record.more, 'aria-controls', record.panel.id)
+              entry.call.insertBefore(record.panel, sub?.parentElement === entry.call ? sub : null)
+            }
+            if (record.panelCall?.raw !== call.raw) {
+              record.panel.removeAttribute('data-dpt-filled'); record.panelCall = call; record.panelLanguage = language
+              if (!record.panel.hidden) this.fillFunctionArguments(record, record.panel)
+            }
+          } else { record.more?.remove(); record.more = null; record.panel?.remove(); record.panel = null; record.panelCall = null }
+          next.set(header, record)
+          showNativeOutcome()
+        }
         // Custom rows without structured records or a safe text seat keep
         // their native summary; never reverse-engineer arguments from labels.
+        if (call && positional && (label === header || (language === 'java' ? javaArguments(call) : goArguments(call)) === null)) { showPositionalNativeFallback(); return }
         if (!call || label === header) {
           const old = next.get(header); if (old) this.releaseFunctionRow(old)
           next.delete(header)
           showNativeOutcome(); return
         }
         let record = previous.get(header)
-        if (record && record.label !== label) { this.releaseFunctionRow(record); record = null }
+        const nativePanelOpen = !!record?.native && !!record.panel && !record.panel.hidden
+        if (record && (record.native || record.label !== label)) { this.releaseFunctionRow(record); previous.delete(header); next.delete(header); record = null }
         const links = [...label.querySelectorAll('button:not([data-dpt-owned]), a:not([data-dpt-owned])')]
-        const formatKey = call.name + '\0' + call.raw + '\0' + scope + '\0' + collapsed
+        const formatKey = language + '\0' + call.name + '\0' + call.raw + '\0' + scope + '\0' + collapsed
         const cached = record?.formatKey === formatKey ? record.formatCache : null
-        const single = cached?.single || codeExpression(call, false, scope, collapsed)
-        const fullCount = cached?.fullCount ?? (call.valid ? Object.keys(call.args).length : 0)
+        const single = cached?.single || codeExpression(call, false, scope, collapsed, language)
+        const fullCount = cached?.fullCount ?? (positional ? single.argumentCount : call.valid ? Object.keys(call.args).length : 0)
         const singleText = cached?.singleText ?? single.tokens.map(item => item.value).join('')
         // Use the actual row width and font; reserve room for native icons and status.
         const available = Math.max(80, measure.width - 100)
         const fontSize = measure.fontSize
         const multiline = call.valid && fullCount > 0 &&
           (singleText.length > 72 || call.raw.length > 100 || singleText.length * fontSize * .62 > available)
-        const syntax = multiline ? cached?.multiline || codeExpression(call, true, scope, collapsed) : single
+        const syntax = multiline ? cached?.multiline || codeExpression(call, true, scope, collapsed, language) : single
         if (links.some(el => !syntax.tokens.some(item => codeTokenLink(item, el))) || label.querySelector('input, select, textarea, [role="button"]')) {
+          if (positional) { showPositionalNativeFallback(); return }
           if (record) this.releaseFunctionRow(record)
           next.delete(header)
           showNativeOutcome(); return
         }
         nextNative.get(header)?.remove(); nextNative.delete(header)
         if (!record) record = { label, links, header }
+        if (record.sub !== sub) record.sub?.removeAttribute('data-dpt-function-brace-scope')
+        record.sub = sub
+        if (sub && scope && scopedBraces) attr(sub, 'data-dpt-function-brace-scope', '')
+        else sub?.removeAttribute('data-dpt-function-brace-scope')
         record.formatKey = formatKey
         record.formatCache = { single, singleText, fullCount, multiline: multiline ? syntax : cached?.multiline }
         record.callId = entry.callId
@@ -2920,16 +3224,16 @@ window.__ModuleLoader__.load({
           const glyph = folded ? '▸' : '▾'
           if (record.scopeToggle.textContent !== glyph) record.scopeToggle.textContent = glyph
         } else { record.scopeToggle?.remove(); record.scopeToggle = null }
-        const signature = call.name + '\0' + call.raw + '\0' + multiline + '\0' + scope + '\0' + collapsed
+        const signature = language + '\0' + call.name + '\0' + call.raw + '\0' + multiline + '\0' + scope + '\0' + collapsed
         const linksChanged = links.length !== record.links.length || links.some((el, i) => el !== record.links[i])
         if (signature !== record.signature || record.expression?.parentElement !== label || linksChanged) {
-          const panelOpen = record.panel && !record.panel.hidden
+          const panelOpen = !!(record.panel && !record.panel.hidden) || nativePanelOpen
           record.expression?.remove(); record.panel?.remove()
           const expression = codeElement('span', 'dpt-code-expression'), text = codeElement('span', 'dpt-code-call-text')
           if (multiline) expression.dataset.multiline = ''
           appendCodeTokens(text, syntax.tokens, links)
           expression.append(text)
-          if (syntax.clipped && !syntax.more && call.raw) {
+          if ((syntax.clipped || positional && fullCount > 0) && !syntax.more && call.raw) {
             const more = codeElement('button', 'dpt-code-more')
             more.type = 'button'; more.textContent = ' ···'; more.setAttribute('aria-label', '展开完整参数'); more.setAttribute('aria-expanded', 'false')
             ;(multiline ? text : expression).append(more)
@@ -2945,6 +3249,7 @@ window.__ModuleLoader__.load({
             more.setAttribute('aria-label', panelOpen ? '收起完整参数' : '展开完整参数')
             panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', call.name + ' 完整参数')
             record.panelCall = call
+            record.panelLanguage = language
             if (panelOpen) this.fillFunctionArguments(record, panel)
             more.setAttribute('aria-controls', panel.id)
             entry.call.insertBefore(panel, sub?.parentElement === entry.call ? sub : null)
@@ -3010,7 +3315,7 @@ window.__ModuleLoader__.load({
           for (const [header, record] of next) if (!decorated.has(header)) { this.releaseFunctionRow(record); next.delete(header) }
           for (const [header, status] of nextNative) if (!decorated.has(header)) { status.remove(); nextNative.delete(header) }
           for (const el of this.content.querySelectorAll('[data-dpt-function-line], [data-dpt-function-scope], [data-dpt-function-comment], [data-dpt-function-comment-label], [data-dpt-function-caption], [data-dpt-function-failed], [data-dpt-function-outcome]')) {
-            if (el === this.functionHeader || decorated.has(el)) continue
+            if (el === this.functionHeader || el === this.functionFooter || decorated.has(el)) continue
             for (const key of ['line', 'scope', 'comment', 'comment-label', 'caption', 'failed', 'outcome']) el.removeAttribute('data-dpt-function-' + key)
             el.style.removeProperty('--dpt-code-number-x')
           }
@@ -3586,7 +3891,7 @@ window.__ModuleLoader__.load({
     applySettings() {
       let dirty = settingsChanges(this.appliedSettings, SETTINGS)
       if (!isCode()) this.clearCodeDecorations()
-      else if (!this.suspended) this.syncCodeDecorations()
+      else if (!this.suspended) this.syncCodeDecorations(this.appliedSettings.codeLanguage !== SETTINGS.codeLanguage ? DIRTY_STRUCTURE : DIRTY_LAYOUT)
       const shadowWanted = SETTINGS.botanicalStyle && SETTINGS.botanicalScrollOptimization && !this.isPreview
       if (!this.suspended && this.svg && !!this.treeShadowHost !== shadowWanted) {
         this.finishGrowth()
@@ -4809,10 +5114,16 @@ window.__ModuleLoader__.load({
           h('h3', { className: 'dpt-subhead' }, '风格'),
           h(StyleCards, { settings, commit }),
           isCode(settings) && h(SelectRow, {
-            label: '代码形态', desc: '任务函数使用 def、真实参数和缩进；也可沿用大括号形态',
+            label: '代码形态', desc: '任务函数展示已记录的参数和嵌套层级；也可沿用大括号形态',
             value: settings.codeLayout,
-            options: [{ value: 'function', label: '任务函数 · Python' }, { value: 'braces', label: '行尾大括号' }],
+            options: [{ value: 'function', label: '任务函数' }, { value: 'braces', label: '行尾大括号' }],
             onChange: codeLayout => commit({ codeLayout }),
+          }),
+          isCode(settings) && settings.codeLayout === 'function' && h(SelectRow, {
+            label: '展示语言', desc: '只改变执行记录的展示格式，不生成或运行代码',
+            value: settings.codeLanguage,
+            options: [{ value: 'python', label: 'Python' }, { value: 'javascript', label: 'JavaScript' }, { value: 'c', label: 'C' }, { value: 'cpp', label: 'C++' }, { value: 'java', label: 'Java' }, { value: 'go', label: 'Go' }],
+            onChange: codeLanguage => commit({ codeLanguage }),
           }),
           isCode(settings) && h(CodeColors, { settings, commit }),
           h('h3', { className: 'dpt-subhead' }, '强度'),
@@ -5024,7 +5335,7 @@ window.__ModuleLoader__.load({
             ],
             onChange: (dotStyle) => commit({ dotStyle }),
           }),
-          ] : [h('p', { className: 'dpt-hint' }, settings.codeLayout === 'function' ? '外层任务和带子调用的工具显示为函数作用域；普通工具显示为调用。此视图是执行记录示意，并非可运行代码。长参数可展开，绿色注释表示思考。' : '行尾括号和淡细线标明子调用范围；闭括号随内容排列，折叠后显示 { … }。完成与否仍由步骤状态表示。')]),
+          ] : [h('p', { className: 'dpt-hint' }, settings.codeLayout === 'function' ? '任务和子调用按记录层级展示；括号或缩进是范围示意，并非可运行代码。长参数可展开，绿色注释表示思考。' : '行尾括号和淡细线标明子调用范围；闭括号随内容排列，折叠后显示 { … }。完成与否仍由步骤状态表示。')]),
           h('h3', { className: 'dpt-subhead' }, '过程行外观'),
           h(SliderRow, {
             label: '缩进',
