@@ -13,21 +13,20 @@ const LEGACY_BOTANICAL = {
   leafStyle: 'slim', dotSize: 5.6, dotFollowWidth: true, indent: 12, toolDim: 0.8,
 }
 
-test('legacy settings without treeStyle migrate to the classic preset', () => {
+test('legacy settings without treeStyle migrate to the code preset', () => {
   // Arrange / Act
   const settings = api.normalize(LEGACY_BOTANICAL)
 
   // Assert
-  assert.equal(settings.treeStyle, 'classic')
+  assert.equal(settings.treeStyle, 'code')
   assert.equal(settings.botanicalStyle, false)
-  assert.equal(settings.lineWidth, 3.8)
-  assert.equal(settings.thicknessDecay, 0.6)
-  // Old organic defaults migrate to the classic preset: straight, light forks, no texture.
-  assert.equal(settings.rootFusion, 0.3)
+  assert.equal(settings.lineWidth, 1)
+  assert.equal(settings.thicknessDecay, 0)
+  assert.equal(settings.rootFusion, 0)
   assert.equal(settings.vineAmplitude, 0)
   assert.equal(settings.textureStyle, 'none')
-  assert.equal(settings.leafStyle, 'slim')
-  assert.equal(settings.dotFollowWidth, true)
+  assert.equal(settings.leafStyle, 'none')
+  assert.equal(settings.dotFollowWidth, false)
 })
 
 test('migration keeps row appearance; old full-size crowns become the emblem', () => {
@@ -67,8 +66,8 @@ test('a custom vine amplitude survives normalization', () => {
   assert.equal(settings.vineAmplitude, 3)
 })
 
-test('an unknown treeStyle falls back to classic', () => {
-  assert.equal(api.normalize({ treeStyle: 'neon' }).treeStyle, 'classic')
+test('an unknown treeStyle falls back to code', () => {
+  assert.equal(api.normalize({ treeStyle: 'neon' }).treeStyle, 'code')
 })
 
 test('normalize does not mutate its input', () => {
@@ -83,12 +82,12 @@ test('soil defaults on and preserves an explicit saved preference', () => {
   assert.equal(api.normalize({ treeStyle: 'botanical', soilEnabled: true }).soilEnabled, true)
 })
 
-test('fresh defaults are classic and explicit saved styles keep their values', () => {
+test('fresh defaults are code and explicit saved styles keep their values', () => {
   for (const raw of [undefined, null, {}, api.DEFAULTS]) {
     const settings = api.normalize(raw)
-    assert.equal(settings.treeStyle, 'classic')
-    assert.equal(settings.lineWidth, 3.8)
-    assert.equal(settings.thicknessDecay, 0.6)
+    assert.equal(settings.treeStyle, 'code')
+    assert.equal(settings.lineWidth, 1)
+    assert.equal(settings.thicknessDecay, 0)
   }
   for (const treeStyle of ['quiet', 'botanical', 'classic']) {
     const settings = api.normalize({ treeStyle, lineWidth: 9, indent: 40 })
@@ -120,13 +119,126 @@ test('state colors migrate safely and preserve valid custom values', () => {
 test('code palettes preserve valid independent choices and migrate missing or invalid colors', () => {
   const old = api.normalize({ treeStyle: 'code', indent: 24 })
   assert.equal(old.codeLightFunction, '#bb8009')
-  assert.equal(old.codeDarkFunction, '#ffdb94')
+  assert.equal(old.codeDarkFunction, '#ffc66d')
   assert.equal(old.indent, 24)
   const custom = api.normalize({ codeLightFunction: '#123ABC', codeDarkPair1: '#456DEF', codeLightComment: 'red' })
   assert.equal(custom.codeLightFunction, '#123abc')
   assert.equal(custom.codeDarkPair1, '#456def')
   assert.equal(custom.codeLightComment, '#008000')
   assert.equal(custom.codeDarkFunction, '#ffdb94')
+})
+
+test('fresh and reset settings use the selected code defaults', () => {
+  for (const source of [{}, api.DEFAULTS, {treeStyle:'code'}]) {
+    const settings=api.normalize(source)
+    assert.equal(settings.codeLayout,'function')
+    assert.equal(settings.codeLanguage,'python')
+    assert.equal(settings.codeLightPreset,'vscode')
+    assert.equal(settings.codeDarkPreset,'jetbrains')
+    assert.equal(settings.codeBackgroundMode,'theme')
+    for(const theme of ['light','dark']) {
+      const id=theme==='light'?'vscode':'jetbrains'
+      for(const [token,value] of Object.entries(api.CODE_PRESETS[id][theme])) {
+        if(token==='background') continue
+        const key='code'+theme[0].toUpperCase()+theme.slice(1)+token[0].toUpperCase()+token.slice(1)
+        assert.equal(settings[key],value,key)
+      }
+    }
+  }
+})
+
+test('explicit existing layout, language, palettes and background remain intact', () => {
+  const before=api.normalize({treeStyle:'code',codeLayout:'braces',codeLanguage:'go',codeLightPreset:'dracula',
+    codeDarkPreset:'vscode',codeBackgroundMode:'host',codeLightFunction:'#123456',codeDarkFunction:'#abcdef'})
+  const after=api.normalize(JSON.parse(JSON.stringify(before)))
+  for(const key of ['codeLayout','codeLanguage','codeLightPreset','codeDarkPreset','codeBackgroundMode','codeLightFunction','codeDarkFunction'])
+    assert.equal(after[key],before[key],key)
+})
+
+test('code preset migration preserves existing colours and independent customisations', () => {
+  const legacy = { treeStyle:'code', codeLightFunction:'#123456', codeDarkPair1:'#abcdef', indent:24, codeLanguage:'java' }
+  let settings = api.normalize(legacy)
+  assert.equal(settings.codeLightPreset,'vscode')
+  assert.equal(settings.codeDarkPreset,'vscode')
+  assert.equal(settings.codeBackgroundMode,'host')
+  assert.equal(settings.codePaletteProfiles.light.vscode.function,'#123456')
+  assert.equal(settings.codePaletteProfiles.dark.vscode.pair1,'#abcdef')
+  settings = api.normalize({...settings,...api.codePresetPatch(settings,'light','catppuccin')})
+  assert.equal(settings.codeLightFunction,api.CODE_PRESETS.catppuccin.light.function)
+  assert.equal(settings.codeDarkPair1,'#abcdef')
+  settings = api.normalize({...settings,codeLightFunction:'#fedcba'})
+  settings = api.normalize({...settings,...api.codePresetPatch(settings,'light','dracula')})
+  settings = api.normalize({...settings,...api.codePresetPatch(settings,'dark','jetbrains')})
+  assert.equal(settings.codeDarkFunction,api.CODE_PRESETS.jetbrains.dark.function)
+  settings = api.normalize({...settings,...api.codePresetPatch(settings,'light','catppuccin')})
+  assert.equal(settings.codeLightFunction,'#fedcba')
+  settings = api.normalize({...settings,...api.codePresetPatch(settings,'light','catppuccin',true)})
+  assert.equal(settings.codeLightFunction,api.CODE_PRESETS.catppuccin.light.function)
+  settings = api.normalize({...settings,...api.codePresetPatch(settings,'light','vscode'),...api.codePresetPatch(settings,'dark','vscode')})
+  assert.equal(settings.codeLightFunction,'#123456')
+  assert.equal(settings.codeDarkPair1,'#abcdef')
+  assert.equal(settings.indent,24)
+  assert.equal(settings.codeLanguage,'java')
+  const restored=api.normalize(JSON.parse(JSON.stringify(settings)))
+  assert.equal(restored.codeLightFunction,'#123456')
+  assert.equal(restored.codePaletteProfiles.light.catppuccin.function,api.CODE_PRESETS.catppuccin.light.function)
+})
+
+test('all previous saved settings survive palette migration', () => {
+  const previous=api.normalize({treeStyle:'code',codeLayout:'braces',codeLanguage:'cpp',indent:43,leading:-3,
+    runningColorLight:'#123456',errorColorDark:'#abcdef',codeLightFunction:'#543210',codeDarkComment:'#765432'})
+  for(const key of ['codeLightPreset','codeDarkPreset','codeBackgroundMode','codePaletteProfiles']) delete previous[key]
+  const migrated=api.normalize(JSON.parse(JSON.stringify(previous)))
+  for(const [key,value] of Object.entries(previous)) assert.deepEqual(migrated[key],value,key)
+  assert.equal(migrated.codeLightPreset,'vscode')
+  assert.equal(migrated.codeDarkPreset,'vscode')
+  assert.equal(migrated.codeBackgroundMode,'host')
+  assert.equal(migrated.codePaletteProfiles.light.vscode.function,'#543210')
+  assert.equal(migrated.codePaletteProfiles.dark.vscode.comment,'#765432')
+})
+
+test('legacy-only settings retain the active colours on re-upgrade', () => {
+  let current=api.normalize({})
+  current=api.normalize({...current,...api.codePresetPatch(current,'light','catppuccin')})
+  current=api.normalize({...current,codeLightFunction:'#123456'})
+  // Older clients save the flat colour fields but do not know the new keys.
+  const legacy={...current}
+  for(const key of ['codeLightPreset','codeDarkPreset','codeBackgroundMode','codePaletteProfiles']) delete legacy[key]
+  const upgraded=api.normalize(JSON.parse(JSON.stringify(legacy)))
+  assert.equal(upgraded.codeLightPreset,'vscode')
+  assert.equal(upgraded.codeLightFunction,'#123456')
+  assert.equal(upgraded.codePaletteProfiles.light.vscode.function,'#123456')
+  assert.equal(upgraded.codePaletteProfiles.light.catppuccin,undefined)
+})
+
+test('code presets validate malformed profiles and retain legacy flat colours', () => {
+  const settings=api.normalize({codeLightPreset:'missing',codeDarkPreset:'dracula',codeLightFunction:'#123456',
+    codePaletteProfiles:{dark:{dracula:{function:'bad',keyword:'#123ABC'}},light:{__proto__:{function:'#111111'}}},codeBackgroundMode:'bad'})
+  assert.equal(settings.codeLightPreset,'vscode')
+  assert.equal(settings.codeLightFunction,'#123456')
+  assert.equal(settings.codeDarkFunction,api.CODE_PRESETS.dracula.dark.function)
+  assert.equal(settings.codeDarkKeyword,'#123abc')
+  assert.equal(settings.codeBackgroundMode,'host')
+  for(const id of ['vscode','jetbrains','catppuccin','dracula']) for(const theme of ['light','dark']) {
+    const preset=api.CODE_PRESETS[id][theme]
+    for(const key of ['function','keyword','parameter','string','number','comment','text','pair1','pair2','pair3','background'])
+      assert.match(preset[key],/^#[0-9a-f]{6}$/i,id+' '+theme+' '+key)
+  }
+})
+
+test('new preset colours remain legible on their own background', () => {
+  const luminance = color => {
+    const channels=[1,3,5].map(index=>parseInt(color.slice(index,index+2),16)/255)
+      .map(value=>value<=0.04045?value/12.92:((value+0.055)/1.055)**2.4)
+    return channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722
+  }
+  for(const id of ['jetbrains','catppuccin','dracula']) for(const theme of ['light','dark']) {
+    const palette=api.CODE_PRESETS[id][theme], background=luminance(palette.background)
+    for(const role of ['function','keyword','parameter','string','number','comment','text','pair1','pair2','pair3']) {
+      const foreground=luminance(palette[role]), ratio=(Math.max(background,foreground)+0.05)/(Math.min(background,foreground)+0.05)
+      assert.ok(ratio>=4.5,`${id} ${theme} ${role}: ${ratio}`)
+    }
+  }
 })
 
 test('each style keeps its own standard preset width', () => {
@@ -321,5 +433,5 @@ test('code is an explicit fourth style and normalization preserves existing pref
   assert.equal(code.botanicalScrollOptimization, true)
   assert.equal(api.matchesIntensity(api.normalize({ ...code, ...api.intensityPatch('code', 'standard') })), true)
   assert.deepEqual(api.normalize(original), original)
-  assert.equal(api.normalize({}).treeStyle, 'classic')
+  assert.equal(api.normalize({}).treeStyle, 'code')
 })

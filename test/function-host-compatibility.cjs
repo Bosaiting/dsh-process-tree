@@ -14,6 +14,13 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
  page.on('pageerror',e=>errors.push(String(e)));
  try{
   await page.emulateMedia({colorScheme:'light',reducedMotion:'reduce'});
+  // Seed old-format preferences only in this disposable browser profile.
+  await page.addInitScript(()=>{
+   if (!sessionStorage.getItem('dpt-legacy-seeded')) {
+    localStorage.setItem('dsh.process-tree.v1',JSON.stringify({treeStyle:'classic',codeLightFunction:'#123456',codeDarkFunction:'#abcdef',indent:31}));
+    sessionStorage.setItem('dpt-legacy-seeded','1');
+   }
+  });
   await page.goto(input,{waitUntil:'networkidle'});
   const welcome=page.getByRole('button',{name:/^(继续|Continue)$/}),close=page.getByRole('button',{name:/^(关闭|Close)$/});
   if(await welcome.isVisible()){await welcome.click();await close.waitFor({state:'visible'})}if(await close.isVisible())await close.click();
@@ -23,6 +30,10 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   if(await activity.getAttribute('aria-expanded')!=='true')await activity.click();await page.waitForSelector('[data-step-process-content] [data-chat-call-id]');
   await page.getByRole('button',{name:/^(账号菜单|Account menu)$/}).click();await page.getByRole('menuitem',{name:/设置|Settings/}).click();await page.getByText('过程树',{exact:true}).click();
   const card=page.getByRole('radiogroup',{name:'风格'}).getByRole('radio',{name:/代码块/});await card.click();await frames(page);
+  const migrated=await page.evaluate(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')));
+  assert.equal(migrated.codeLightFunction,'#123456');assert.equal(migrated.codeDarkFunction,'#abcdef');assert.equal(migrated.indent,31);
+  assert.equal(migrated.codeLightPreset,'vscode');assert.equal(migrated.codeDarkPreset,'vscode');assert.equal(migrated.codeBackgroundMode,'host');
+  check('legacy settings migrate without changing saved colours or spacing');
   const layout=page.getByRole('combobox',{name:'代码形态'});assert.equal(await layout.inputValue(),'function');
   assert.equal(await page.locator('.dpt-preview-stage .dpt-function-header').innerText(),'def 检查项目(workspace="./demo"):');
   for(const [theme,color] of [['dark','rgb(86, 156, 214)'],['light','rgb(0, 0, 255)']]) {
@@ -38,10 +49,26 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}');return s.codeLightFunction==='#2468ac'&&s.codeDarkFunction==='#aabbcc'});
   check('code colors save and preview independently in both themes');
   await page.getByRole('button',{name:'恢复浅色代码颜色'}).click();await page.getByRole('button',{name:'恢复深色代码颜色'}).click();await frames(page);
+  const lightPreset=page.getByLabel('浅色配色方案'),darkPreset=page.getByLabel('深色配色方案'),codeBackground=page.getByLabel('代码背景');
+  await codeBackground.selectOption('theme');
+  for(const [id,lightColor,darkColor,lightBg,darkBg] of [
+   ['jetbrains','rgb(0, 51, 179)','rgb(215, 134, 60)','rgb(255, 255, 255)','rgb(43, 43, 43)'],
+   ['catppuccin','rgb(136, 57, 239)','rgb(203, 166, 247)','rgb(239, 241, 245)','rgb(30, 30, 46)'],
+   ['dracula','rgb(163, 20, 77)','rgb(255, 121, 198)','rgb(255, 251, 235)','rgb(40, 42, 54)']]) {
+   await lightPreset.selectOption(id);await darkPreset.selectOption(id);
+   for(const [mode,color,bg] of [['light',lightColor,lightBg],['dark',darkColor,darkBg]]) {
+    await page.getByRole('combobox',{name:'预览主题'}).selectOption(mode);await frames(page);
+    assert.equal(await page.locator('.dpt-preview-stage .dpt-function-header [data-token="keyword"]').evaluate(e=>getComputedStyle(e).color),color);
+    assert.equal(await page.locator('.dpt-preview-stage [data-step-process-content]').evaluate(e=>getComputedStyle(e).backgroundColor),bg);
+   }
+  }
+  await lightPreset.selectOption('vscode');await darkPreset.selectOption('vscode');await codeBackground.selectOption('host');await frames(page);
+  check('IDE presets and optional backgrounds preview in both host themes');
   await page.locator('.dpt-preview-panel').screenshot({path:path.join(out,'function-preview.png')});
   check('function layout and explicit IDE preview themes');
   await close.click();await frames(page);
   const process=page.locator('[data-step-process-content]');
+  const waitForTab=suffix=>page.waitForFunction(suffix=>Array.from(document.querySelectorAll('[data-step-process-content] .dpt-function-tab')).some(tab=>tab.textContent.endsWith(suffix)),suffix,{timeout:5000});
   assert.ok((await process.locator('.dpt-function-header').innerText()).startsWith('def '));
   assert.ok((await process.locator('.dpt-function-header').innerText()).includes('workspace='));
   assert.equal(await process.locator('.dpt-code-expression').count(),8);
@@ -151,7 +178,7 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   await page.getByRole('combobox',{name:'展示语言'}).selectOption('javascript');await frames(page);
   assert.match(await page.locator('.dpt-preview-stage .dpt-function-header').innerText(),/^function /);
   await close.click();await frames(page);
-  assert.match(await process.locator('.dpt-function-tab').innerText(),/\.js$/);
+  await waitForTab('.js');assert.match(await process.locator('.dpt-function-tab').innerText(),/\.js$/);
   assert.match(await expression('function-child-1').innerText(),/^read\(\{path: "src\/index.ts"\}\);/);
   assert.equal(await process.locator('.dpt-function-footer').innerText(),'}');
   assert.match(await process.locator('[data-dpt-function-comment-label]').first().evaluate(e=>getComputedStyle(e,'::before').content),/^"\/\/ /);
@@ -166,7 +193,7 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   await page.getByRole('combobox',{name:'展示语言'}).selectOption('c');await frames(page);
   assert.match(await page.locator('.dpt-preview-stage .dpt-function-header').innerText(),/^void task_01\(void\) \{/);
   await page.getByRole('dialog').getByRole('button',{name:/^(关闭|Close)$/}).click();await frames(page);
-  assert.match(await process.locator('.dpt-function-tab').innerText(),/\.c$/);
+  await waitForTab('.c');assert.match(await process.locator('.dpt-function-tab').innerText(),/\.c$/);
   assert.match(await expression('function-child-1').innerText(),/^read\(\s*\/\* path \*\/ "src\/index.ts"\s*\);$/);
   assert.equal(await process.locator('.dpt-function-footer').innerText(),'}');
   assert.match(await process.locator('[data-dpt-function-comment-label]').first().evaluate(e=>getComputedStyle(e,'::before').content),/^"\/\/ /);
@@ -181,7 +208,7 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   await page.getByRole('combobox',{name:'展示语言'}).selectOption('cpp');await frames(page);
   assert.match(await page.locator('.dpt-preview-stage .dpt-function-header').innerText(),/^void task_01\(\) \{/);
   await page.getByRole('dialog').getByRole('button',{name:/^(关闭|Close)$/}).click();await frames(page);
-  assert.match(await process.locator('.dpt-function-tab').innerText(),/\.cpp$/);
+  await waitForTab('.cpp');assert.match(await process.locator('.dpt-function-tab').innerText(),/\.cpp$/);
   assert.match(await expression('function-child-1').innerText(),/^read\(\s*\/\* path \*\/ "src\/index.ts"\s*\);$/);
   assert.equal(await process.locator('.dpt-function-footer').innerText(),'}');
   assert.match(await process.locator('[data-dpt-function-comment-label]').first().evaluate(e=>getComputedStyle(e,'::before').content),/^"\/\/ /);
@@ -197,7 +224,7 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   assert.match(await page.locator('.dpt-preview-stage .dpt-function-header').innerText(),/^void 检查项目\(\) \{/);
   assert.equal(await page.locator('.dpt-preview-stage .dpt-function-readonly').innerText(),'执行记录 · Java 风格');
   await page.getByRole('dialog').getByRole('button',{name:/^(关闭|Close)$/}).click();await frames(page);
-  assert.match(await process.locator('.dpt-function-tab').innerText(),/\.java$/);
+  await waitForTab('.java');assert.match(await process.locator('.dpt-function-tab').innerText(),/\.java$/);
   assert.match(await expression('function-child-1').innerText(),/^read\(\s*"src\/index.ts"\s*\);/);
   const javaChild=process.locator('[data-chat-call-id="function-child-1"]')
   await javaChild.locator('.dpt-code-more').click()
@@ -219,7 +246,7 @@ const check=(name,detail={})=>{results.checks.push({name,pass:true,...detail});c
   assert.match(await page.locator('.dpt-preview-stage .dpt-function-header').innerText(),/^func 检查项目\(\) \{/);
   assert.equal(await page.locator('.dpt-preview-stage .dpt-function-readonly').innerText(),'执行记录 · Go 风格');
   await page.getByRole('dialog').getByRole('button',{name:/^(关闭|Close)$/}).click();await frames(page);
-  assert.match(await process.locator('.dpt-function-tab').innerText(),/\.go$/);
+  await waitForTab('.go');assert.match(await process.locator('.dpt-function-tab').innerText(),/\.go$/);
   assert.match(await expression('function-child-1').innerText(),/^read\(\s*"src\/index.ts"\s*\)/);
   const goChild=process.locator('[data-chat-call-id="function-child-1"]');
   await goChild.locator('.dpt-code-more').click();assert.deepEqual(JSON.parse(await goChild.locator('.dpt-code-arguments').innerText()),{path:'src/index.ts'});await goChild.locator('.dpt-code-more').click();

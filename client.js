@@ -127,9 +127,32 @@ window.__ModuleLoader__.load({
       keyword: '#569cd6', parameter: '#9cdcfe', number: '#b5cea8', text: '#d4d4d4',
       pair1: '#e6cb95', pair2: '#da70d6', pair3: '#179fff' }),
   })
+  // Token roles are adapted to this read-only process view; background and
+  // colours are bundled locally and do not alter the host editor's theme.
+  const CODE_PRESETS = Object.freeze({
+    vscode: Object.freeze({
+      light: Object.freeze({ ...CODE_PALETTES.light, background: '#ffffff' }),
+      dark: Object.freeze({ ...CODE_PALETTES.dark, background: '#1e1e1e' }),
+    }),
+    jetbrains: Object.freeze({
+      light: Object.freeze({ function: '#00627a', keyword: '#0033b3', parameter: '#5b3e87', string: '#067d17', number: '#1750eb', comment: '#737373', text: '#202124', pair1: '#0033b3', pair2: '#067d17', pair3: '#871094', background: '#ffffff' }),
+      dark: Object.freeze({ function: '#ffc66d', keyword: '#d7863c', parameter: '#a9b7c6', string: '#6aab73', number: '#6897bb', comment: '#929292', text: '#a9b7c6', pair1: '#ffc66d', pair2: '#d7863c', pair3: '#6897bb', background: '#2b2b2b' }),
+    }),
+    catppuccin: Object.freeze({
+      light: Object.freeze({ function: '#1b5ee0', keyword: '#8839ef', parameter: '#4c4f69', string: '#2f7920', number: '#a44b00', comment: '#686b81', text: '#4c4f69', pair1: '#1b5ee0', pair2: '#8839ef', pair3: '#14777d', background: '#eff1f5' }),
+      dark: Object.freeze({ function: '#89b4fa', keyword: '#cba6f7', parameter: '#cdd6f4', string: '#a6e3a1', number: '#fab387', comment: '#9399b2', text: '#cdd6f4', pair1: '#89b4fa', pair2: '#cba6f7', pair3: '#94e2d5', background: '#1e1e2e' }),
+    }),
+    dracula: Object.freeze({
+      light: Object.freeze({ function: '#14710a', keyword: '#a3144d', parameter: '#1f1f1f', string: '#846e15', number: '#a34d14', comment: '#6c664b', text: '#1f1f1f', pair1: '#644ac9', pair2: '#a3144d', pair3: '#036a96', background: '#fffbeb' }),
+      dark: Object.freeze({ function: '#50fa7b', keyword: '#ff79c6', parameter: '#f8f8f2', string: '#f1fa8c', number: '#ffb86c', comment: '#8b98c9', text: '#f8f8f2', pair1: '#bd93f9', pair2: '#ff79c6', pair3: '#8be9fd', background: '#282a36' }),
+    }),
+  })
   const codeColorKey = (theme, token) => 'code' + theme[0].toUpperCase() + theme.slice(1) + token[0].toUpperCase() + token.slice(1)
+  const codePresetKey = theme => theme === 'light' ? 'codeLightPreset' : 'codeDarkPreset'
+  const CODE_DEFAULT_PRESETS = Object.freeze({ light: 'vscode', dark: 'jetbrains' })
   const CODE_COLOR_DEFAULTS = Object.freeze(Object.fromEntries(Object.entries(CODE_PALETTES).flatMap(([theme, palette]) =>
-    Object.entries(palette).map(([token, value]) => [codeColorKey(theme, token), value]))))
+    Object.keys(palette).map(token => [codeColorKey(theme, token), CODE_PRESETS[CODE_DEFAULT_PRESETS[theme]][theme][token]]))))
+  const CODE_PALETTE_SETTINGS = new Set([...Object.keys(CODE_COLOR_DEFAULTS), 'codeLightPreset', 'codeDarkPreset', 'codeBackgroundMode'])
 
   function intensityPatch(treeStyle, intensity) {
     const preset = STYLE_PRESETS[treeStyle], level = INTENSITIES[intensity]
@@ -157,9 +180,13 @@ window.__ModuleLoader__.load({
   }
 
   const DEFAULTS = Object.freeze({
-    treeStyle: 'classic',
+    treeStyle: 'code',
     codeLayout: 'function',
     codeLanguage: 'python',
+    codeLightPreset: 'vscode',
+    codeDarkPreset: 'jetbrains',
+    codeBackgroundMode: 'theme',
+    codePaletteProfiles: Object.freeze({ light: Object.freeze({}), dark: Object.freeze({}) }),
     intensity: 'standard',
     botanicalStyle: false,
     botanicalScrollOptimization: false,
@@ -185,7 +212,7 @@ window.__ModuleLoader__.load({
     toolDim: 1,
     thinkDim: 1,
     leading: 0,
-    ...STYLE_PRESETS.classic,
+    ...STYLE_PRESETS.code,
   })
 
   // The wood gradient keeps its original span so a small crown does not band the roots.
@@ -215,6 +242,46 @@ window.__ModuleLoader__.load({
     return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value.toLowerCase() : fallback
   }
 
+  function normalizeCodePreferences(source) {
+    const profiles = { light: {}, dark: {} }, active = {}, selected = {}
+    const hasSavedColors = Object.keys(CODE_COLOR_DEFAULTS).some(key => Object.hasOwn(source, key))
+    const hasSavedPresets = ['codeLightPreset', 'codeDarkPreset'].some(key => Object.hasOwn(source, key))
+    for (const theme of ['light', 'dark']) {
+      const key = codePresetKey(theme)
+      // Old flat colours belonged to VS Code; preserve that association when
+      // migrating. A fresh or colour-free configuration gets the new default.
+      const legacyColors = Object.keys(CODE_PALETTES[theme]).some(token => Object.hasOwn(source, codeColorKey(theme, token)))
+      const id = Object.hasOwn(CODE_PRESETS, source[key]) ? source[key] : legacyColors ? 'vscode' : CODE_DEFAULT_PRESETS[theme]
+      selected[key] = id
+      for (const preset of Object.keys(CODE_PRESETS)) {
+        const stored = source.codePaletteProfiles?.[theme]?.[preset]
+        if (!stored || typeof stored !== 'object' || Array.isArray(stored)) continue
+        profiles[theme][preset] = Object.fromEntries(Object.keys(CODE_PALETTES[theme]).map(token =>
+          [token, normalizeColor(stored[token], CODE_PRESETS[preset][theme][token])]))
+      }
+      const fallback = profiles[theme][id] || CODE_PRESETS[id][theme]
+      const colors = Object.fromEntries(Object.keys(CODE_PALETTES[theme]).map(token => {
+        const colorKey = codeColorKey(theme, token)
+        const value = normalizeColor(source[colorKey], fallback[token])
+        active[colorKey] = value
+        return [token, value]
+      }))
+      // The existing flat fields remain authoritative for older clients and
+      // preserve every previously saved custom colour during migration.
+      profiles[theme][id] = colors
+    }
+    const background = ['host', 'theme'].includes(source.codeBackgroundMode) ? source.codeBackgroundMode :
+      (hasSavedColors || hasSavedPresets ? 'host' : DEFAULTS.codeBackgroundMode)
+    return { ...selected, ...active, codePaletteProfiles: profiles, codeBackgroundMode: background }
+  }
+
+  function codePresetPatch(settings, theme, id, reset = false) {
+    if (!Object.hasOwn(CODE_PRESETS, id)) id = 'vscode'
+    const colors = !reset && settings.codePaletteProfiles?.[theme]?.[id] || CODE_PRESETS[id][theme]
+    return { [codePresetKey(theme)]: id, ...Object.fromEntries(Object.keys(CODE_PALETTES[theme]).map(token =>
+      [codeColorKey(theme, token), colors[token]])) }
+  }
+
   function normalize(raw) {
     const source = migrateStyle(raw && typeof raw === 'object' ? raw : {})
     const defaults = { ...DEFAULTS, ...STYLE_PRESETS[source.treeStyle] }
@@ -225,6 +292,7 @@ window.__ModuleLoader__.load({
       treeStyle: source.treeStyle,
       codeLayout: source.codeLayout === 'braces' ? 'braces' : 'function',
       codeLanguage: ['python', 'javascript', 'c', 'cpp', 'java', 'go'].includes(source.codeLanguage) ? source.codeLanguage : 'python',
+      ...normalizeCodePreferences(source),
       intensity: Object.hasOwn(INTENSITIES, source.intensity) ? source.intensity : defaults.intensity,
       // Derived; kept in storage so older plugin builds still read a value.
       botanicalStyle: source.treeStyle === 'botanical',
@@ -265,7 +333,6 @@ window.__ModuleLoader__.load({
       errorColorLight: normalizeColor(source.errorColorLight, defaults.errorColorLight),
       runningColorDark: normalizeColor(source.runningColorDark, defaults.runningColorDark),
       errorColorDark: normalizeColor(source.errorColorDark, defaults.errorColorDark),
-      ...Object.fromEntries(Object.entries(CODE_COLOR_DEFAULTS).map(([key, fallback]) => [key, normalizeColor(source[key], fallback)])),
       dotStyle: DOT_STYLES.includes(source.dotStyle) ? source.dotStyle : defaults.dotStyle,
       dotSize: clampNumber(source.dotSize ?? defaults.dotSize, 2, MAX_DOT_SIZE, defaults.dotSize),
       dotFollowWidth: typeof source.dotFollowWidth === 'boolean' ? source.dotFollowWidth : defaults.dotFollowWidth,
@@ -383,6 +450,7 @@ window.__ModuleLoader__.load({
     style.setProperty('--dpt-error-dark', SETTINGS.errorColorDark)
     for (const [theme, palette] of Object.entries(CODE_PALETTES)) {
       for (const token of Object.keys(palette)) style.setProperty(`--dpt-code-${theme}-${token}`, SETTINGS[codeColorKey(theme, token)])
+      style.setProperty(`--dpt-code-${theme}-background`, CODE_PRESETS[SETTINGS[codePresetKey(theme)]][theme].background)
     }
     // Rows follow the rail so the dot-to-label gap is the same in every style.
     style.setProperty('--dpt-rail-shift', (BASE_X - railX()) + 'px')
@@ -403,6 +471,7 @@ window.__ModuleLoader__.load({
     style.removeProperty('--dpt-error-dark')
     for (const [theme, palette] of Object.entries(CODE_PALETTES)) {
       for (const token of Object.keys(palette)) style.removeProperty(`--dpt-code-${theme}-${token}`)
+      style.removeProperty(`--dpt-code-${theme}-background`)
     }
     style.removeProperty('--dsh-tool-dim')
     style.removeProperty('--dsh-think-dim')
@@ -773,8 +842,10 @@ window.__ModuleLoader__.load({
   // Default token colours are based on VS Code Dark+/Light+ and the editor bracket registry.
   // Keep syntax depth independent of execution status: status belongs to the
   // summary; the same opening/closing pair must always retain the same hue.
-  const codePaletteVars = (theme, settings) => Object.fromEntries(Object.entries(CODE_PALETTES[theme]).map(([key, value]) =>
-    ['--dpt-code-' + key, settings ? settings[codeColorKey(theme, key)] : `var(--dpt-code-${theme}-${key}, ${value})`]))
+  const codePaletteVars = (theme, settings) => ({ ...Object.fromEntries(Object.entries(CODE_PALETTES[theme]).map(([key, value]) =>
+    ['--dpt-code-' + key, settings ? settings[codeColorKey(theme, key)] : `var(--dpt-code-${theme}-${key}, ${value})`])),
+    '--dpt-code-background': settings ? CODE_PRESETS[settings[codePresetKey(theme)]][theme].background :
+      `var(--dpt-code-${theme}-background, ${CODE_PRESETS.vscode[theme].background})` })
   const codePaletteCSS = (theme) => Object.entries(codePaletteVars(theme)).map(([key, value]) => key + ':' + value).join(';')
   const CODE_CSS = String.raw`
 :root { ${codePaletteCSS('light')} }
@@ -783,6 +854,10 @@ window.__ModuleLoader__.load({
   --dpt-row-gap: 12px;
   --dpt-code-indent: clamp(20px, var(--dsh-tool-indent, 28px), 36px);
   --dpt-code-pair: var(--dpt-code-pair1);
+}
+.dpt-host[data-dpt-style="code"][data-dpt-code-background="theme"] {
+  background: var(--dpt-code-background); border-radius: 8px;
+  --dsw-alias-bg-base: var(--dpt-code-background);
 }
 .dpt-host[data-dpt-style="code"] > [data-chat-flow-kind] { padding-left: 0; }
 .dpt-host[data-dpt-style="code"] [data-chat-call-id] { margin-left: 0; }
@@ -2820,6 +2895,13 @@ window.__ModuleLoader__.load({
             this.stateTargets.add(record.target)
             dirty |= DIRTY_STATE | (isFunctionCode() ? DIRTY_LAYOUT : 0)
           } else dirty |= DIRTY_LAYOUT
+        } else if (isFunctionCode() && record.type === 'childList' &&
+          record.target.nodeType === 1 && record.target.closest('[data-dpt-function-label]') &&
+          record.target.closest('button:not([data-dpt-owned]), a:not([data-dpt-owned])') &&
+          !record.target.closest('[data-dpt-owned]')) {
+          // A retained native file button can change its displayed target
+          // without changing its identity. Recheck the action mapping.
+          dirty |= DIRTY_LAYOUT
         } else if (structureMutation(record)) {
           dirty |= DIRTY_LAYOUT | DIRTY_STRUCTURE
           this.structureDirty = true
@@ -2910,6 +2992,7 @@ window.__ModuleLoader__.load({
     clearCodeDecorations(retainLayout = false) {
       this.clearBraceDecorations(retainLayout)
       this.clearFunctionDecorations(retainLayout)
+      if (!retainLayout) this.content.removeAttribute('data-dpt-code-background')
       codeSource?.sync()
     }
 
@@ -3641,6 +3724,7 @@ window.__ModuleLoader__.load({
 
     syncCodeDecorations(dirty = DIRTY_LAYOUT) {
       if (!isCode()) { this.clearCodeDecorations(); return }
+      attr(this.content, 'data-dpt-code-background', SETTINGS.codeBackgroundMode)
       if (isFunctionCode()) { this.clearBraceDecorations(); this.syncFunctionDecorations(dirty); return }
       this.clearFunctionDecorations()
       codeSource?.sync()
@@ -4008,7 +4092,10 @@ window.__ModuleLoader__.load({
 
     applySettings() {
       let dirty = settingsChanges(this.appliedSettings, SETTINGS)
+      const changedKeys = Object.keys(SETTINGS).filter(key => key !== 'codePaletteProfiles' && this.appliedSettings[key] !== SETTINGS[key])
+      const paletteOnly = changedKeys.every(key => CODE_PALETTE_SETTINGS.has(key))
       if (!isCode()) this.clearCodeDecorations()
+      else if (!this.suspended && paletteOnly) attr(this.content, 'data-dpt-code-background', SETTINGS.codeBackgroundMode)
       else if (!this.suspended) this.syncCodeDecorations(this.appliedSettings.codeLanguage !== SETTINGS.codeLanguage ? DIRTY_STRUCTURE : DIRTY_LAYOUT)
       const shadowWanted = SETTINGS.botanicalStyle && SETTINGS.botanicalScrollOptimization && !this.isPreview
       if (!this.suspended && this.svg && !!this.treeShadowHost !== shadowWanted) {
@@ -4025,7 +4112,7 @@ window.__ModuleLoader__.load({
       if (SETTINGS.botanicalStyle && !this.suspended &&
           (dirty & (DIRTY_LAYOUT | DIRTY_SHAPE) || ['soilEnabled','rootDetail','textureStyle','textureStrength'].some((key) => this.appliedSettings[key] !== SETTINGS[key]))) this.paintCrown(this.crownSpace || this.crownHeight)
       for (const key of Object.keys(SETTINGS)) {
-        if (this.appliedSettings[key] !== SETTINGS[key]) this.appearanceKeys.add(key)
+        if (key !== 'codePaletteProfiles' && this.appliedSettings[key] !== SETTINGS[key]) this.appearanceKeys.add(key)
       }
       const motionChanged = ['growthEnabled', 'growthSpeed', 'stateMotion', 'motionStrength'].some(
         (key) => this.appliedSettings[key] !== SETTINGS[key])
@@ -4967,6 +5054,7 @@ window.__ModuleLoader__.load({
   if (typeof window[TEST_HOOK] === 'function') {
     window[TEST_HOOK]({
        DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, elbowCurve, dotRadius, railX, topBranchStartY,
+       CODE_PRESETS, codePresetPatch,
        codeFunctionName, codeCall, codeExpression, codeValue, codeString, codeDuration, codeError, codeErrorInfo, codeOutcome, codeOutcomeLabel, codeFailed, codeDescendantFailures, codeStats, createCodeSource,
        setCodeSource: source => { codeSource = source; codeSource?.sync() },
       INTENSITIES, intensityPatch, matchesIntensity, matchesLegacyIntensity,
@@ -5175,11 +5263,24 @@ window.__ModuleLoader__.load({
         ['text', '普通文字'], ['pair1', '一级括号'],
         ['pair2', '二级括号'], ['pair3', '三级括号'],
       ]
+      const CODE_PRESET_LABELS = {
+        light: { vscode: 'VS Code Light+', jetbrains: 'JetBrains Light', catppuccin: 'Catppuccin Latte', dracula: 'Alucard Light' },
+        dark: { vscode: 'VS Code Dark+', jetbrains: 'JetBrains Darcula', catppuccin: 'Catppuccin Mocha', dracula: 'Dracula Classic' },
+      }
 
       function CodeColors({ settings, commit }) {
         return h('section', { 'aria-label': '代码颜色' },
           h('h3', { className: 'dpt-subhead' }, '代码颜色'),
-          h('p', { className: 'dpt-hint' }, '浅色与深色分别设置；点击色块或输入六位 HEX 颜色值。右侧预览可切换主题，修改会自动保存。'),
+          h('p', { className: 'dpt-hint' }, '浅色与深色分别选择配色；各方案的自定义颜色独立保存。右侧可切换预览。'),
+          ...[['light', '浅色'], ['dark', '深色']].map(([theme, label]) => h(SelectRow, {
+            key: 'preset-' + theme, label: label + '配色方案', desc: '跟随界面' + label + '模式使用',
+            value: settings[codePresetKey(theme)],
+            options: Object.entries(CODE_PRESET_LABELS[theme]).map(([value, name]) => ({ value, label: name })),
+            onChange: id => commit(codePresetPatch(settings, theme, id)),
+          })),
+          h(SelectRow, { label: '代码背景', desc: '仅影响代码过程区域；跟随界面时保留 DSH 背景。',
+            value: settings.codeBackgroundMode, options: [{ value: 'host', label: '跟随界面' }, { value: 'theme', label: '使用配色方案背景' }],
+            onChange: codeBackgroundMode => commit({ codeBackgroundMode }) }),
           ...[['light', '浅色'], ['dark', '深色']].map(([theme, label]) =>
             h('details', { className: 'dpt-advanced dpt-code-colors', key: theme },
               h('summary', null, h('span', { className: 'dpt-label' }, label + '代码颜色')),
@@ -5187,8 +5288,8 @@ window.__ModuleLoader__.load({
                 const key = codeColorKey(theme, token)
                 return h(ColorField, { key, label: label + name, value: settings[key], onChange: value => commit({ [key]: value }) })
               })),
-              h('button', { className: 'dpt-btn dpt-color-reset', type: 'button', onClick: () => commit(Object.fromEntries(
-                Object.entries(CODE_PALETTES[theme]).map(([token, value]) => [codeColorKey(theme, token), value]))) }, '恢复' + label + '代码颜色')
+              h('button', { className: 'dpt-btn dpt-color-reset', type: 'button', onClick: () => commit(
+                codePresetPatch(settings, theme, settings[codePresetKey(theme)], true)) }, '恢复' + label + '代码颜色')
             )))
       }
 
@@ -5245,16 +5346,17 @@ window.__ModuleLoader__.load({
             onChange: codeLanguage => commit({ codeLanguage }),
           }),
           isCode(settings) && h(CodeColors, { settings, commit }),
-          h('h3', { className: 'dpt-subhead' }, '强度'),
-          h('div', { className: 'dpt-segmented', role: 'radiogroup', 'aria-label': '强度' },
-            INTENSITY_OPTIONS.map((option) => h('button', {
-              key: option.value,
-              type: 'button',
-              role: 'radio',
-              'aria-checked': !custom && settings.intensity === option.value,
-              onClick: () => commit(intensityPatch(settings.treeStyle, option.value)),
-            }, option.label))),
-          h('p', { className: 'dpt-hint dpt-under' }, isCode(settings) ? '调整范围细线的浓淡与粗细；括号和正文保持清晰' : legacy ? '沿用旧版强度线宽；重新选择强度可应用新预设' : custom ? '已在高级设置中自定义线宽或圆点；选择一档即可恢复' : '同时调整线条深浅、粗细和圆点大小'),
+          !isCode(settings) && h(React.Fragment, null,
+            h('h3', { className: 'dpt-subhead' }, '强度'),
+            h('div', { className: 'dpt-segmented', role: 'radiogroup', 'aria-label': '强度' },
+              INTENSITY_OPTIONS.map((option) => h('button', {
+                key: option.value,
+                type: 'button',
+                role: 'radio',
+                'aria-checked': !custom && settings.intensity === option.value,
+                onClick: () => commit(intensityPatch(settings.treeStyle, option.value)),
+              }, option.label))),
+            h('p', { className: 'dpt-hint dpt-under' }, legacy ? '沿用旧版强度线宽；重新选择强度可应用新预设' : custom ? '已在高级设置中自定义线宽或圆点；选择一档即可恢复' : '同时调整线条深浅、粗细和圆点大小')),
           !(isCode(settings) && settings.codeLayout === 'function') && h('label', { className: 'dpt-toggle' },
             h('span', null, h('span', { className: 'dpt-label' }, '动画'),
               h('span', { className: 'dpt-toggle-desc' }, isCode(settings) ? '括号配对的轻微颜色过渡；系统减少动态效果时关闭' : '新步骤的生长、运行中的呼吸和完成时的收光；系统减少动态效果时始终关闭')),
@@ -5265,14 +5367,15 @@ window.__ModuleLoader__.load({
               checked: animated,
               onChange: (event) => commit({ growthEnabled: event.currentTarget.checked, stateMotion: event.currentTarget.checked }),
             })),
-          h('h3', { className: 'dpt-subhead' }, '状态颜色'),
-          h('p', { className: 'dpt-hint' }, isCode(settings) ? '运行和错误状态单独着色；可分别设置浅色和深色。' : '浅色和深色分别设置；点击色块选择，或输入六位 HEX 颜色值。'),
-          h('div', { className: 'dpt-colors' },
-            h(ColorField, { label: '浅色运行', value: settings.runningColorLight, onChange: runningColorLight => commit({ runningColorLight }) }),
-            h(ColorField, { label: '浅色错误', value: settings.errorColorLight, onChange: errorColorLight => commit({ errorColorLight }) }),
-            h(ColorField, { label: '深色运行', value: settings.runningColorDark, onChange: runningColorDark => commit({ runningColorDark }) }),
-            h(ColorField, { label: '深色错误', value: settings.errorColorDark, onChange: errorColorDark => commit({ errorColorDark }) })),
-          h('button', { className: 'dpt-btn dpt-color-reset', type: 'button', onClick: () => commit(STATUS_COLOR_DEFAULTS) }, '恢复状态颜色')
+          !isCode(settings) && h(React.Fragment, null,
+            h('h3', { className: 'dpt-subhead' }, '状态颜色'),
+            h('p', { className: 'dpt-hint' }, '浅色和深色分别设置；点击色块选择，或输入六位 HEX 颜色值。'),
+            h('div', { className: 'dpt-colors' },
+              h(ColorField, { label: '浅色运行', value: settings.runningColorLight, onChange: runningColorLight => commit({ runningColorLight }) }),
+              h(ColorField, { label: '浅色错误', value: settings.errorColorLight, onChange: errorColorLight => commit({ errorColorLight }) }),
+              h(ColorField, { label: '深色运行', value: settings.runningColorDark, onChange: runningColorDark => commit({ runningColorDark }) }),
+              h(ColorField, { label: '深色错误', value: settings.errorColorDark, onChange: errorColorDark => commit({ errorColorDark }) })),
+            h('button', { className: 'dpt-btn dpt-color-reset', type: 'button', onClick: () => commit(STATUS_COLOR_DEFAULTS) }, '恢复状态颜色'))
         )
       }
 
@@ -5302,12 +5405,12 @@ window.__ModuleLoader__.load({
         }
         return h('div', { className: 'dpt-page' },
           h('h3', null, '过程树'),
-          h('p', { className: 'dpt-hint' }, '选好风格和强度即可；改动立即生效并自动保存。'),
+          h('p', { className: 'dpt-hint' }, isCode(settings) ? '选择代码形态和配色；改动立即生效并自动保存。' : '选好风格和强度即可；改动立即生效并自动保存。'),
           storageError && h('p', { role: 'alert', className: 'dpt-hint', style: { color: 'var(--dpt-state-error, #c7766e)' } }, '无法读取或保存过程树设置；当前调整可能在重启后丢失。恢复存储后再次调整即可重试。'),
           h('div', { className: 'dpt-settings-layout' },
           h('div', { className: 'dpt-controls' },
           h(MainSettings, { settings, commit }),
-          h('details', { className: 'dpt-advanced' },
+          !isCode(settings) && h('details', { className: 'dpt-advanced' },
           h('summary', null, h('span', { className: 'dpt-label' }, '高级设置'),
             h('span', { className: 'dpt-advanced-hint' }, '枝条形态、纹理、圆点和行外观的细项')),
           ...(settings.treeStyle !== 'botanical' ? [] : [

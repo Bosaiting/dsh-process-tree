@@ -2,7 +2,7 @@
 
 [中文](README.md)
 
-A process tree for DeepSeek Harness: classic flowing branches by default, with optional quiet lines, botanical artwork and code blocks. Supports nested calls, state dots, viewport rendering and reduced motion.
+A process view for DeepSeek Harness: code blocks by default, with optional classic branches, quiet lines and botanical artwork. Supports nested calls, status indicators, viewport rendering and reduced motion.
 
 This community UI plugin targets DSH Web and the Desktop web interface. It does not render in TUI. See [compatibility and verification](docs/COMPATIBILITY.md) for tested environments and limits.
 
@@ -24,7 +24,7 @@ The same multi-branch process in the botanical style, shown in both interface th
 
 ### Before and after
 
-The same records without the plugin above, and with Process Tree's default classic curves below.
+The same records without the plugin above, and with Process Tree's classic curves below.
 
 ![The same task before and after installing Process Tree](docs/images/process-tree-before-after.png)
 
@@ -107,13 +107,17 @@ Colours follow VS Code Dark+/Light+: [official themes](https://github.com/micros
 
 ## Settings
 
-Open **Settings → Plugins → 过程树**. Classic is the default: flowing tapered curves and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds a small original canopy, shaded wood roots and halos. The main settings cover style, intensity, animation, and state colors. Choose or enter separate six-digit HEX colors for running and errors in light and dark themes; changes apply immediately and are saved automatically. State colors can be reset without changing other preferences.
+Open **Settings → Plugins → 过程树**. Code blocks are the default. Classic uses flowing tapered curves and leaves on finished tool steps. Quiet is the understated mode and uses 1.5 px uniform lines, rounded corners and dots of one size at every level; botanical adds a small original canopy, shaded wood roots and halos. The main settings cover style, intensity and animation. The three tree styles also allow separate six-digit HEX running and error colors for light and dark themes; changes apply immediately and are saved automatically. State colors can be reset without changing other preferences. Code style hides these controls while retaining saved colors.
 
-With Code blocks selected, expand the light or dark **Code colours** settings to adjust functions and tools, keywords, parameter names, strings and files, numbers, reasoning and comments, plain text, and all three bracket levels separately. Use the colour picker or enter a six-digit HEX value; the live preview can show either theme. Each theme has its own reset button, independent of status colours and other settings.
+Code blocks default to the task-function layout and Python, with VS Code Light+ for light mode, JetBrains Darcula for dark mode, and the preset background in the process view. Choose separate light and dark **Code colours** presets inspired by VS Code, JetBrains, Catppuccin and Dracula, or switch the background to follow DSH. The live preview can show either mode. Colours are adapted to this plugin's token roles, with some contrast adjustments, rather than a full IDE reproduction. Existing saved choices are preserved.
+
+Expand the light or dark colour settings to adjust functions and tools, keywords, parameter names, strings and files, numbers, reasoning and comments, plain text, and three bracket levels. Each preset retains its own customisations; reset affects only the active preset and mode, while the full settings reset clears all presets. Existing colours migrate as custom VS Code values. Switching and editing colours work offline.
+
+If an older version saves the settings after a downgrade, the active colours remain, but preset selections and customisations for other presets may be lost. Back up settings before downgrading if those preferences matter.
 
 Classic's subtle, standard, and vivid presets use line widths of 3.10, 3.80, and 4.64 px respectively; botanical uses 3.20, 4.60, and 6.28 px. Saved line widths remain unchanged; choose an intensity again to apply its new preset.
 
-Everything else (transitions, line width, texture, leaves, dots, indentation, summary dimming, leading, growth speed) lives under a collapsed **Advanced** section. Changing line width or dots there marks intensity as custom; picking a level restores it. Botanical controls appear in that style. The settings preview shares the chat renderer and can switch both state and light/dark appearance. Quiet uses state colors on dots; botanical retains its wood-colored running branches while the node and glow use the running color. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use classic while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
+Tree-style details (transitions, line width, texture, leaves, dots, indentation, summary dimming, leading, growth speed) live under a collapsed **Advanced** section. Changing line width or dots there marks intensity as custom; picking a level restores it. Botanical controls appear in that style. Code style hides the intensity and advanced controls. The settings preview shares the chat renderer and can switch both state and light/dark appearance. Quiet uses state colors on dots; botanical retains its wood-colored running branches while the node and glow use the running color. Reduced motion stops growth and state motion. Far-away history releases drawing resources while preserving layout space. Fresh installations and older preferences without a valid style use code blocks while retaining row appearance and canopy preferences. Explicit saved style choices remain unchanged.
 
 Botanical Advanced settings include an opt-in **植物滚动优化** (botanical scrolling optimization), off by default. It can reduce browser style recalculation while scrolling long processes. When enabled, other plugins or custom CSS that directly query or alter the internal root graphics may no longer work; turn it off to restore the previous access. The settings preview is unaffected.
 

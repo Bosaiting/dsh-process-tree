@@ -2,6 +2,12 @@
 
 Version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5; other releases are not declared compatible. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2.
 
+## Local IDE colour presets / 本地 IDE 配色方案（2026-10-31）
+
+The local candidate retains legacy light/dark colours and adds independent VS Code, JetBrains, Catppuccin and Dracula-inspired presets, with optional code-area backgrounds. Existing colours migrate into the VS Code profiles. Editing only colours, presets or background changes CSS variables without rebuilding call rows. Native file-label mutations still invalidate their mappings, and a suspended code view retains its background.
+
+On macOS, 59 unit tests and 47 synthetic Chromium browser cases passed. An isolated rc.5 Web host with the locally customized Claude Style 0.19.6 runtime passed 25 synthetic checks, including migration and all new presets in both preview themes. A first host run read the C++ tab before the asynchronous update completed; the test was changed to wait for the observed tab and the full rerun passed. No model or tool ran. Client SHA-256: `fa70485679292ab87249e6e75d79e2d14200c7a5e42f729f686d0e01fba9d985`. These checks do not establish native Desktop visual acceptance, sustained live generation, native frame rates, or Windows/Linux compatibility.
+
 ## Local audit fixes / 本地审查修复（2026-10-31）
 
 The local candidate preserves recorded argument text, falls back for lossy object-style formatting and ambiguous native file actions, reports host-only failure indications separately, and warns if settings storage fails. Its client SHA-256 is `1936e17281677e9f8a282422db3bf412c4829e923d3308423337e18d8fe6ca88`. On macOS, 54 unit tests and 46 synthetic Chromium browser cases passed. A separate rc.5 Web host with the locally customized Claude Style 0.19.6 runtime passed 23 synthetic function checks; a clean rc.5 Web host passed six synthetic streaming checks. No model or tool ran. A Windows-style path was exercised only in a synthetic browser fixture, not on Windows Desktop.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add independently selectable VS Code, JetBrains, Catppuccin and Dracula-inspired light/dark code palettes, per-preset custom colours, and optional code-area backgrounds. Preserve existing colour settings on migration and update colours without rebuilding call expressions.
+
 - Preserve raw argument disclosures and fall back when object-style formatting would change recorded numbers or duplicate keys; require an unambiguous one-to-one mapping for native file actions.
 - Distinguish host-marked failures from recorded tool failures, correct duration rounding and Unicode truncation, and report recoverable settings-storage errors.
 - Reuse minimap geometry on data-only updates and adapt conversion batch sizes to measured work. Scroll positioning retains same-event updates; Desktop performance remains separately unverified.

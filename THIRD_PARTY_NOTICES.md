@@ -41,3 +41,14 @@ SOFTWARE.
 
 The client requests React from the DSH module loader. React is not copied into
 the published plugin. React and React DOM in devDependencies serve browser tests.
+
+## Code colour references
+
+The code-view presets map visual token roles to colours inspired by the
+following projects. Some colours are adapted for contrast and for this plugin's
+limited token roles; they are not full copies of the source themes.
+
+- VS Code default themes and editor bracket colours: https://github.com/microsoft/vscode
+- JetBrains editor schemes: https://www.jetbrains.com/help/idea/configuring-colors-and-fonts.html
+- Catppuccin palette and style guidance: https://github.com/catppuccin/catppuccin
+- Dracula and Alucard palette specification: https://github.com/dracula/draculatheme.com/blob/main/content/spec.mdx

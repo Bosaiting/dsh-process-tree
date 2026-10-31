@@ -861,6 +861,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
       const {page,context,errors}=await fixture(browser,{style:'code',calls:6,nested:true});
       try {
         await page.emulateMedia({reducedMotion:'reduce'});
+        await page.evaluate(()=>api.change(api.codePresetPatch(api.getSettings(),'dark','vscode')));await page.evaluate(()=>frames(8));
         await page.evaluate(()=>{
           const parent=document.querySelector('[data-chat-call-id="g0-1"]'),sub=document.createElement('div');sub.dataset.subcalls='';
           sub.append(document.querySelector('[data-chat-call-id="g0-2"]'));parent.append(sub);
@@ -1113,6 +1114,99 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});assert.deepEqual(errors,[]);return {};
       }finally{await context.close()}
     });
+    await test('IDE presets preserve edits, preview both themes, and do not rebuild calls',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:3,nested:false});
+      try {
+        await page.emulateMedia({reducedMotion:'reduce'});
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.evaluate(()=>{
+          manager.stop();window.effects=[];
+          window.paletteChatSyncs=0;const sync=api.TreeView.prototype.syncCodeDecorations;
+          api.TreeView.prototype.syncCodeDecorations=function(...args){if(this.content.closest('#flow'))paletteChatSyncs++;return sync.apply(this,args)};
+          const nodes=new Map();for(let i=0;i<3;i++)nodes.set('g0-'+i,{kind:'tool-call',data:{root:{callId:'g0-'+i,kind:'tool-result',isError:false,call:{name:'read',argsRaw:JSON.stringify({path:'src/file'+i+'.js'})},subCalls:[]}}});
+          api.setCodeSource({sync(){},read(){return {key:'preset-test',nodes}}});
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');mount.id='preset-settings';mount.style.cssText='position:fixed;z-index:1000;left:500px;top:0;width:590px;height:750px;overflow:auto;background:#fff';document.body.append(mount);
+          window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });
+        await page.waitForSelector('#flow .dpt-code-expression');await page.evaluate(()=>frames(8));
+        await page.evaluate(()=>{window.originalExpression=document.querySelector('#flow .dpt-code-expression');window.initialPaletteChatSyncs=paletteChatSyncs});
+        const light=page.getByLabel('浅色配色方案'),dark=page.getByLabel('深色配色方案'),background=page.getByLabel('代码背景');
+        assert.equal(await light.inputValue(),'vscode');assert.equal(await dark.inputValue(),'jetbrains');assert.equal(await background.inputValue(),'theme');
+        assert.equal(await page.getByLabel('代码形态').inputValue(),'function');assert.equal(await page.getByLabel('展示语言').inputValue(),'python');
+        await dark.selectOption('vscode');
+        await page.getByText('浅色代码颜色',{exact:true}).click();await page.getByText('深色代码颜色',{exact:true}).click();
+        const lightFunction=page.getByLabel('浅色函数和工具颜色值'),darkFunction=page.getByLabel('深色函数和工具颜色值');
+        await lightFunction.fill('#2468AC');await darkFunction.fill('#AABBCC');
+        await light.selectOption('catppuccin');assert.equal(await lightFunction.inputValue(),'#1B5EE0');
+        await lightFunction.fill('#102030');await light.selectOption('dracula');assert.equal(await lightFunction.inputValue(),'#14710A');
+        await light.selectOption('catppuccin');assert.equal(await lightFunction.inputValue(),'#102030');
+        await page.getByRole('button',{name:'恢复浅色代码颜色'}).click();await page.evaluate(()=>frames(4));assert.equal(await lightFunction.inputValue(),'#1B5EE0');
+        await light.selectOption('vscode');assert.equal(await lightFunction.inputValue(),'#2468AC');assert.equal(await darkFunction.inputValue(),'#AABBCC');
+        await dark.selectOption('jetbrains');assert.equal(await darkFunction.inputValue(),'#FFC66D');
+        await dark.selectOption('vscode');assert.equal(await darkFunction.inputValue(),'#AABBCC');
+        const preview=page.locator('.dpt-preview-stage'),pc=preview.locator('[data-step-process-content]');
+        await background.selectOption('host');await page.evaluate(()=>frames(6));
+        const hostBackground=await pc.evaluate(el=>getComputedStyle(el).backgroundColor);
+        await background.selectOption('theme');
+        const options=[['vscode','#ffffff','#1e1e1e'],['jetbrains','#ffffff','#2b2b2b'],['catppuccin','#eff1f5','#1e1e2e'],['dracula','#fffbeb','#282a36']];
+        const rgb=hex=>{const n=hex.slice(1).match(/../g).map(x=>parseInt(x,16));return `rgb(${n.join(', ')})`};
+        for(const [id,lightBg,darkBg] of options){
+          await light.selectOption(id);await dark.selectOption(id);
+          for(const [mode,bg] of [['light',lightBg],['dark',darkBg]]){
+            await page.getByLabel('预览主题').selectOption(mode);await page.evaluate(()=>frames(6));
+            assert.equal(await pc.evaluate(el=>getComputedStyle(el).backgroundColor),rgb(bg),id+' '+mode);
+            await preview.screenshot({path:path.join(out,`preset-${id}-${mode}.png`)});
+          }
+        }
+        await page.getByLabel('预览主题').selectOption('light');await page.evaluate(()=>frames(6));
+        assert.equal(await page.locator('#flow [data-step-process-content]').evaluate(el=>getComputedStyle(el).backgroundColor),rgb('#fffbeb'));
+        await page.evaluate(()=>document.documentElement.setAttribute('data-ds-dark-theme',''));await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('#flow [data-step-process-content]').evaluate(el=>getComputedStyle(el).backgroundColor),rgb('#282a36'));
+        assert.equal(await page.evaluate(()=>originalExpression===document.querySelector('#flow .dpt-code-expression')),true);
+        assert.equal(await page.evaluate(()=>paletteChatSyncs),await page.evaluate(()=>initialPaletteChatSyncs),'colour-only changes must not reconvert chat calls');
+        await page.evaluate(()=>{for(const view of instances)if(view.content.closest('#flow'))view.suspend()});
+        assert.equal(await page.locator('#flow [data-step-process-content]').getAttribute('data-dpt-code-background'),'theme');
+        await page.evaluate(()=>{for(const view of instances)if(view.content.closest('#flow'))view.resume()});await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('#flow [data-step-process-content]').evaluate(el=>getComputedStyle(el).backgroundColor),rgb('#282a36'));
+        await background.selectOption('host');await page.evaluate(()=>frames(6));
+        assert.equal(await pc.evaluate(el=>getComputedStyle(el).backgroundColor),hostBackground);
+        await page.getByLabel('代码形态').selectOption('braces');await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('#flow [data-dpt-code-layout="function"]').count(),0);
+        await background.selectOption('theme');await page.evaluate(()=>frames(6));
+        assert.equal(await page.locator('#flow [data-step-process-content]').evaluate(el=>getComputedStyle(el).backgroundColor),rgb('#282a36'));
+        assert.equal(await pc.evaluate(el=>getComputedStyle(el).backgroundColor),rgb('#fffbeb'));
+        await background.selectOption('host');await page.evaluate(()=>frames(6));
+        await page.getByRole('radio',{name:/安静线条/}).click();await page.evaluate(()=>frames(8));
+        assert.equal(await page.locator('#flow [data-dpt-code-background]').count(),0);
+        await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}');return s.codeLightPreset==='dracula'&&s.codeDarkPreset==='dracula'&&s.codeBackgroundMode==='host'&&s.codePaletteProfiles.light.vscode.function==='#2468ac'&&s.codePaletteProfiles.dark.vscode.function==='#aabbcc'});
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});
+        await page.reload();await page.evaluate(setup);
+        await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});
+        await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
+        await page.addScriptTag({content:tested});
+        await page.evaluate(()=>{
+          window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)});window.effects=[];
+          plugin.apply({effect(fn){const stop=fn();if(stop)effects.push(stop)},slots:{inject(name,fn){return fn()},register(meta,component){window.SettingsPage=component;return ()=>{}}}});
+          const mount=document.createElement('div');document.body.append(mount);window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
+        });
+        await page.evaluate(()=>frames(8));await page.getByRole('radio',{name:/代码块/}).click();
+        assert.equal(await page.getByLabel('浅色配色方案').inputValue(),'dracula');
+        assert.equal(await page.getByLabel('深色配色方案').inputValue(),'dracula');
+        await page.getByLabel('浅色配色方案').selectOption('vscode');await page.getByLabel('深色配色方案').selectOption('vscode');
+        await page.getByText('浅色代码颜色',{exact:true}).click();await page.getByText('深色代码颜色',{exact:true}).click();await page.evaluate(()=>frames(4));
+        assert.equal(await page.getByLabel('浅色函数和工具颜色值').inputValue(),'#2468AC');
+        assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#AABBCC');
+        await page.getByRole('button',{name:'恢复默认',exact:true}).click();
+        assert.equal(await page.getByRole('radio',{name:/代码块/}).getAttribute('aria-checked'),'true');
+        assert.equal(await page.getByLabel('代码形态').inputValue(),'function');assert.equal(await page.getByLabel('展示语言').inputValue(),'python');
+        assert.equal(await page.getByLabel('浅色配色方案').inputValue(),'vscode');assert.equal(await page.getByLabel('深色配色方案').inputValue(),'jetbrains');
+        assert.equal(await page.getByLabel('代码背景').inputValue(),'theme');
+        await page.getByText('深色代码颜色',{exact:true}).click();assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#FFC66D');
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});
+        assert.deepEqual(errors,[]);return {};
+      }finally{await context.close()}
+    });
     await test('code colors update chat and both previews, persist and reset independently',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',calls:3,nested:true});
       try {
@@ -1177,7 +1271,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.equal(await input.inputValue(),'#BB8009');assert.equal(await page.getByLabel('浅色字符串和文件颜色值').inputValue(),'#A31515');
         assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#AABBCC');
         await page.getByRole('button',{name:'恢复深色代码颜色'}).click();await page.evaluate(()=>frames(8));
-        assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#FFDB94');
+        assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#FFC66D');
         await page.getByLabel('深色函数和工具颜色值').fill('#AABBCC');
         await page.getByRole('radio',{name:/安静线条/}).click();await page.getByRole('radio',{name:/代码块/}).click();
         await page.getByText('深色代码颜色',{exact:true}).click();assert.equal(await page.getByLabel('深色函数和工具颜色值').inputValue(),'#AABBCC');
@@ -1264,8 +1358,38 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         await page.getByLabel('浅色错误颜色选择').fill('#c85140');
         await page.getByLabel('深色运行颜色值').fill('#2A5BB1');
         await page.getByLabel('深色错误颜色值').fill('#B24F75');
+        await page.locator('.dpt-advanced > summary').click();
+        await page.getByLabel('缩进',{exact:true}).fill('33');
+        await page.locator('.dpt-advanced > summary').click();
+        for(const style of ['经典曲线','安静线条','植物手稿']) {
+          await page.getByRole('radio',{name:new RegExp(style)}).click();
+          assert.equal(await page.getByRole('heading',{name:'状态颜色'}).count(),1,style);
+          assert.equal(await page.getByRole('radiogroup',{name:'强度'}).count(),1,style);
+          assert.equal(await page.locator('.dpt-controls > details.dpt-advanced').count(),1,style);
+          assert.equal(await page.getByLabel('浅色运行颜色值').inputValue(),'#3478A2',style);
+          assert.equal(await page.getByRole('button',{name:'恢复状态颜色'}).count(),1,style);
+        }
+        await page.getByRole('radio',{name:/代码块/}).click();
+        for(const layout of ['function','braces']) {
+          await page.getByRole('combobox',{name:'代码形态'}).selectOption(layout);
+          assert.equal(await page.getByRole('heading',{name:'状态颜色'}).count(),0,layout);
+          assert.equal(await page.getByText('运行和错误状态单独着色；可分别设置浅色和深色。').count(),0,layout);
+          assert.equal(await page.getByLabel('浅色运行颜色值').count(),0,layout);
+          assert.equal(await page.getByRole('button',{name:'恢复状态颜色'}).count(),0,layout);
+          assert.equal(await page.getByRole('heading',{name:'强度'}).count(),0,layout);
+          assert.equal(await page.getByRole('radiogroup',{name:'强度'}).count(),0,layout);
+          assert.equal(await page.locator('.dpt-controls > details.dpt-advanced').count(),0,layout);
+          assert.equal(await page.getByRole('combobox',{name:'代码背景'}).count(),1,layout);
+        }
+        await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}');return s.treeStyle==='code'&&s.runningColorLight==='#3478a2'&&s.errorColorDark==='#b24f75'});
+        await page.getByRole('radio',{name:/经典曲线/}).click();
+        assert.equal(await page.getByLabel('浅色运行颜色值').inputValue(),'#3478A2');
+        assert.equal(await page.getByLabel('深色错误颜色值').inputValue(),'#B24F75');
+        await page.locator('.dpt-advanced > summary').click();
+        assert.equal(await page.getByLabel('缩进',{exact:true}).inputValue(),'33');
+        await page.locator('.dpt-advanced > summary').click();
         await page.getByLabel('预览状态').selectOption('running');
-        await page.getByLabel('预览主题').selectOption('light');await page.evaluate(()=>frames(10));
+        await page.getByLabel('预览主题').selectOption('light');await page.locator('.dpt-preview-stage').scrollIntoViewIfNeeded();await page.evaluate(()=>frames(10));
         assert.equal(await fill(chatRun),'rgb(52, 120, 162)');
         assert.equal(await fill(chatError),'rgb(200, 81, 64)');
         assert.equal(await fill('#flow .dpt-edge.dpt-live'),'rgb(52, 120, 162)');
