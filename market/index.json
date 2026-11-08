@@ -53,9 +53,17 @@
         ]
       },
       "dist-tags": {
-        "latest": "0.11.1"
+        "latest": "0.11.2"
       },
       "versions": [
+        {
+          "version": "0.11.2",
+          "publishTimestamp": 1794112100,
+          "source": {
+            "type": "npm",
+            "registry": "https://registry.npmjs.org"
+          }
+        },
         {
           "version": "0.11.1",
           "publishTimestamp": 1793451246,

@@ -4,7 +4,7 @@ The current source does not declare an `engines.dsh` restriction or DSH peer-ver
 
 The versioned historical candidate sections below are snapshots from development before the 0.11.0 release. Their test counts, hashes, host versions and limitations apply only to the specific candidate tested, not to later releases. Where a candidate was superseded, the later entry or release notes describe the final behavior.
 
-## Unreleased: four-mode performance / 四种模式性能优化（2026-11-08）
+## 0.11.2: four-mode performance / 四种模式性能优化（2026-11-08）
 
 Classic and quiet chat drawings now use the same automatic Shadow DOM boundary
 as botanical drawings. Switching between tree styles reuses that boundary and
@@ -69,7 +69,7 @@ select diagnostic subsets; performance comparisons should run without concurrent
 browser tests. Results describe elapsed-time scripted scrolling in Chromium,
 not native Desktop FPS. Timing thresholds are not imposed in functional CI.
 
-## Unreleased: automatic botanical isolation / 植物默认优化（2026-11-08）
+## 0.11.2: automatic botanical isolation / 植物默认优化（2026-11-08）
 
 Botanical chat graphics now always use the existing Shadow DOM isolation path.
 There is no scrolling-optimisation control. Normalization discards the obsolete
@@ -107,7 +107,7 @@ cases with zero displacement error, and the 39-file package dry run passed.
 Details, source hash and the initial test-query failure are retained in
 `docs/verification/botanical-default-isolation.json` in the source checkout.
 
-## Unreleased: issue #2 wheel scrolling / 滚轮跳动修复（2026-11-08）
+## 0.11.2: issue #2 wheel scrolling / 滚轮跳动修复（2026-11-08）
 
 The 0.11.1 runtime reproduced the reported runaway on macOS arm64 in an isolated
 DSH 0.2.2-rc.1 Web host with synthetic Session records, without a theme. A 7,657px
@@ -140,7 +140,8 @@ the verification record.
 
 These are Chromium 153.0.8010.12 Web checks on macOS, not Windows Desktop,
 Electron scrolling or sustained live-generation acceptance. The issue remains
-open and the patch is not a published release. Source hashes, measurements and
+open pending confirmation in the reporter's environment; the patch is included
+in 0.11.2. Source hashes, measurements and
 validation counts are recorded in `docs/verification/issue-2-scroll-anchoring.json`
 in the source checkout.
 

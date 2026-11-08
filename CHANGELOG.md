@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.11.2 — 2026-11-08
 
 - Extend automatic drawing isolation to classic and quiet styles. Select visible entries by their recorded order instead of scanning the full history, and reuse bounded outline/texture/shading strings when branches return to the viewport.
 - Move the code minimap indicator through a persistent paused transform animation, with synchronous position updates, cleanup and a direct-transform fallback.

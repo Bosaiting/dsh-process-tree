@@ -24,7 +24,7 @@ The index belongs to the current profile. Other users and profiles must add it s
 
 - 没有 Discover 标签：检查实验性插件是否启用。 / No Discover tab: enable the experimental plugin.
 - 索引加载失败：打开管理索引源查看错误，确认网络能直接访问上面的 GitHub Raw 地址，再刷新索引。 / Loading fails: inspect the source error, check access to GitHub Raw, then refresh.
-- 没有可安装版本：核对 DSH 版本；本索引沿用包的兼容范围，不扩大未经验证的支持范围。 / No compatible version: check the DSH version against the declared range.
+- 没有可安装版本：先刷新索引并核对包版本。0.11.2 未声明 DSH 版本门槛，但未测试版本不等于已验证兼容；旧版本保留原有兼容声明。 / No installable version: refresh the index and check the package version. Version 0.11.2 has no DSH version gate; untested hosts are not verified compatible, and older versions retain their original declarations.
 
 ## 维护 / Maintenance
 

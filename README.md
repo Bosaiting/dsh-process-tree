@@ -95,14 +95,14 @@ https://raw.githubusercontent.com/Bosaiting/dsh-process-tree/main/market/index.j
 dsh plugin --profile web add dsh-process-tree@latest
 
 # 或安装固定版本
-dsh plugin --profile web add dsh-process-tree@0.11.1
+dsh plugin --profile web add dsh-process-tree@0.11.2
 ```
 
 离线安装可先下载 npm 包，再使用实际文件名：
 
 ```sh
-npm pack dsh-process-tree@0.11.1
-dsh plugin --profile web add ./dsh-process-tree-0.11.1.tgz
+npm pack dsh-process-tree@0.11.2
+dsh plugin --profile web add ./dsh-process-tree-0.11.2.tgz
 ```
 
 安装后重启对应 DSH 实例。桌面版使用插件管理界面；已验证的 macOS 桌面版也可使用其自带 CLI 管理 `desktop` profile。不要直接修改桌面应用安装目录。
@@ -128,11 +128,11 @@ dsh plugin --profile web add ./dsh-process-tree-0.11.1.tgz
 
 代码颜色可分别调整函数与工具、关键字、参数名、字符串与文件、数字、注释、普通文字和三级括号颜色。若退回旧版并由旧版保存设置，当前生效的颜色会保留，但方案选择和其他方案的自定义值可能丢失，建议先备份设置。
 
-三种树形风格可分别设置浅色和深色的运行、错误颜色。线条、圆点、缩进、摘要浓度与行距等细项位于折叠的**高级设置**中。当前未发布源码中的三种树形风格自动采用隔离绘制，植物滚动优化开关已移除；旧设置中的关闭值不再生效，其他外观偏好保留。外部自定义 CSS 不会穿透隔离边界访问内部树形图案。代码小地图同步滚动，并复用位移动画减少图层更新。已发布的 0.11.1 仍保留原有行为。
+三种树形风格可分别设置浅色和深色的运行、错误颜色。线条、圆点、缩进、摘要浓度与行距等细项位于折叠的**高级设置**中。0.11.2 中的三种树形风格自动采用隔离绘制，植物滚动优化开关已移除；旧设置中的关闭值不再生效，其他外观偏好保留。外部自定义 CSS 不会穿透隔离边界访问内部树形图案。代码小地图同步滚动，并复用位移动画减少图层更新。0.11.1 及以前的发布包仍保留原有行为。
 
 ## 兼容性与数据
 
-0.11.1 不按 DSH 版本号阻止安装或加载；这不等于未来版本都已测试。rc.5 已通过隔离 Web 宿主检查；原生桌面的持续运行、Windows 和 Linux 等仍有未验证范围。旧版 0.8.2 的 RC2／RC5 限制保持其原始发布记录。具体证据见 [兼容性记录](docs/COMPATIBILITY.md)。
+0.11.2 不按 DSH 版本号阻止安装或加载；这不等于未来版本都已测试。rc.5 已通过隔离 Web 宿主检查；原生桌面的持续运行、Windows 和 Linux 等仍有未验证范围。旧版 0.8.2 的 RC2／RC5 限制保持其原始发布记录。具体证据见 [兼容性记录](docs/COMPATIBILITY.md)。
 
 插件读取已显示的聊天结构、元素尺寸和当前会话已加载的 Chat 投影，不额外加载历史；不注册模型工具、不执行命令、不发送网络请求。设置保存在当前界面的 `localStorage`（`dsh.process-tree.v1`）；卸载不会清除偏好。若存储不可用，设置页会提示，恢复后再次调整可重试。
 

@@ -95,14 +95,14 @@ Restart when prompted. Index sources belong to a profile and must be added separ
 dsh plugin --profile web add dsh-process-tree@latest
 
 # Or install a pinned version
-dsh plugin --profile web add dsh-process-tree@0.11.1
+dsh plugin --profile web add dsh-process-tree@0.11.2
 ```
 
 For offline installation, download the npm package first and use the resulting filename:
 
 ```sh
-npm pack dsh-process-tree@0.11.1
-dsh plugin --profile web add ./dsh-process-tree-0.11.1.tgz
+npm pack dsh-process-tree@0.11.2
+dsh plugin --profile web add ./dsh-process-tree-0.11.2.tgz
 ```
 
 Restart the corresponding DSH instance. Use the plugin manager for Desktop; the verified macOS Desktop also provides a bundled CLI for the `desktop` profile. Do not edit the Desktop application installation directory directly.
@@ -128,11 +128,11 @@ Light presets are VS Code Light+, JetBrains Light, Catppuccin Latte and Alucard 
 
 Code colours can be adjusted for functions and tools, keywords, parameters, strings and files, numbers, comments, plain text and three bracket levels. If an older version saves settings after a downgrade, active colours remain but preset selections and other preset customisations may be lost; back up settings first if needed.
 
-The three tree styles support separate light and dark running/error colours. Line, dot, indentation, summary and leading controls live in the collapsed **Advanced** section. In the unreleased source, all three tree styles isolate their drawings, and the botanical scrolling optimisation switch has been removed. Legacy opt-out values are ignored; other appearance preferences are retained. External custom CSS cannot cross the isolation boundary to style internal tree graphics. The code minimap follows scrolling synchronously using a reusable transform animation to reduce layer updates. Published 0.11.1 retains the original behavior.
+The three tree styles support separate light and dark running/error colours. Line, dot, indentation, summary and leading controls live in the collapsed **Advanced** section. In 0.11.2, all three tree styles isolate their drawings, and the botanical scrolling optimisation switch has been removed. Legacy opt-out values are ignored; other appearance preferences are retained. External custom CSS cannot cross the isolation boundary to style internal tree graphics. The code minimap follows scrolling synchronously using a reusable transform animation to reduce layer updates. Previously published 0.11.1 retains the original behavior.
 
 ## Compatibility and data
 
-Version 0.11.1 does not block installation or loading by DSH version. This does not mean future releases have been tested. rc.5 passed isolated Web-host checks; sustained native Desktop operation and Windows/Linux remain among the unverified areas. Older published 0.8.2 retains its original RC2/RC5 restriction. See [compatibility](docs/COMPATIBILITY.md) for evidence and limits.
+Version 0.11.2 does not block installation or loading by DSH version. This does not mean future releases have been tested. rc.5 passed isolated Web-host checks; sustained native Desktop operation and Windows/Linux remain among the unverified areas. Older published 0.8.2 retains its original RC2/RC5 restriction. See [compatibility](docs/COMPATIBILITY.md) for evidence and limits.
 
 The plugin reads rendered chat structure, element dimensions and the current session's already-loaded Chat projection without loading extra history. It registers no model tools, runs no commands and sends no network requests. Preferences are stored in the current interface's `localStorage` (`dsh.process-tree.v1`); uninstalling leaves them intact. If storage fails, settings display a warning and another change retries after recovery.
 
