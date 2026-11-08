@@ -11,7 +11,7 @@ let tested = source.replace('DEFAULTS, STYLE_PRESETS, ELBOW_RADIUS, normalize, e
   change: (patch) => {SETTINGS=normalize({...SETTINGS,...patch});queueLineVars();for(const view of watchedViews.values())view.syncSettings()},
   getSettings: () => SETTINGS,
   resources:()=>({views:watchedViews.size,rows:rowOwners.size,clips:clipOwners.size,crowns:floatingCrowns.size,libraries:crownLibraries.size,settingsFrame,frameHandle,crownPositionFrame}),`);
-for (const fn of ['geometryOf', 'strokeGeometry', 'branchBody', 'positionCrowns', 'syncCrownLibraries']) {
+for (const fn of ['geometryOf', 'strokeGeometry', 'branchBody', 'textureD', 'stripeD', 'positionCrowns', 'syncCrownLibraries']) {
   tested = tested.replace(new RegExp('(function ' + fn + '\\([^)]*\\) \\{)'), '$1 window.count("' + fn + '");');
 }
 const html = '<!doctype html><html><head><style>html,body{margin:0;font:14px/24px Arial}body{padding:20px}[data-chat-flow]{width:760px}[data-step-process]{margin-bottom:40px}[data-step-process-content]{display:flex;flex-direction:column;gap:12px}[data-disclosure-row]{display:flex;align-items:center;height:24px}[data-subcalls]{display:flex;flex-direction:column;gap:16px}.output{line-height:20px}#unrelated{position:fixed;right:0;top:0}</style></head><body><div id="flow" data-chat-flow></div><div id="unrelated"></div></body></html>';
@@ -24,6 +24,8 @@ const setup = () => {
   window.__ModuleLoader__ = { load(spec) {window.moduleSpec = spec} };
   window[Symbol.for('dsh.process-tree.test')] = (api) => {window.api=api};
   window.frames = async (n = 6) => {for(let i=0;i<n;i++)await new Promise(requestAnimationFrame)};
+  window.drawingAll = selector => [...instances].filter(v=>!v.isPreview&&!v.stopped&&v.svg).flatMap(v=>v.svg.matches(selector)?[v.svg]:[...v.svg.querySelectorAll(selector)]);
+  window.drawing = selector => drawingAll(selector)[0] || null;
   window.makeGroup = (key, total, nested = false) => {
     const group = document.createElement('section'); group.dataset.stepProcess='';group.dataset.chatGroupKey=key;
     group.innerHTML='<button data-process-activity>过程</button><div data-step-process-body><div data-step-process-content></div></div>';
@@ -63,12 +65,14 @@ const setup = () => {
   };
 };
 const results = {mode:'Isolated host-shaped DOM, actual source and browser; no model requests or native desktop FPS claim.',cases:[]};
-async function fixture(browser,{style='quiet',calls=120,groups=1,nested=true,cap=0,scale=1,codeLayout='braces'}={}){
+async function fixture(browser,{style='quiet',calls=120,groups=1,nested=true,cap=0,scale=1,codeLayout='braces',storedSettings,stylesheetFault}={}){
   const context=await browser.newContext({viewport:{width:1100,height:800},deviceScaleFactor:scale}),page=await context.newPage();
   const errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text())});
+  if(storedSettings)await page.addInitScript(value=>{if(!localStorage.getItem('dsh.process-tree.v1'))localStorage.setItem('dsh.process-tree.v1',JSON.stringify(value))},storedSettings);
   await page.route('https://dsh-tree-test.invalid/',r=>r.fulfill({contentType:'text/html',body:html}));
   await page.goto('https://dsh-tree-test.invalid/',{waitUntil:'networkidle'});await page.evaluate(setup);
   await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});
+  if(stylesheetFault)await page.evaluate(mode=>{if(mode==='replaceSync')CSSStyleSheet.prototype.replaceSync=function(){throw Error('fixture replaceSync denied')};else Object.defineProperty(ShadowRoot.prototype,'adoptedStyleSheets',{configurable:true,get(){return []},set(){throw Error('fixture adoption denied')}})},stylesheetFault);
   await page.addScriptTag({content:tested});
   await page.evaluate(()=>{window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)})});
   await page.evaluate(({style,calls,groups,nested,cap,codeLayout})=>{
@@ -89,6 +93,76 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
 (async()=>{
   const browser=await chromium.launch({headless:true,...(process.env.DSH_CHROMIUM_EXECUTABLE?{executablePath:process.env.DSH_CHROMIUM_EXECUTABLE}:{})});
   try{
+    await test('native wheel input does not anchor to moving SVG viewport tiles',async()=>{
+      const records=[];
+      for(const [style,legacyOptimization] of [['botanical',false],['classic',false],['botanical',true]]){
+        const {page,context,errors}=await fixture(browser,{style,calls:172,nested:false,scale:1.25});
+        try{
+          await page.setViewportSize({width:1100,height:874});
+          await page.evaluate(({style,legacyOptimization})=>{
+            api.change({treeStyle:style,botanicalScrollOptimization:legacyOptimization,...api.STYLE_PRESETS[style],growthEnabled:false,stateMotion:false});
+            // Reduced from DSH 0.2.2-rc.1's verbose transcript. In particular,
+            // preserve the inline-size container and the two-axis overflow
+            // behavior; a plain document-scrolling list misses this regression.
+            const css=document.createElement('style');
+            css.textContent='#flow{container-type:inline-size;overflow:clip visible}[data-step-process-content]>*{flex-shrink:0}[data-step-process-content]>:not([hidden]):not(:empty)~:not([hidden]):not(:empty){margin-top:4px}';
+            document.head.append(css);
+            const scroller=document.createElement('div');scroller.id='wheel-scroller';
+            scroller.style.cssText='height:874px;overflow:auto;position:relative;display:flex;flex-direction:column';
+            document.body.style.padding='0';document.body.prepend(scroller);
+            const wrap=document.createElement('div');wrap.style.cssText='overflow:visible clip;flex:none;position:relative';
+            wrap.append(document.querySelector('#flow'));scroller.append(wrap);
+            const tail=document.createElement('div');tail.style.height='140px';tail.textContent='Synthetic final answer';scroller.append(tail);
+            window.wheelScroller=scroller;
+          },{style,legacyOptimization});
+          await page.evaluate(()=>frames(12));
+          await page.evaluate(()=>{wheelScroller.scrollTop=wheelScroller.scrollHeight});
+          await page.evaluate(()=>frames(12));
+          await page.mouse.move(500,400);
+          const initial=await page.evaluate(()=>({height:wheelScroller.scrollHeight,anchor:getComputedStyle(document.querySelector('[data-step-process-content]')).overflowAnchor}));
+          assert.ok(initial.height>4000);assert.equal(initial.anchor,'auto');
+          const samples=[];
+          // One initial setup write above; no setters/scrollTo in this loop.
+          for(const delta of [...Array(10).fill(-100),...Array(10).fill(100)]){
+            const before=await page.evaluate(()=>({y:wheelScroller.scrollTop,max:wheelScroller.scrollHeight-wheelScroller.clientHeight}));
+            await page.mouse.wheel(0,delta);
+            const positions=await page.evaluate(()=>new Promise(resolve=>{
+              const values=[],start=performance.now();
+              function tick(){values.push(wheelScroller.scrollTop);if(performance.now()-start<250)requestAnimationFrame(tick);else resolve(values)}
+              requestAnimationFrame(tick);
+            }));
+            const expected=Math.max(0,Math.min(before.max,before.y+delta)),actual=positions.at(-1);
+            samples.push({delta,before:before.y,expected,actual});
+            assert.ok(Math.abs(actual-expected)<=1,JSON.stringify({style,legacyOptimization,delta,before,expected,actual,positions}));
+            // Motion must settle after the wheel notch, not keep stepping by
+            // a viewport tile after the expected input has been consumed.
+            assert.ok(positions.slice(-4).every(y=>Math.abs(y-expected)<=1));
+          }
+          const after=await page.evaluate(()=>wheelScroller.scrollHeight);assert.equal(after,initial.height);
+          assert.equal(await page.evaluate(()=>[...instances].some(v=>!!v.treeShadowHost)),style!=='code');
+          // Real content above the viewport must still receive normal native
+          // anchoring. A blanket overflow-anchor:none on the transcript would
+          // stop the runaway but fail this user-visible stability check.
+          const beforeInsert=await page.evaluate(()=>{
+            const viewport=wheelScroller.getBoundingClientRect();
+            window.visibleWheelRow=[...document.querySelectorAll('[data-disclosure-row]')].find(row=>{
+              const r=row.getBoundingClientRect();return r.top>viewport.top+40&&r.bottom<viewport.bottom;
+            });
+            return {scroll:wheelScroller.scrollTop,top:visibleWheelRow.getBoundingClientRect().top};
+          });
+          await page.evaluate(()=>{
+            const earlier=document.createElement('div');earlier.style.height='80px';earlier.textContent='Earlier synthetic message';
+            document.querySelector('#flow').before(earlier);
+          });
+          await page.evaluate(()=>frames(12));
+          const afterInsert=await page.evaluate(()=>({scroll:wheelScroller.scrollTop,top:visibleWheelRow.getBoundingClientRect().top}));
+          assert.ok(Math.abs(afterInsert.scroll-beforeInsert.scroll-80)<=1,JSON.stringify({beforeInsert,afterInsert}));
+          assert.ok(Math.abs(afterInsert.top-beforeInsert.top)<=1,JSON.stringify({beforeInsert,afterInsert}));
+          assert.deepEqual(errors,[]);records.push({style,legacyOptimization,height:after,samples,beforeInsert,afterInsert});
+        }finally{await context.close()}
+      }
+      return {records};
+    });
     await test('Go long nested calls reserve a separate scope line during native scrolling',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:2,nested:true,cap:140});
       try {
@@ -772,11 +846,13 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
       try {
         const map=page.locator('.dpt-minimap'), count=await map.locator('.dpt-map-mark').count();
         assert.ok(count>1 && count<=120,'marker count '+count);
-        const before=await page.locator('.dpt-map-viewport').evaluate(e=>e.style.top);
+        const before=await page.locator('.dpt-map-viewport').evaluate(e=>e.getBoundingClientRect().top-e.parentElement.getBoundingClientRect().top);
         await page.evaluate(()=>{document.querySelector('[data-step-process-body]').scrollTop=2500});await page.evaluate(()=>frames(15));
-        const after=await page.locator('.dpt-map-viewport').evaluate(e=>e.style.top);
+        const after=await page.locator('.dpt-map-viewport').evaluate(e=>e.getBoundingClientRect().top-e.parentElement.getBoundingClientRect().top);
         assert.notEqual(after,before);
         assert.ok((await map.boundingBox()).height>0);
+        await page.evaluate(()=>{window.previousViewportMotion=[...instances][0].functionViewportMotion;manager.stop()});
+        assert.equal(await page.evaluate(()=>previousViewportMotion.playState),'idle');
         assert.deepEqual(errors,[]);return {count};
       }finally{await context.close()}
     });
@@ -807,6 +883,8 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
     await test('function minimap viewport tracks each scroll event without an extra frame',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'code',codeLayout:'function',calls:220,nested:false,cap:220});
       try {
+        for(const fallback of [false,true]) {
+          if(fallback)await page.evaluate(()=>{const v=[...instances][0];v.functionViewportMotion?.cancel();v.functionViewportMotion=null;v.functionViewport.animate=()=>{throw Error('fixture animation unavailable')}});
         const samples=await page.evaluate(async()=>{
           const scroller=document.querySelector('[data-step-process-body]');
           const content=document.querySelector('[data-step-process-content]');
@@ -819,7 +897,9 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
                 const rect=content.getBoundingClientRect(), clip=scroller.getBoundingClientRect();
                 const scale=rect.width/content.offsetWidth;
                 const expected=Math.max(0,Math.min(100,(Math.max(clip.top,nav.getBoundingClientRect().bottom)-rect.top)/scale/content.offsetHeight*100));
-                values.push({expected,actual:parseFloat(viewport.style.top),offset:scroller.scrollTop});
+                const map=document.querySelector('.dpt-minimap');
+                const actual=(viewport.getBoundingClientRect().top-map.getBoundingClientRect().top)/scale/map.clientHeight*100;
+                values.push({expected,actual,offset:scroller.scrollTop});
                 resolve();
               },{once:true});
               scroller.scrollTop=offset;
@@ -828,7 +908,14 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
           return values;
         });
         for(const sample of samples) assert.ok(Math.abs(sample.actual-sample.expected)<0.03,JSON.stringify(sample));
-        assert.deepEqual(errors,[]);return {samples};
+        const state=await page.evaluate(()=>{const v=[...instances][0];return {fallback:!!v.functionViewportFallback,paused:v.functionViewportMotion?.playState,inlineTransform:v.functionViewport.style.transform}});
+        assert.equal(state.fallback,fallback);
+        if(!fallback){assert.equal(state.paused,'paused');assert.equal(state.inlineTransform,'')}
+        else assert.ok(state.inlineTransform.startsWith('translateY('));
+        }
+        await page.evaluate(()=>{const v=[...instances][0];window.oldViewportMotion=v.functionViewportMotion;manager.stop()});
+        assert.equal(await page.evaluate(()=>!oldViewportMotion||oldViewportMotion.playState==='idle'),true);
+        assert.deepEqual(errors,[]);return {fallback:true};
       } finally { await context.close() }
     });
     await test('function code preserves native summaries when structured data is absent or belongs to another session',async()=>{
@@ -978,10 +1065,13 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.deepEqual(errors,[]);
       } finally {await context.close()}
     });
-    await test('botanical scroll optimization is opt-in, persistent, reversible, and has a stylesheet fallback',async()=>{
-      const {page,context,errors}=await fixture(browser,{style:'botanical',calls:30,nested:true,cap:260});
+    await test('botanical isolation is automatic, ignores legacy opt-out, and cleans up across mode switches and reloads',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'botanical',calls:30,nested:true,cap:260,
+        storedSettings:{treeStyle:'botanical',botanicalScrollOptimization:false,lineWidth:4.2,runningColorDark:'#123456'}});
       try {
-        assert.equal(await page.evaluate(()=>api.getSettings().botanicalScrollOptimization),false,'legacy settings default off');
+        assert.equal(await page.evaluate(()=>Object.hasOwn(api.getSettings(),'botanicalScrollOptimization')),false);
+        assert.equal(await page.evaluate(()=>[...instances].some(v=>v.treeShadowHost)),true,'legacy false must not disable isolation');
+        await aligned(page);
         await page.addScriptTag({path:path.join(reactRoot,'react-dom/umd/react-dom.development.js')});
         await page.evaluate(()=>{
           manager.stop();window.effects=[];
@@ -990,35 +1080,54 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
           window.settingsRoot=ReactDOM.createRoot(mount);settingsRoot.render(React.createElement(SettingsPage));
         });await page.evaluate(()=>frames(20));
         await page.locator('.dpt-advanced > summary').click();
-        const toggle=page.getByRole('switch',{name:'植物滚动优化'});assert.equal(await toggle.isChecked(),false);
-        let data=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);return {shadow:!!v.treeShadowHost,dots:v.content.querySelectorAll('.dpt-dot').length,contentHeight:v.content.getBoundingClientRect().height,rowTop:v.content.querySelector('[data-chat-flow-kind]').getBoundingClientRect().top,scrollHeight:v.content.closest('[data-step-process-body]').scrollHeight,preview:[...instances].filter(v=>v.isPreview&&!v.stopped).every(v=>!v.treeShadowHost)}});
-        assert.equal(data.shadow,false);assert.ok(data.dots>0);assert.equal(data.preview,true);
-        const baselineLayout={contentHeight:data.contentHeight,rowTop:data.rowTop,scrollHeight:data.scrollHeight};
-        await page.emulateMedia({reducedMotion:'no-preference'});
-        for(const mode of ['replaceSync','adoption']){
-          await page.evaluate(mode=>{if(mode==='replaceSync'){window.savedReplaceSync=CSSStyleSheet.prototype.replaceSync;CSSStyleSheet.prototype.replaceSync=function(){throw Error('fixture replaceSync denied')}}else{window.savedAdoption=Object.getOwnPropertyDescriptor(ShadowRoot.prototype,'adoptedStyleSheets');Object.defineProperty(ShadowRoot.prototype,'adoptedStyleSheets',{configurable:true,get(){return []},set(){throw Error('fixture adoption denied')}})}},mode);
-          await toggle.check();await page.evaluate(()=>frames(20));await aligned(page);
-          data=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);window.lastShadowHost=v.treeShadowHost;return {shadow:!!v.treeShadowHost,nonempty:!v.treeShadowHost.matches(':empty'),markerHidden:v.treeShadowHost.firstElementChild?.hidden,contentHeight:v.content.getBoundingClientRect().height,rowTop:v.content.querySelector('[data-chat-flow-kind]').getBoundingClientRect().top,scrollHeight:v.content.closest('[data-step-process-body]').scrollHeight,innerStyle:v.treeShadowHost?.shadowRoot.querySelector('style')?.textContent.length||0,dots:v.svg.querySelectorAll('.dpt-dot').length,externalDots:v.content.querySelectorAll('.dpt-dot').length,fill:getComputedStyle(v.svg.querySelector('.dpt-edge')).fill,preview:[...instances].filter(v=>v.isPreview&&!v.stopped).every(v=>!v.treeShadowHost)}});
-          assert.equal(data.shadow,true);assert.equal(data.nonempty,true);assert.equal(data.markerHidden,true);assert.equal(data.contentHeight,baselineLayout.contentHeight);assert.equal(data.rowTop,baselineLayout.rowTop);assert.equal(data.scrollHeight,baselineLayout.scrollHeight);assert.ok(data.innerStyle>100);assert.ok(data.dots>0);assert.equal(data.externalDots,0);assert.ok(data.fill.startsWith('url('));assert.equal(data.preview,true);
+        assert.equal(await page.getByRole('switch',{name:'植物滚动优化'}).count(),0,'implementation detail is no longer a setting');
+        await page.getByLabel('线宽',{exact:true}).fill('4.2');
+        await page.waitForFunction(()=>{const saved=JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}');return saved.lineWidth===4.2&&!Object.hasOwn(saved,'botanicalScrollOptimization')});
+        assert.equal(await page.evaluate(()=>{const previews=[...instances].filter(v=>v.isPreview&&!v.stopped);return previews.length>0&&previews.every(v=>!v.treeShadowHost)}),true,'preview is already isolated');
+        for(const style of ['classic','quiet','code']) {
+          await page.evaluate(style=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);window.lastShadowHost=v.treeShadowHost;api.change({treeStyle:style,...api.STYLE_PRESETS[style]})},style);
+          await page.evaluate(()=>frames(20));
+          assert.equal(await page.evaluate(style=>lastShadowHost.isConnected===(style!=='code')&&[...instances].filter(v=>!v.isPreview&&!v.stopped).every(v=>!!v.treeShadowHost===(style!=='code')),style),true,'tree modes reuse isolation; code removes it: '+style);
+          await page.evaluate(()=>api.change({treeStyle:'botanical',...api.STYLE_PRESETS.botanical}));await page.evaluate(()=>frames(20));await aligned(page);
+          assert.equal(await page.evaluate(()=>[...instances].filter(v=>!v.isPreview&&!v.stopped).every(v=>!!v.treeShadowHost)),true);
+        }
+        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});await page.evaluate(()=>frames(12));
+        assert.equal(await page.evaluate(()=>[...instances].filter(v=>!v.isPreview).every(v=>v.stopped&&!v.treeShadowHost)),true,'disable removes isolated hosts');
+        for(const legacy of [false,true]) {
+          // Reload the actual persisted legacy payload, not just a settings patch.
+          await page.evaluate(value=>localStorage.setItem('dsh.process-tree.v1',JSON.stringify({treeStyle:'botanical',botanicalScrollOptimization:value,lineWidth:4.2,runningColorDark:'#123456'})),legacy);
+          await page.reload();await page.evaluate(setup);
+          await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});await page.addScriptTag({content:tested});
+          await page.evaluate(()=>{
+            window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)});
+            const start=api.TreeView.prototype.start;api.TreeView.prototype.start=function(...args){instances.add(this);return start.apply(this,args)};
+            const css=document.createElement('style');css.textContent=api.CSS;document.head.append(css);makeGroup('reload',30,true);window.manager=api.createManager();manager.start();
+          });await page.evaluate(()=>frames(15));await aligned(page);
+          const restored=await page.evaluate(()=>({settings:api.getSettings(),isolated:[...instances].every(v=>!!v.treeShadowHost)}));
+          assert.equal(restored.isolated,true);assert.equal(Object.hasOwn(restored.settings,'botanicalScrollOptimization'),false);
+          assert.equal(restored.settings.lineWidth,4.2);assert.equal(restored.settings.runningColorDark,'#123456');
+        }
+        assert.deepEqual(errors,[]);return {legacySettings:[false,true],reload:true};
+      }finally{await context.close()}
+    });
+    await test('automatic botanical isolation retains stylesheet fallbacks, themes, motion, and texture clipping',async()=>{
+      for(const stylesheetFault of [undefined,'replaceSync','adoption']) {
+        const {page,context,errors}=await fixture(browser,{style:'botanical',calls:30,nested:true,cap:260,stylesheetFault});
+        try {
+          await page.emulateMedia({reducedMotion:'no-preference'});
+          await page.evaluate(()=>api.change({stateMotion:true,motionStrength:.8}));await page.evaluate(()=>frames(15));await aligned(page);
+          const data=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);return {shadow:!!v.treeShadowHost,nonempty:!v.treeShadowHost.matches(':empty'),markerHidden:v.treeShadowHost.firstElementChild?.hidden,innerStyle:v.treeShadowHost.shadowRoot.querySelector('style')?.textContent.length||0,adopted:v.treeShadowHost.shadowRoot.adoptedStyleSheets?.length||0,dots:v.svg.querySelectorAll('.dpt-dot').length,externalDots:v.content.querySelectorAll('.dpt-dot').length,anchor:getComputedStyle(v.svg).overflowAnchor}});
+          assert.equal(data.shadow,true);assert.equal(data.nonempty,true);assert.equal(data.markerHidden,true);assert.ok(data.dots>0);assert.equal(data.externalDots,0);assert.equal(data.anchor,'none');
+          if(stylesheetFault)assert.ok(data.innerStyle>100);else assert.equal(data.adopted,1);
           for(const theme of ['light','dark']) {
             await page.evaluate(theme=>{if(theme==='dark')document.body.setAttribute('data-ds-dark-theme','');else document.body.removeAttribute('data-ds-dark-theme');const v=[...instances].find(v=>!v.isPreview&&!v.stopped);v.model.nodes.find(n=>n.call)?.call.querySelector('[data-state]')?.setAttribute('data-state','running')},theme);await page.evaluate(()=>frames(12));
             const appearance=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped),r=[...v.edgeRecords.values()].find(r=>r.texture);return {wood:getComputedStyle(v.svg).getPropertyValue('--dpt-wood').trim(),running:getComputedStyle(v.svg).getPropertyValue('--dpt-state-running').trim(),motion:v.svg.dataset.stateMotion,active:!!v.svg.querySelector('.dpt-dot.dpt-running'),clip:r?.clip?.id,texture:r?.texture?.getAttribute('clip-path'),clipD:r?.silhouette?.getAttribute('d'),pathD:r?.path?.getAttribute('d')}});
             assert.equal(appearance.wood,theme==='dark'?'#ae9a83':'#9c8770');assert.equal(appearance.running,theme==='dark'?'#8ca9cb':'#7190b1');assert.equal(appearance.motion,'on');assert.equal(appearance.active,true);assert.ok(appearance.clip);assert.equal(appearance.texture,'url(#'+appearance.clip+')');assert.equal(appearance.clipD,appearance.pathD);
           }
-          await toggle.uncheck();await page.evaluate(()=>frames(20));await aligned(page);
-          data=await page.evaluate(()=>{const v=[...instances].find(v=>!v.isPreview&&!v.stopped);return {shadow:!!v.treeShadowHost,dots:v.content.querySelectorAll('.dpt-dot').length,oldHostConnected:window.lastShadowHost.isConnected}});
-          assert.equal(data.shadow,false);assert.ok(data.dots>0);assert.equal(data.oldHostConnected,false,'previous isolated host was removed');
-          await page.evaluate(mode=>{if(mode==='replaceSync')CSSStyleSheet.prototype.replaceSync=window.savedReplaceSync;else if(window.savedAdoption)Object.defineProperty(ShadowRoot.prototype,'adoptedStyleSheets',window.savedAdoption);else delete ShadowRoot.prototype.adoptedStyleSheets},mode);
-        }
-        await toggle.check();await page.evaluate(()=>frames(20));
-        await page.waitForFunction(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').botanicalScrollOptimization===true);
-        await page.evaluate(()=>{settingsRoot.unmount();effects.forEach(fn=>fn())});await page.evaluate(()=>frames(12));
-        assert.equal(await page.evaluate(()=>[...instances].filter(v=>!v.isPreview).every(v=>v.stopped&&!v.treeShadowHost)),true,'disable removes isolated hosts');
-        await page.reload();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('dsh.process-tree.v1')||'{}').botanicalScrollOptimization),true);
-        await page.evaluate(setup);await page.addScriptTag({path:path.join(reactRoot,'react/umd/react.development.js')});await page.addScriptTag({content:tested});
-        await page.evaluate(()=>{window.plugin=moduleSpec.factory(name=>{if(name==='react')return React;throw Error(name)})});assert.equal(await page.evaluate(()=>api.getSettings().botanicalScrollOptimization),true,'reload restores opt-in');
-        assert.deepEqual(errors,[]);return {faultModes:['replaceSync','adoption'],reload:true};
-      }finally{await context.close()}
+          assert.deepEqual(errors,[]);
+        }finally{await context.close()}
+      }
+      return {faultModes:['replaceSync','adoption']};
     });
     await test('window snapshots retry after compute or paint failures',async()=>{
       const {page,context,errors}=await fixture(browser,{style:'quiet',calls:30,nested:false,cap:260});
@@ -1104,14 +1213,14 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         const keys=()=>page.evaluate(()=>[...instances][0].structure.map(e=>e.key));
         assert.deepEqual(await keys(),['g0-0']);
         await page.evaluate(()=>{reset();document.querySelector('[data-chat-anchor-key="late-child"] span').textContent='hello'});
-        await page.waitForFunction(()=>[...document.querySelectorAll('.dpt-dot')].some(e=>e.dataset.dptKey==='late-child'),null,{timeout:5000});
+        await page.waitForFunction(()=>[...drawingAll('.dpt-dot')].some(e=>e.dataset.dptKey==='late-child'),null,{timeout:5000});
         await page.evaluate(()=>frames(10));
         assert.ok((await keys()).includes('late-child'));
         await page.evaluate(()=>{reset();document.querySelector('[data-chat-anchor-key="late-child"] span').firstChild.data='hello again'});
         await page.evaluate(()=>frames(10));
         assert.equal(await page.evaluate(()=>stats.collect||0),0,'already indexed text changes do not cause a tree layout');
         await page.evaluate(()=>document.querySelector('[data-chat-anchor-key="late-data"] span').firstChild.data='second');
-        await page.waitForFunction(()=>[...document.querySelectorAll('.dpt-dot')].some(e=>e.dataset.dptKey==='late-data'),null,{timeout:5000});
+        await page.waitForFunction(()=>[...drawingAll('.dpt-dot')].some(e=>e.dataset.dptKey==='late-data'),null,{timeout:5000});
         assert.ok(!(await keys()).includes('remain-empty'));
         await page.evaluate(()=>document.querySelector('[data-chat-anchor-key="remain-empty"]').remove());await page.evaluate(()=>frames(10));
         assert.equal(await page.evaluate(()=>[...instances][0].emptyRows.size),0,'removed empty row is released');
@@ -1129,7 +1238,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         assert.equal(await page.evaluate(()=>[...instances][0].emptyObserver),null,'suspend disconnects empty-row observer');
         await page.evaluate(()=>[...instances][0].resume());await page.evaluate(()=>frames(10));
         await page.evaluate(()=>{document.querySelector('[data-chat-anchor-key="after-resume"] span').textContent='restored'});
-        await page.waitForFunction(()=>[...document.querySelectorAll('.dpt-dot')].some(e=>e.dataset.dptKey==='after-resume'),null,{timeout:5000});
+        await page.waitForFunction(()=>[...drawingAll('.dpt-dot')].some(e=>e.dataset.dptKey==='after-resume'),null,{timeout:5000});
         await page.evaluate(()=>manager.stop());
         assert.equal(await page.evaluate(()=>[...instances][0].emptyObserver),null);
         assert.equal(await page.evaluate(()=>[...instances][0].emptyRows.size),0);
@@ -1650,24 +1759,66 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
     await test('quiet fast path, bounded paint and style switches',async()=>{
       const {page,context,errors}=await fixture(browser,{calls:400});
       try{
-        const initial=await page.evaluate(()=>({dots:document.querySelectorAll('.dpt-dot').length,halos:document.querySelectorAll('.dpt-halo').length,materials:document.querySelectorAll('.dpt-layer linearGradient,.dpt-layer radialGradient').length,edges:document.querySelectorAll('.dpt-edge').length,strokes:document.querySelectorAll('.dpt-stroke').length,outlineCalls:stats.branchBody||0,pathChars:[...document.querySelectorAll('.dpt-edge')].reduce((s,e)=>s+e.getAttribute('d').length,0)}));
+        const initial=await page.evaluate(()=>({dots:drawingAll('.dpt-dot').length,halos:drawingAll('.dpt-halo').length,materials:drawingAll('.dpt-layer linearGradient,.dpt-layer radialGradient').length,edges:drawingAll('.dpt-edge').length,strokes:drawingAll('.dpt-stroke').length,outlineCalls:stats.branchBody||0,pathChars:[...drawingAll('.dpt-edge')].reduce((s,e)=>s+e.getAttribute('d').length,0)}));
         assert.ok(initial.dots<80);assert.equal(initial.halos,0);assert.equal(initial.materials,0);assert.equal(initial.edges,initial.strokes);assert.equal(initial.outlineCalls,0);
         for(const style of ['classic','botanical','quiet']){
           await page.evaluate(style=>api.change({treeStyle:style,...api.STYLE_PRESETS[style]}),style);await page.evaluate(()=>frames(8));await aligned(page);
-          const value=await page.evaluate(()=>({crowns:document.querySelectorAll('.dpt-crown-portal').length,halos:document.querySelectorAll('.dpt-halo').length,strokes:document.querySelectorAll('.dpt-stroke').length}));
+          const value=await page.evaluate(()=>({crowns:document.querySelectorAll('.dpt-crown-portal').length,halos:[...instances].reduce((n,v)=>n+(v.svg?.querySelectorAll('.dpt-halo').length||0),0),strokes:[...instances].reduce((n,v)=>n+(v.svg?.querySelectorAll('.dpt-stroke').length||0),0)}));
           if(style==='botanical'){assert.ok(value.crowns>0);assert.ok(value.halos>0)}else{assert.equal(value.crowns,0);assert.equal(value.halos,0)}
         }
         await page.evaluate(()=>api.change({thicknessDecay:.5}));await page.evaluate(()=>frames());assert.equal(await page.locator('.dpt-stroke').count(),0);
         assert.deepEqual(errors,[]);return {initial};
       }finally{await context.close()}
     });
+    await test('viewport selection preserves nested order without walking the full history',async()=>{
+      const {page,context,errors}=await fixture(browser,{calls:1200,nested:true,cap:260});
+      try {
+        const result=await page.evaluate(()=>{
+          const v=[...instances][0],all=v.structure;let reads=0;
+          v.structure=new Proxy(all,{get(target,key,receiver){if(typeof key==='string'&&/^\d+$/.test(key))reads++;return Reflect.get(target,key,receiver)}});
+          const selected=v.selectedEntries();v.structure=all;
+          const expected=all.filter(e=>selected.includes(e));
+          return {reads,total:all.length,selected:selected.length,ordered:selected.every((e,i)=>e===expected[i]),ancestors:selected.every(e=>!e.parent||selected.includes(e.parent))};
+        });
+        assert.ok(result.selected>0&&result.selected<100);assert.equal(result.ordered,true);assert.equal(result.ancestors,true);assert.ok(result.reads<100,'viewport lookup scanned history: '+JSON.stringify(result));
+        await page.evaluate(()=>{const sub=document.querySelector('[data-subcalls]');sub.prepend(sub.lastElementChild)});await page.evaluate(()=>frames(12));await aligned(page);
+        assert.equal(await page.evaluate(()=>{const v=[...instances][0],entries=v.selectedEntries();return entries.every((e,i)=>e.order===v.structure.indexOf(e)&&(!i||entries[i-1].order<e.order))}),true);
+        assert.deepEqual(errors,[]);return result;
+      }finally{await context.close()}
+    });
+    await test('botanical path reuse survives eviction from the viewport and respects shape and detail changes',async()=>{
+      const {page,context,errors}=await fixture(browser,{style:'botanical',calls:8,nested:false,cap:260});
+      try {
+        await page.evaluate(()=>api.change({rootDetail:.7,textureStyle:'ink',textureStrength:.5}));await page.evaluate(()=>frames(12));
+        const reuse=await page.evaluate(async()=>{
+          const v=[...instances][0],records=[...v.edgeRecords],before=records.map(([key,r])=>[key,r.path.getAttribute('d'),r.texture?.getAttribute('d'),r.shade?.innerHTML]);
+          for(const [key] of records)v.releaseEdge(key);
+          reset();v.schedule(2);await frames(12);
+          return {before,after:before.map(([key])=>{const r=v.edgeRecords.get(key);return [key,r.path.getAttribute('d'),r.texture?.getAttribute('d'),r.shade?.innerHTML]}),stats:{...stats},chars:v.pathCacheChars,size:v.pathCache.size};
+        });
+        assert.deepEqual(reuse.after,reuse.before);assert.equal(reuse.stats.branchBody||0,0);assert.equal(reuse.stats.textureD||0,0);assert.equal(reuse.stats.stripeD||0,0);assert.ok(reuse.chars>0&&reuse.chars<=512*1024);
+        await page.evaluate(()=>api.change({rootDetail:0}));await page.evaluate(()=>frames(8));assert.equal(await page.locator('.dpt-root-shade').count(),0);
+        await page.evaluate(()=>api.change({rootDetail:.4}));await page.evaluate(()=>frames(8));
+        assert.equal(await page.evaluate(()=>[...instances][0].svg.querySelector('.dpt-root-shade').style.opacity),'0.4');
+        assert.ok(await page.locator('.dpt-root-shade path[d]').count()>0);
+        await page.evaluate(()=>{reset();api.change({lineWidth:7})});await page.evaluate(()=>frames(10));assert.ok(await page.evaluate(()=>stats.branchBody)>0,'shape change must recompute');await aligned(page);
+        const bounded=await page.evaluate(()=>{
+          const v=[...instances][0];v.clearPathCache();let rebuilt=0;
+          for(let i=0;i<600;i++)v.cachedPath('large-'+i,()=>('x'.repeat(4096)));
+          v.cachedPath('large-599',()=>{rebuilt++;return 'wrong'});
+          const value={size:v.pathCache.size,chars:v.pathCacheChars,rebuilt};manager.stop();return {...value,afterSize:v.pathCache.size,afterChars:v.pathCacheChars};
+        });
+        assert.ok(bounded.size<=256&&bounded.chars<=512*1024);assert.equal(bounded.rebuilt,0);assert.equal(bounded.afterSize,0);assert.equal(bounded.afterChars,0);
+        assert.deepEqual(errors,[]);return {reusedEdges:reuse.before.length,cache:bounded};
+      }finally{await context.close()}
+    });
     await test('row-size changes with unchanged group size, font, leading and zoom',async()=>{
       const {page,context,errors}=await fixture(browser,{calls:8,nested:false});
       try{
         await page.evaluate(()=>{const blocks=document.querySelectorAll('.output');blocks[0].style.height='40px';blocks[1].style.height='40px'});await page.evaluate(()=>frames());
-        const before=await page.evaluate(()=>({height:document.querySelector('[data-step-process-content]').getBoundingClientRect().height,y:document.querySelectorAll('.dpt-dot')[1].getBoundingClientRect().top}));
+        const before=await page.evaluate(()=>({height:document.querySelector('[data-step-process-content]').getBoundingClientRect().height,y:drawingAll('.dpt-dot')[1].getBoundingClientRect().top}));
         await page.evaluate(()=>{const blocks=document.querySelectorAll('.output');blocks[0].style.height='60px';blocks[1].style.height='20px'});await page.evaluate(()=>frames());
-        const after=await page.evaluate(()=>({height:document.querySelector('[data-step-process-content]').getBoundingClientRect().height,y:document.querySelectorAll('.dpt-dot')[1].getBoundingClientRect().top}));
+        const after=await page.evaluate(()=>({height:document.querySelector('[data-step-process-content]').getBoundingClientRect().height,y:drawingAll('.dpt-dot')[1].getBoundingClientRect().top}));
         assert.equal(before.height,after.height);assert.ok(Math.abs(after.y-before.y-20)<.8);
         for(const [leading,delta] of [[24,0],[0,6],[-4,0]]){await page.evaluate(({leading,delta})=>{document.documentElement.style.setProperty('--dsh-content-font-delta',delta+'px');api.change({leading})},{leading,delta});await page.evaluate(()=>frames());await aligned(page)}
         for(const zoom of [.8,1,1.25,1.5]){await page.evaluate(zoom=>document.body.style.zoom=zoom,zoom);await page.evaluate(()=>frames());await aligned(page)}
@@ -1681,7 +1832,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         try{
           for(const fraction of [0,.25,.6,1,0]){
             await page.evaluate(({fraction,cap})=>{const scroller=cap?document.querySelector('[data-step-process-body]'):document.scrollingElement;scroller.scrollTop=(scroller.scrollHeight-scroller.clientHeight)*fraction},{fraction,cap});await page.evaluate(()=>frames(8));
-            const visible=await aligned(page),value=await page.evaluate(()=>({dots:document.querySelectorAll('.dpt-dot').length,nodes:[...instances].find(v=>v.model)?.model.nodes.length,motions:[...instances].reduce((s,v)=>s+v.motions.size,0)}));
+            const visible=await aligned(page),value=await page.evaluate(()=>({dots:drawingAll('.dpt-dot').length,nodes:[...instances].find(v=>v.model)?.model.nodes.length,motions:[...instances].reduce((s,v)=>s+v.motions.size,0)}));
             assert.ok(value.dots<90);assert.equal(value.motions,0);records.push({cap,fraction,visible,...value});
           }
           assert.deepEqual(errors,[]);
@@ -1770,7 +1921,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
         await page.waitForFunction(()=>[...instances].every(v=>v.motions.size===0),null,{timeout:5000});assert.equal(await page.locator('.dpt-layer mask').count(),0);
         await page.evaluate(()=>{const e=document.createElement('div');e.dataset.chatCallId='offscreen-new';e.innerHTML='<div data-state="running"><div data-disclosure-row>远处工具</div></div>';document.querySelector('[data-subcalls]').append(e)});await page.evaluate(()=>frames());assert.equal(await page.locator('.dpt-layer mask').count(),0);
         await page.evaluate(()=>document.querySelector('[data-chat-call-id="offscreen-new"]').scrollIntoView());await page.evaluate(()=>frames(8));
-        const late=await page.evaluate(()=>({masks:document.querySelectorAll('.dpt-layer mask').length,motions:[...instances].flatMap(v=>[...v.motions.keys()]),births:[...instances].flatMap(v=>[...v.births])}));
+        const late=await page.evaluate(()=>({masks:drawingAll('.dpt-layer mask').length,motions:[...instances].flatMap(v=>[...v.motions.keys()]),births:[...instances].flatMap(v=>[...v.births])}));
         assert.equal(late.masks,0,JSON.stringify(late));await aligned(page);
         assert.deepEqual(errors,[]);return {};
       }finally{await context.close()}
@@ -1922,7 +2073,7 @@ async function aligned(page){const value=await page.evaluate(()=>checkAlignment(
       try{
         await page.evaluate(()=>window.__ModuleLoader__={load(spec){window.composer=spec.factory(()=>({}))}});await page.addScriptTag({content:fs.readFileSync(process.env.DSH_COMPOSER_SOURCE,'utf8')});
         await page.evaluate(()=>{window.refreshes=0;window.stops=[];composer.apply({configForms:{get(){return {getSnapshot:()=>({status:'ready',value:{enabled:true}}),subscribe:()=>()=>{}}}},effect(fn,key){if(key==='dsh-composer-predictions: coexistence')stops.push(fn())},slots:{entriesOfSlot(){refreshes++;return []},subscribe(){return ()=>{}},inject(){}},get(){return {manifest:{modules:[]}}}})});await page.evaluate(()=>frames());
-        await page.evaluate(()=>{refreshes=0;document.querySelector('.dpt-edges').append(document.createElementNS('http://www.w3.org/2000/svg','path'))});await page.evaluate(()=>frames());assert.equal(await page.evaluate(()=>refreshes),0);
+        await page.evaluate(()=>{refreshes=0;drawing('.dpt-edges').append(document.createElementNS('http://www.w3.org/2000/svg','path'))});await page.evaluate(()=>frames());assert.equal(await page.evaluate(()=>refreshes),0);
         const records=[];
         for(const action of ['add','priority','remove','next-add','next-clear']){
           await page.evaluate(action=>{refreshes=0;if(action==='add'){const e=document.createElement('div');e.id='marker';e.dataset.composerGhost='foreign';document.body.append(e)}if(action==='priority')document.querySelector('#marker').dataset.composerGhostPriority='1';if(action==='remove')document.querySelector('#marker').remove();if(action==='next-add'){const e=document.createElement('div');e.id='hint';document.body.append(e);e.dataset.nextHint='ghost'}if(action==='next-clear')document.querySelector('#hint').removeAttribute('data-next-hint')},action);await page.evaluate(()=>frames());const refreshes=await page.evaluate(()=>window.refreshes);assert.ok(refreshes>=1);records.push({action,refreshes});

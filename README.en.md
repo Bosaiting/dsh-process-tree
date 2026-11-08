@@ -128,7 +128,7 @@ Light presets are VS Code Light+, JetBrains Light, Catppuccin Latte and Alucard 
 
 Code colours can be adjusted for functions and tools, keywords, parameters, strings and files, numbers, comments, plain text and three bracket levels. If an older version saves settings after a downgrade, active colours remain but preset selections and other preset customisations may be lost; back up settings first if needed.
 
-The three tree styles support separate light and dark running/error colours. Line, dot, indentation, summary and leading controls live in the collapsed **Advanced** section. Botanical scrolling optimisation is off by default; enabling it may affect other plugins or custom CSS that directly access internal root elements.
+The three tree styles support separate light and dark running/error colours. Line, dot, indentation, summary and leading controls live in the collapsed **Advanced** section. In the unreleased source, all three tree styles isolate their drawings, and the botanical scrolling optimisation switch has been removed. Legacy opt-out values are ignored; other appearance preferences are retained. External custom CSS cannot cross the isolation boundary to style internal tree graphics. The code minimap follows scrolling synchronously using a reusable transform animation to reduce layer updates. Published 0.11.1 retains the original behavior.
 
 ## Compatibility and data
 

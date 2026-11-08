@@ -34,7 +34,7 @@ jobs:
           console.log('Bundled Chromium:', executable)
           NODE
       - name: Browser regressions
-        timeout-minutes: 3
+        timeout-minutes: 5
         run: npm run test:browser
       - name: Save browser results
         if: ${{ !cancelled() }}

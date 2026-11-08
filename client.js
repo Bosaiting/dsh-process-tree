@@ -189,7 +189,6 @@ window.__ModuleLoader__.load({
     codePaletteProfiles: Object.freeze({ light: Object.freeze({}), dark: Object.freeze({}) }),
     intensity: 'standard',
     botanicalStyle: false,
-    botanicalScrollOptimization: false,
     canopyEnabled: true,
     soilEnabled: true,
     canopyScale: CANOPY_SCALE,
@@ -296,7 +295,6 @@ window.__ModuleLoader__.load({
       intensity: Object.hasOwn(INTENSITIES, source.intensity) ? source.intensity : defaults.intensity,
       // Derived; kept in storage so older plugin builds still read a value.
       botanicalStyle: source.treeStyle === 'botanical',
-      botanicalScrollOptimization: typeof source.botanicalScrollOptimization === 'boolean' ? source.botanicalScrollOptimization : defaults.botanicalScrollOptimization,
       canopyEnabled: typeof source.canopyEnabled === 'boolean' ? source.canopyEnabled : defaults.canopyEnabled,
       soilEnabled: typeof source.soilEnabled === 'boolean' ? source.soilEnabled : defaults.soilEnabled,
       // Old full-size crowns become the emblem; emblem sizes stay editable.
@@ -553,6 +551,11 @@ window.__ModuleLoader__.load({
      while the content height animates (the trunk wobble). */
   overflow: visible;
   pointer-events: none;
+  /* Viewport tiles move and replace SVG descendants while scrolling. They
+     must not become native scroll anchors: compensating for their movement
+     can trigger another tile update and a runaway 256px scroll loop. Keep
+     anchoring enabled for the host's actual transcript rows. */
+  overflow-anchor: none;
   z-index: 0;
 }
 .dpt-edge {
@@ -988,7 +991,7 @@ window.__ModuleLoader__.load({
   border-left: 1px solid var(--dsw-alias-border-l2, #8883); background: var(--dsw-alias-bg-base, #fff);
   border-radius: 2px; overflow: hidden;
 }
-.dpt-map-viewport { position: absolute; left: 2px; right: 1px; pointer-events: none;
+.dpt-map-viewport { position: absolute; top: 0; left: 2px; right: 1px; pointer-events: none;
   background: color-mix(in srgb, var(--dpt-code-text) 8%, transparent); border: 1px solid color-mix(in srgb, var(--dpt-code-text) 12%, transparent); }
 .dpt-map-mark { position: absolute; left: 5px; width: 19px; height: 5px; min-height: 5px;
   padding: 0; border: 0; border-radius: 1px; background: color-mix(in srgb, var(--dpt-code-text) 33%, transparent); cursor: pointer; }
@@ -2384,7 +2387,7 @@ window.__ModuleLoader__.load({
   function settingsChanges(previous, next) {
     let dirty = 0
     const changed = (keys) => keys.some((key) => previous[key] !== next[key])
-    if (changed(['treeStyle', 'botanicalStyle', 'botanicalScrollOptimization', 'canopyEnabled', 'canopyScale', 'topTransition', 'subTransition', 'indent', 'leading'])) dirty |= DIRTY_LAYOUT
+    if (changed(['treeStyle', 'botanicalStyle', 'canopyEnabled', 'canopyScale', 'topTransition', 'subTransition', 'indent', 'leading'])) dirty |= DIRTY_LAYOUT
     const before = dotMetrics(previous), after = dotMetrics(next)
     if (before.padding !== after.padding || before.minRow !== after.minRow) dirty |= DIRTY_LAYOUT
     if (changed(['treeStyle', 'topBend', 'subBend', 'curveShape', 'vineAmplitude', 'lineWidth', 'thicknessDecay', 'rootFusion'])) dirty |= DIRTY_SHAPE
@@ -2642,7 +2645,8 @@ window.__ModuleLoader__.load({
     }
     return d
   }
-  // Experimental: one shared sheet for isolated drawing roots.
+  // Share the drawing stylesheet across tree roots. Settings previews
+  // already live in their own shadow root and do not need another boundary.
   let isolatedTreeSheet = null
   function installIsolatedTreeStyles(root) {
     if (typeof CSSStyleSheet === 'function' && 'adoptedStyleSheets' in root && CSSStyleSheet.prototype.replaceSync) {
@@ -2672,6 +2676,10 @@ window.__ModuleLoader__.load({
       this.dotGroup = null
       this.edgeEls = new Map()
       this.edgeRecords = new Map()
+      // Keep only path strings, never detached DOM or call records. Revisiting
+      // a viewport can reuse outlines, engraving and shading within this cap.
+      this.pathCache = new Map()
+      this.pathCacheChars = 0
       this.motions = new Map()
       // Include hidden DOM calls so unfolding an existing branch never grows it again.
       this.knownCalls = new Set()
@@ -2970,6 +2978,7 @@ window.__ModuleLoader__.load({
         entry.callId = call?.dataset.chatCallId
         if (entry.callId) this.rememberCall(entry.callId)
         next.set(el, entry)
+        entry.order = entries.length
         entries.push(entry)
         if (parent) parent.children.push(entry)
         else roots.push(entry)
@@ -3030,6 +3039,9 @@ window.__ModuleLoader__.load({
       if (this.functionBatch?.frame) cancelAnimationFrame(this.functionBatch.frame)
       this.functionBatch = null
       this.functionPriority = null
+      this.functionViewportMotion?.cancel()
+      this.functionViewportMotion = null
+      this.functionViewportFallback = false
       if (retainLayout) return
       for (const record of this.functionRows?.values() || []) this.releaseFunctionRow(record)
       this.functionRows?.clear()
@@ -3054,6 +3066,7 @@ window.__ModuleLoader__.load({
       this.functionNavRows = null
       this.functionNavigationAt = 0
       this.functionMapSignature = null
+      this.functionMapHeight = 0
       for (const sub of this.content.querySelectorAll('[data-dpt-function-folded]')) sub.removeAttribute('data-dpt-function-folded')
       this.functionHeader = null
       this.functionStats = null
@@ -3679,6 +3692,7 @@ window.__ModuleLoader__.load({
         row.state = codeOutcome(this.functionBlocks?.get(entry.callId), stateOf(entry.call || entry.el))
       }
       const height = Math.max(1, this.content.offsetHeight)
+      if (rebuild || !this.functionMapHeight) this.functionMapHeight = this.functionMap.clientHeight
       if (rebuild || refreshStates || !this.functionMapSignature) {
         const slots = Math.min(120, rows.length)
         const selected = new Map()
@@ -3724,8 +3738,33 @@ window.__ModuleLoader__.load({
       const height = Math.max(1, this.content.offsetHeight)
       const start = Math.max(0, Math.min(100, visibleTop / height * 100))
       const end = Math.max(start, Math.min(100, visibleBottom / height * 100))
-      const thumbTop = start.toFixed(2) + '%', thumbHeight = Math.max(3, end - start).toFixed(2) + '%'
-      if (this.functionViewport.style.top !== thumbTop) this.functionViewport.style.top = thumbTop
+      const mapHeight = this.functionMapHeight || this.functionMap.clientHeight
+      // A persistent paused transform animation lets Chromium move this small
+      // indicator without rebuilding the transcript's layer tree each scroll.
+      // Seeking is synchronous: the indicator must not lag native scrolling.
+      if (!this.functionViewportFallback && mapHeight > 0) {
+        try {
+          if (!this.functionViewportMotion) {
+            this.functionViewportMotion = this.functionViewport.animate([], { duration: 1000, fill: 'both' })
+            this.functionViewportMotion.pause()
+            this.functionViewportMotionHeight = 0
+          }
+          if (this.functionViewportMotionHeight !== mapHeight) {
+            this.functionViewportMotion.effect.setKeyframes([
+              { transform: 'translateY(0px)' }, { transform: 'translateY(' + mapHeight + 'px)' },
+            ])
+            this.functionViewportMotionHeight = mapHeight
+          }
+          if (this.functionViewportMotion.currentTime !== start * 10) this.functionViewportMotion.currentTime = start * 10
+        } catch (_) {
+          this.functionViewportMotion?.cancel()
+          this.functionViewportMotion = null
+          this.functionViewportFallback = true
+        }
+      }
+      const thumbOffset = 'translateY(' + (start / 100 * mapHeight).toFixed(3) + 'px)'
+      const thumbHeight = Math.max(3, end - start).toFixed(2) + '%'
+      if (!this.functionViewportMotion && this.functionViewport.style.transform !== thumbOffset) this.functionViewport.style.transform = thumbOffset
       if (this.functionViewport.style.height !== thumbHeight) this.functionViewport.style.height = thumbHeight
     }
 
@@ -3853,7 +3892,7 @@ window.__ModuleLoader__.load({
       if (this.isPreview) return this.structure
       const selected = new Set()
       const include = (entry) => {
-        for (let current = entry; current; current = current.parent) selected.add(current)
+        for (let current = entry; current && !selected.has(current); current = current.parent) selected.add(current)
       }
       for (const entry of [...this.headerWindow, ...this.blockWindow]) {
         include(entry)
@@ -3862,7 +3901,9 @@ window.__ModuleLoader__.load({
         if (siblings[entry.siblingIndex + 1]) include(siblings[entry.siblingIndex + 1])
       }
       if (!selected.size && this.roots[0]) include(this.roots[0])
-      return this.structure.filter((entry) => selected.has(entry))
+      // Intersection sets are unordered. Restore transcript order without
+      // scanning every historical entry on each viewport update.
+      return [...selected].sort((a, b) => a.order - b.order)
     }
 
     readWindow(rect, scale, height) {
@@ -3939,6 +3980,7 @@ window.__ModuleLoader__.load({
       delete this.content.dataset.dptStyle
       this.edgeEls.clear()
       this.edgeRecords.clear()
+      this.clearPathCache()
       this.dotEls.clear()
       this.haloEls.clear()
       this.leafEls.clear()
@@ -3968,6 +4010,7 @@ window.__ModuleLoader__.load({
       this.emptyObserver = null
       this.emptyRows.clear()
       this.inViewport = false
+      this.clearPathCache()
       unwatchView(this)
       this.finishGrowth()
       this.destroyCrown(true)
@@ -4053,7 +4096,7 @@ window.__ModuleLoader__.load({
       this.haloEls.clear()
       this.rootWoodGradient = this.haloGradient = this.haloGroup = null
       this.syncMaterials()
-      if (SETTINGS.botanicalStyle && SETTINGS.botanicalScrollOptimization && !this.isPreview) {
+      if (!isCode() && !this.isPreview) {
         const host = document.createElement('div')
         host.setAttribute('aria-hidden', 'true')
         host.setAttribute('data-dsh-claude-quiet', '')
@@ -4066,8 +4109,8 @@ window.__ModuleLoader__.load({
         const shadow = host.attachShadow({ mode: 'open' })
         installIsolatedTreeStyles(shadow)
         const wrapper = document.createElement('div')
-        wrapper.dataset.dptBotanical = 'on'
-        wrapper.dataset.dptStyle = 'botanical'
+        wrapper.dataset.dptBotanical = SETTINGS.botanicalStyle ? 'on' : 'off'
+        wrapper.dataset.dptStyle = SETTINGS.treeStyle
         wrapper.append(svg)
         shadow.append(wrapper)
         this.treeShadowHost = host
@@ -4121,12 +4164,13 @@ window.__ModuleLoader__.load({
 
     applySettings() {
       let dirty = settingsChanges(this.appliedSettings, SETTINGS)
+      if (dirty & DIRTY_SHAPE) this.clearPathCache()
       const changedKeys = Object.keys(SETTINGS).filter(key => key !== 'codePaletteProfiles' && this.appliedSettings[key] !== SETTINGS[key])
       const paletteOnly = changedKeys.every(key => CODE_PALETTE_SETTINGS.has(key))
       if (!isCode()) this.clearCodeDecorations()
       else if (!this.suspended && paletteOnly) attr(this.content, 'data-dpt-code-background', SETTINGS.codeBackgroundMode)
       else if (!this.suspended) this.syncCodeDecorations(this.appliedSettings.codeLanguage !== SETTINGS.codeLanguage ? DIRTY_STRUCTURE : DIRTY_LAYOUT)
-      const shadowWanted = SETTINGS.botanicalStyle && SETTINGS.botanicalScrollOptimization && !this.isPreview
+      const shadowWanted = !isCode() && !this.isPreview
       if (!this.suspended && this.svg && !!this.treeShadowHost !== shadowWanted) {
         this.finishGrowth()
         if (this.treeShadowHost) this.treeShadowHost.remove()
@@ -4135,6 +4179,11 @@ window.__ModuleLoader__.load({
         this.svg = null
         this.ensureLayer()
         dirty |= DIRTY_LAYOUT | DIRTY_SHAPE
+      }
+      const drawingRoot = this.treeShadowHost?.shadowRoot.querySelector('[data-dpt-style]')
+      if (drawingRoot) {
+        attr(drawingRoot, 'data-dpt-style', SETTINGS.treeStyle)
+        attr(drawingRoot, 'data-dpt-botanical', SETTINGS.botanicalStyle ? 'on' : 'off')
       }
       if (['treeStyle','botanicalStyle','canopyEnabled','canopyScale'].some((key) => this.appliedSettings[key] !== SETTINGS[key])) this.syncCrown()
       if (!this.suspended && this.svg) this.syncMaterials()
@@ -4630,15 +4679,48 @@ window.__ModuleLoader__.load({
           }
         }
         const signature = [stroke, edge.d, SETTINGS.lineWidth, SETTINGS.thicknessDecay, SETTINGS.rootFusion, node.width, edge.sourceWidth, edge.stemEnd, edge.terminalEnd, edge.taperStart].join('|')
-        const body = record?.signature === signature ? null : stroke ? { d: edge.d } : branchBody(geometry, widthAt)
+        const body = record?.signature === signature ? null : { d: stroke ? edge.d :
+          this.cachedPath('body|' + signature, () => branchBody(geometry, widthAt).d) }
         const textured = SETTINGS.textureStyle !== 'none' && SETTINGS.textureStrength > 0
         const textureSignature = signature + '|' + SETTINGS.textureStyle + '|' + SETTINGS.botanicalStyle
+        const shaded = SETTINGS.botanicalStyle && SETTINGS.rootDetail > 0
         update.plans.push({
           edge, node, geometry, signature, widthAt, body, stroke, textured, textureSignature,
           texture: textured && (!record?.texture || record.textureSignature !== textureSignature) ?
-            textureD(geometry, geometry.length, widthAt, this.vineKey + edge.key) : null,
+            this.cachedPath('texture|' + this.vineKey + edge.key + '|' + textureSignature,
+              () => textureD(geometry, geometry.length, widthAt, this.vineKey + edge.key)) : null,
+          shade: shaded && (!record?.shade || record.shadeSignature !== signature) ? {
+            dark: this.cachedPath('shade-dark|' + signature, () => stripeD(geometry, widthAt, 0.62, 0.3)),
+            light: this.cachedPath('shade-light|' + signature, () => stripeD(geometry, widthAt, -0.28, 0.24)),
+          } : null,
         })
       }
+    }
+
+    clearPathCache() {
+      this.pathCache.clear()
+      this.pathCacheChars = 0
+    }
+
+    cachedPath(key, build) {
+      if (this.pathCache.has(key)) {
+        const value = this.pathCache.get(key)
+        this.pathCache.delete(key)
+        this.pathCache.set(key, value)
+        return value
+      }
+      const value = build(), size = key.length + value.length
+      // Bound both entry count and total string size (UTF-16 code units).
+      const budget = 512 * 1024
+      if (size > budget) return value
+      while (this.pathCache.size && (this.pathCache.size >= 256 || this.pathCacheChars + size > budget)) {
+        const oldest = this.pathCache.keys().next().value
+        this.pathCacheChars -= oldest.length + this.pathCache.get(oldest).length
+        this.pathCache.delete(oldest)
+      }
+      this.pathCache.set(key, value)
+      this.pathCacheChars += size
+      return value
     }
 
     syncRootShade(record, plan) {
@@ -4647,7 +4729,6 @@ window.__ModuleLoader__.load({
         if (record.shade) { record.shade.remove(); record.shade = null }
         return
       }
-      if (!plan.body) return
       if (!record.shade) {
         const group = document.createElementNS(NS, 'g')
         group.classList.add('dpt-root-shade')
@@ -4657,8 +4738,11 @@ window.__ModuleLoader__.load({
       }
       record.shade.style.opacity = String(SETTINGS.rootDetail)
       const [dark, light] = record.shade.children
-      attr(dark, 'd', stripeD(plan.geometry, plan.widthAt, 0.62, 0.3))
-      attr(light, 'd', stripeD(plan.geometry, plan.widthAt, -0.28, 0.24))
+      if (plan.shade) {
+        attr(dark, 'd', plan.shade.dark)
+        attr(light, 'd', plan.shade.light)
+        record.shadeSignature = plan.signature
+      }
     }
 
     createEdge(edge, node, fragment) {
@@ -5444,12 +5528,6 @@ window.__ModuleLoader__.load({
             h('span', { className: 'dpt-advanced-hint' }, '枝条形态、纹理、圆点和行外观的细项')),
           ...(settings.treeStyle !== 'botanical' ? [] : [
           h('h3', { className: 'dpt-subhead' }, '植物手稿'),
-          h('label', { className: 'dpt-toggle' },
-            h('span', null, h('span', { className: 'dpt-label' }, '植物滚动优化'),
-              h('span', { className: 'dpt-toggle-desc' }, '减少长过程滚动时的卡顿；开启后其他插件或自定义样式可能无法访问根系图形。预览不受影响。')),
-            h('input', { type: 'checkbox', role: 'switch', 'aria-label': '植物滚动优化',
-              checked: settings.botanicalScrollOptimization,
-              onChange: event => commit({ botanicalScrollOptimization: event.currentTarget.checked }) })),
           h(SelectRow, { label: '顶部树冠', desc: '树冠随本轮过程一起折叠；不改变根系的曲线和缩进', value: settings.canopyEnabled ? 'on' : 'off', options: [{ value: 'on', label: '显示' }, { value: 'off', label: '隐藏' }], onChange: value => commit({ canopyEnabled: value === 'on' }) }),
           h(SelectRow, { label: '土壤装饰', desc: '在树干与根系交界处显示薄土层；随顶部树冠显示或隐藏', value: settings.soilEnabled ? 'on' : 'off', options: [{ value: 'on', label: '显示' }, { value: 'off', label: '隐藏' }], onChange: value => commit({ soilEnabled: value === 'on' }) }),
           h(SliderRow, { label: '树冠大小', desc: '顶部小树冠徽记的大小；树冠始终留在内容区内', min: CANOPY_MIN, max: CANOPY_MAX, step: .01, value: settings.canopyScale, format: value => Math.round(value * 100) + '%', onChange: canopyScale => commit({ canopyScale }) }),

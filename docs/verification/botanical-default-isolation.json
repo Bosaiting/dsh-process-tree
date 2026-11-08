@@ -1,0 +1,217 @@
+{
+  "date": "2026-11-08",
+  "scope": "Unreleased automatic botanical Shadow DOM isolation; local source and disposable Web host only. No release, push, desktop installation or issue closure.",
+  "sourceSha256": "0c84f3eeedfb9741d231ab409166fb900810ca79e770647943f752689176806a",
+  "host": "DSH 0.2.2-rc.1",
+  "platform": "darwin/arm64",
+  "chromium": "153.0.8010.12",
+  "changes": [
+    "Removed scrolling optimization UI and persisted setting from normalized settings.",
+    "Always isolate botanical chat graphics, ignoring obsolete false/true values.",
+    "Keep existing settings-preview isolation and constructed stylesheet fallback.",
+    "Keep prior issue2 overflow-anchor fix."
+  ],
+  "unitTests": {
+    "passed": 61,
+    "failed": 0
+  },
+  "browserTests": {
+    "distinctVerified": 51,
+    "fullRunPassed": 50,
+    "fullRunTotal": 51,
+    "initialFailure": {
+      "name": "quiet fast path, bounded paint and style switches",
+      "cause": "The test queried document light DOM for botanical halos. Automatic isolation requires querying each actual view SVG. Alignment already passed. Only the test query was corrected; runtime unchanged."
+    },
+    "focusedReruns": [
+      {
+        "name": "focusedModeSwitch",
+        "cases": [
+          {
+            "name": "quiet fast path, bounded paint and style switches",
+            "pass": true,
+            "initial": {
+              "dots": 28,
+              "halos": 0,
+              "materials": 0,
+              "edges": 30,
+              "strokes": 30,
+              "outlineCalls": 0,
+              "pathChars": 1641
+            }
+          }
+        ]
+      },
+      {
+        "name": "focusedMigration",
+        "cases": [
+          {
+            "name": "botanical isolation is automatic, ignores legacy opt-out, and cleans up across mode switches and reloads",
+            "pass": true,
+            "legacySettings": [
+              false,
+              true
+            ],
+            "reload": true
+          },
+          {
+            "name": "automatic botanical isolation retains stylesheet fallbacks, themes, motion, and texture clipping",
+            "pass": true,
+            "faultModes": [
+              "replaceSync",
+              "adoption"
+            ]
+          }
+        ]
+      }
+    ],
+    "additionalTestChanges": "Native wheel isolation assertion moved after displacement measurement to preserve old-source negative control. Persistence assertion added to migration test; focused rerun passed."
+  },
+  "wheel": {
+    "cases": [
+      {
+        "style": "botanical",
+        "legacyOptimization": false,
+        "presentation": "Verbose",
+        "pass": true,
+        "inputCount": 36,
+        "maxDisplacementError": 0,
+        "geometry": {
+          "processHeight": 8889,
+          "calls": 100,
+          "scrollHeight": 9292,
+          "clientHeight": 1024,
+          "inner": false,
+          "isolated": true
+        },
+        "after": {
+          "scrollHeight": 9292,
+          "writes": 0,
+          "transcriptAnchor": "auto"
+        },
+        "errors": []
+      },
+      {
+        "style": "botanical",
+        "legacyOptimization": true,
+        "presentation": "Verbose",
+        "pass": true,
+        "inputCount": 36,
+        "maxDisplacementError": 0,
+        "geometry": {
+          "processHeight": 8889,
+          "calls": 100,
+          "scrollHeight": 9292,
+          "clientHeight": 1024,
+          "inner": false,
+          "isolated": true
+        },
+        "after": {
+          "scrollHeight": 9292,
+          "writes": 0,
+          "transcriptAnchor": "auto"
+        },
+        "errors": []
+      },
+      {
+        "style": "classic",
+        "legacyOptimization": false,
+        "presentation": "Verbose",
+        "pass": true,
+        "inputCount": 36,
+        "maxDisplacementError": 0,
+        "geometry": {
+          "processHeight": 8784,
+          "calls": 100,
+          "scrollHeight": 9187,
+          "clientHeight": 1024,
+          "inner": false,
+          "isolated": false
+        },
+        "after": {
+          "scrollHeight": 9187,
+          "writes": 0,
+          "transcriptAnchor": "auto"
+        },
+        "errors": []
+      },
+      {
+        "style": "quiet",
+        "legacyOptimization": false,
+        "presentation": "Verbose",
+        "pass": true,
+        "inputCount": 36,
+        "maxDisplacementError": 0,
+        "geometry": {
+          "processHeight": 8784,
+          "calls": 100,
+          "scrollHeight": 9187,
+          "clientHeight": 1024,
+          "inner": false,
+          "isolated": false
+        },
+        "after": {
+          "scrollHeight": 9187,
+          "writes": 0,
+          "transcriptAnchor": "auto"
+        },
+        "errors": []
+      },
+      {
+        "style": "code",
+        "legacyOptimization": false,
+        "presentation": "Verbose",
+        "pass": true,
+        "inputCount": 36,
+        "maxDisplacementError": 0,
+        "geometry": {
+          "processHeight": 6525,
+          "calls": 100,
+          "scrollHeight": 6928,
+          "clientHeight": 1024,
+          "inner": false,
+          "isolated": false
+        },
+        "after": {
+          "scrollHeight": 6928,
+          "writes": 0,
+          "transcriptAnchor": "auto"
+        },
+        "errors": []
+      },
+      {
+        "style": "botanical",
+        "legacyOptimization": false,
+        "presentation": "Detailed",
+        "pass": true,
+        "inputCount": 36,
+        "maxDisplacementError": 0,
+        "geometry": {
+          "processHeight": 8889,
+          "calls": 100,
+          "scrollHeight": 8889,
+          "clientHeight": 400,
+          "inner": true,
+          "isolated": true
+        },
+        "after": {
+          "scrollHeight": 8889,
+          "writes": 0,
+          "transcriptAnchor": "auto"
+        },
+        "errors": []
+      }
+    ],
+    "totalInputs": 216
+  },
+  "packageCheck": {
+    "files": 39,
+    "passed": true,
+    "dryRunOnly": true
+  },
+  "limits": [
+    "No new FPS benchmark: performance justification comes from the prior isolated-vs-light-DOM comparison.",
+    "No native Windows/Electron high-refresh or sustained live-generation acceptance.",
+    "External document CSS cannot select internal botanical SVG nodes across Shadow DOM; plugin theme and appearance controls are covered."
+  ]
+}

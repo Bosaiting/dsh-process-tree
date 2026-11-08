@@ -2,7 +2,159 @@
 
 The current source does not declare an `engines.dsh` restriction or DSH peer-version requirements. This removes the version gate; it does not establish compatibility with untested host releases. Published version 0.8.2 declares DSH 0.2.1-rc.2 and 0.2.1-rc.5. Earlier npm 0.8.0 and GitHub 0.8.1 packages declare only rc.2; previously published metadata is unchanged.
 
-The candidate checks below are historical snapshots from development before the 0.11.0 release. Their test counts, hashes, host versions and limitations apply only to the specific candidate tested, not to later releases. Where a candidate was superseded, the later entry or release notes describe the final behavior.
+The versioned historical candidate sections below are snapshots from development before the 0.11.0 release. Their test counts, hashes, host versions and limitations apply only to the specific candidate tested, not to later releases. Where a candidate was superseded, the later entry or release notes describe the final behavior.
+
+## Unreleased: four-mode performance / 四种模式性能优化（2026-11-08）
+
+Classic and quiet chat drawings now use the same automatic Shadow DOM boundary
+as botanical drawings. Switching between tree styles reuses that boundary and
+updates its style context; entering code mode removes it. The settings preview
+retains its existing isolation. External document CSS cannot select internal
+tree graphics, while plugin appearance and theme controls continue to work.
+
+The function-code minimap seeks one persistent paused transform animation in the
+native scroll event. This avoids repeatedly assigning its position through CSS
+while retaining synchronous indicator movement. If the animation API fails,
+it falls back to direct transforms. Suspension and teardown cancel the animation.
+The braces layout retains its existing rendering path.
+
+Viewport selection sorts only observed entries and required ancestors/neighbors
+by an index recorded during structural updates. It no longer scans the whole
+history to recover display order. Outline, texture and shading strings use a
+per-view LRU cache capped at 256 entries and 512 Ki UTF-16 code units including
+keys. It retains no detached DOM or call objects, is cleared on shape-setting
+changes, suspension and teardown, and avoids recomputing unchanged paths when
+an edge returns to the window. Root-detail changes update shading opacity even
+when the outline itself is unchanged.
+
+Three rotating-order rounds against the previous automatic-botanical candidate
+(100 completed calls plus 100 reasoning rows) produced these median renderer
+busy times during a nominal 2.4 s fast-scroll phase:
+
+| Layout/style | Before | After |
+| --- | ---: | ---: |
+| Code function | 1.669 s | 0.329 s |
+| Code braces | 0.324 s | 0.335 s |
+| Quiet | 2.157 s | 0.909 s |
+| Classic | 2.244 s | 1.019 s |
+| Botanical (already isolated) | 1.149 s | 1.137 s |
+
+Quiet/classic median style recalculation fell from about 1.5 s to 16/17 ms.
+Braces and botanical showed no clear overall gain in this comparison. All data
+were retained, including isolated 3,600 ms and 167 ms frame intervals in the
+before-function and after-braces conditions; medians do not describe worst-case
+latency. Content heights matched before/after in every mode. Separate diagnostic
+traces confirmed the function minimap's layer-processing reduction.
+
+Validation covers 61 unit tests, 53 distinct browser cases (including focused
+reruns after updating two assertions tied to the previous minimap implementation),
+and 216 native wheel inputs with zero displacement error and zero script scroll
+writes. A 1,200-entry nested fixture selected its visible entries without reading
+the historical array; recreating nine botanical edges reused identical outlines,
+textures and shading without invoking their generators. Cache limits and cleanup,
+shape/detail changes, synchronous minimap movement and animation fallback are
+covered. Full denominators, hashes, outliers and the original assertion failures
+are recorded in `docs/verification/four-mode-performance.json` in the checkout.
+
+### Repeatable comparison
+
+`npm run test:perf` requires `DPT_PERF_ROOT` pointing to a disposable directory
+with `.dpt-disposable-test`, `before/client.js`, `after/client.js`, and the two
+loopback host logs `before.log` and `after.log`. Run separate isolated DSH Web
+profiles using the existing fixture overlay with `DSH_TEST_FIXTURE_STEPS=100`.
+The script performs three rotating-order rounds of each mode/layout against both
+hosts, retains source hashes and all samples, and writes `performance-results.json`
+to the disposable root. It sends no model requests. `REPEATS` and `MODES` can
+select diagnostic subsets; performance comparisons should run without concurrent
+browser tests. Results describe elapsed-time scripted scrolling in Chromium,
+not native Desktop FPS. Timing thresholds are not imposed in functional CI.
+
+## Unreleased: automatic botanical isolation / 植物默认优化（2026-11-08）
+
+Botanical chat graphics now always use the existing Shadow DOM isolation path.
+There is no scrolling-optimisation control. Normalization discards the obsolete
+`botanicalScrollOptimization` key, including saved `false`; line, dot, canopy,
+colour and other appearance settings retain their existing normalization rules.
+The obsolete key is omitted on the next ordinary settings save. Settings previews
+already have their own shadow boundary and do not gain a nested isolation host.
+That change alone retained the other modes' rendering paths; the subsequent four-mode optimization above extends isolation to classic and quiet styles.
+
+The shared constructed stylesheet and inline-style fallback are retained. Themes
+and plugin appearance controls continue to work, while external CSS selectors
+cannot reach internal botanical graphics across the boundary. Switching modes
+or disabling the plugin must remove the old isolation host.
+
+The November 8 performance comparison used 100 completed synthetic calls plus
+100 reasoning rows in isolated DSH 0.2.2-rc.1 Web hosts on macOS, Chromium
+153.0.8010.12, three rotating-order trials per condition. For 2.4 seconds of
+scripted 3,000 px/s scrolling, botanical median style recalculation decreased
+from 1.289 s without isolation to 0.029 s with isolation; observed frame intervals
+above 25 ms decreased from 46.3% to 0%. This measured the existing isolation
+path before removing the toggle, not a new post-change FPS claim. It does not
+establish native Desktop, Windows, 120 Hz or live-generation performance.
+
+The opt-in scripts and verification records under `test/botanical-host`,
+`test/performance-rc5` and earlier `docs/verification` entries are historical;
+the old on/off comparison requires a runtime that still exposes that switch.
+Current automatic-isolation coverage lives in `test/browser-regressions.cjs`;
+`test/scroll-wheel-host.cjs` now treats saved false/true as migration inputs and
+requires isolation in both botanical cases.
+
+Validation: 61 unit tests passed; all 51 browser cases were verified (the full
+run exposed one light-DOM-only test query, corrected and rerun alongside the
+updated migration checks). The real-host matrix passed 216 wheel inputs in six
+cases with zero displacement error, and the 39-file package dry run passed.
+Details, source hash and the initial test-query failure are retained in
+`docs/verification/botanical-default-isolation.json` in the source checkout.
+
+## Unreleased: issue #2 wheel scrolling / 滚轮跳动修复（2026-11-08）
+
+The 0.11.1 runtime reproduced the reported runaway on macOS arm64 in an isolated
+DSH 0.2.2-rc.1 Web host with synthetic Session records, without a theme. A 7,657px
+process block contained 172 rows / 86 recorded calls. Native wheel inputs of
+100px produced multi-thousand-pixel jumps while scrollHeight stayed constant.
+Excluding only `.dpt-layer` from native scroll anchoring stopped the jumps in the
+same host. Shadow isolation also stopped them in the diagnostic comparison.
+That initial fix preserved the optimization toggle, saved settings, normal row anchoring
+and existing drawing behavior (the subsequent automatic-isolation change below supersedes the toggle); it does not claim to eliminate SVG long tasks.
+
+The reduced browser regression preserves the host's inline-size container,
+directional overflow and flex layout. With the original runtime, its first
+-100px wheel input moved from 6,872px to 3,444px within the observation window;
+the samples stepped by -256px after the initial -100px. With the fix, botanical
+(isolation off/on) and classic each passed 20 wheel inputs. Inserting 80px of
+ordinary content above the viewport still preserved the visible row's position.
+This regression is part of the regular browser suite and CI. Unlike earlier
+render-speed probes, neither new regression writes scroll position during the
+measured wheel sequence.
+
+The real-host regression passed 216 wheel inputs across six cases: verbose
+botanical isolation off/on, classic, quiet and code, plus botanical with a capped
+400px inner scroller. Every case retained content height and recorded zero
+programmatic scroll writes; the final displacement error was zero. The first
+inner-scroller attempt had `next-input` timing, which deliberately leaves the
+latest completed turn uncapped. Its geometry assertion failed before wheel
+measurement. Selecting `completion` for that case produced the intended inner
+scroller and the focused rerun passed; the unsuccessful setup is retained in
+the verification record.
+
+These are Chromium 153.0.8010.12 Web checks on macOS, not Windows Desktop,
+Electron scrolling or sustained live-generation acceptance. The issue remains
+open and the patch is not a published release. Source hashes, measurements and
+validation counts are recorded in `docs/verification/issue-2-scroll-anchoring.json`
+in the source checkout.
+
+To reproduce the browser failure, run `DSH_TEST_FILTER='native wheel input'
+npm run test:browser`; `DSH_CLIENT_SOURCE` can point to the original 0.11.1
+`client.js` as a negative control. To repeat the host matrix, use a new disposable
+directory containing `.dpt-disposable-test`, put `DSH_HOME` in its `home` child,
+and install the candidate into that Web profile. Launch DSH 0.2.2-rc.1 with
+`DSH_TEST_FIXTURE_STEPS=86`, `--patch ./test/fixtures/cordis.patch.yml`, `--no-open`
+and a loopback port; save its log inside the disposable directory. With the host
+running in English, set `DPT_HOST_TEST_ROOT` to that directory and
+`DSH_TEST_HOST_LOG` to its log, then run `npm run test:wheel-host`. This test changes
+only the isolated host's presentation settings. The log contains a temporary
+access token and is not part of the shareable verification record.
 
 ## Historical web-fetch display candidate / 网页获取展示历史候选（2026-10-31）
 

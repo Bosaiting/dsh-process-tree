@@ -43,12 +43,14 @@ test('an emblem-sized canopy preference is kept', () => {
   assert.equal(api.normalize({ treeStyle: 'botanical', canopyScale: 0.05 }).canopyScale, 0.15)
 })
 
-test('botanical scrolling optimization defaults off and preserves only explicit boolean preferences', () => {
-  assert.equal(api.normalize({}).botanicalScrollOptimization, false)
-  assert.equal(api.normalize({ treeStyle: 'botanical' }).botanicalScrollOptimization, false)
-  assert.equal(api.normalize({ treeStyle: 'botanical', botanicalScrollOptimization: true }).botanicalScrollOptimization, true)
-  assert.equal(api.normalize({ treeStyle: 'classic', botanicalScrollOptimization: true }).botanicalScrollOptimization, true)
-  assert.equal(api.normalize({ treeStyle: 'botanical', botanicalScrollOptimization: 'true' }).botanicalScrollOptimization, false)
+test('obsolete botanical scrolling preferences are dropped without changing appearance settings', () => {
+  for (const treeStyle of ['botanical', 'classic', 'quiet', 'code']) {
+    const expected = api.normalize({ treeStyle, lineWidth: 4.2, runningColorDark: '#123456' })
+    assert.equal(Object.hasOwn(expected, 'botanicalScrollOptimization'), false)
+    for (const botanicalScrollOptimization of [undefined, false, true, 'true']) {
+      assert.deepEqual(api.normalize({ ...expected, botanicalScrollOptimization }), expected)
+    }
+  }
 })
 
 test('an explicit botanical style keeps its own values', () => {
@@ -430,7 +432,7 @@ test('code is an explicit fourth style and normalization preserves existing pref
   assert.equal(code.botanicalStyle, false)
   assert.equal(code.indent, original.indent)
   assert.equal(code.runningColorDark, original.runningColorDark)
-  assert.equal(code.botanicalScrollOptimization, true)
+  assert.equal(Object.hasOwn(code, 'botanicalScrollOptimization'), false)
   assert.equal(api.matchesIntensity(api.normalize({ ...code, ...api.intensityPatch('code', 'standard') })), true)
   assert.deepEqual(api.normalize(original), original)
   assert.equal(api.normalize({}).treeStyle, 'code')

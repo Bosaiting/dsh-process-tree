@@ -1,0 +1,869 @@
+{
+  "date": "2026-11-08",
+  "scope": "macOS headless Chromium, isolated DSH 0.2.2-rc.1 Web hosts, 100 synthetic tool calls plus 100 reasoning rows; completed idle/scroll, no model requests. Elapsed-time scripted scroll, not desktop FPS.",
+  "sourceHashes": {
+    "before": "0c84f3eeedfb9741d231ab409166fb900810ca79e770647943f752689176806a",
+    "after": "fd4119f211412a0201af72858fbac5f073b81fd4cee84f630a739963c4202dce"
+  },
+  "chromium": "153.0.8010.12",
+  "platform": "darwin/arm64",
+  "basis": "Before is the prior unreleased candidate with automatic botanical isolation and the issue2 anchor fix already applied. After is this four-mode optimization.",
+  "method": {
+    "trials": 30,
+    "rounds": 3,
+    "order": "rotating",
+    "nominalFastScrollMs": 2400,
+    "fastScrollPxPerSecond": 3000,
+    "viewport": "1440x1100, dpr1.25, dark",
+    "frameStatistics": "Proportion of observed intervals above25ms, not percentage of missing display frames. CPU durations overlap; TaskDuration must not be summed with its components.",
+    "outliers": "All trials and long intervals retained, including a 3600ms before-code-function interval and a 166.7ms after-code-braces interval. Medians are not worst-case guarantees."
+  },
+  "performance": [
+    {
+      "mode": "before-code-function",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 116.95400000000001,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 5.388000000000001,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000273,
+      "intervalsAbove25Ms": 0,
+      "intervals": 272,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        116.95400000000001,
+        124.793,
+        100.06600000000002
+      ]
+    },
+    {
+      "mode": "before-code-function",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 1221.1270000000002,
+      "styleMsMedian": 14.678999999999998,
+      "scriptMsMedian": 111.095,
+      "layoutMsMedian": 29.202,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        1221.1270000000002,
+        1230.9640000000002,
+        1203.4560000000001
+      ]
+    },
+    {
+      "mode": "before-code-function",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 1668.548,
+      "styleMsMedian": 13.854999999999999,
+      "scriptMsMedian": 121.52099999999999,
+      "layoutMsMedian": 28.091,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 1,
+      "intervals": 334,
+      "maxFrameIntervalMs": 3599.8,
+      "taskMsAllTrials": [
+        4091.6560000000004,
+        1668.548,
+        1589.363
+      ]
+    },
+    {
+      "mode": "after-code-function",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 119.04100000000001,
+      "styleMsMedian": 0.03799999999999984,
+      "scriptMsMedian": 4.765999999999999,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000273,
+      "intervalsAbove25Ms": 0,
+      "intervals": 271,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        111.66699999999999,
+        119.04100000000001,
+        121.802
+      ]
+    },
+    {
+      "mode": "after-code-function",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 393.506,
+      "styleMsMedian": 9.922999999999998,
+      "scriptMsMedian": 134.068,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        326.434,
+        393.506,
+        412.42300000000006
+      ]
+    },
+    {
+      "mode": "after-code-function",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 329.03700000000003,
+      "styleMsMedian": 9.021999999999995,
+      "scriptMsMedian": 126.25200000000004,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 434,
+      "maxFrameIntervalMs": 16.80000000000109,
+      "taskMsAllTrials": [
+        340.627,
+        329.03700000000003,
+        328.96999999999997
+      ]
+    },
+    {
+      "mode": "before-code-braces",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 115.219,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 5.992,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000273,
+      "intervalsAbove25Ms": 0,
+      "intervals": 273,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        136.717,
+        115.219,
+        110.662
+      ]
+    },
+    {
+      "mode": "before-code-braces",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 291.122,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 100.40899999999999,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        291.122,
+        301.064,
+        285.42100000000005
+      ]
+    },
+    {
+      "mode": "before-code-braces",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 323.893,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 104.29,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 434,
+      "maxFrameIntervalMs": 16.80000000000109,
+      "taskMsAllTrials": [
+        323.893,
+        321.628,
+        330.728
+      ]
+    },
+    {
+      "mode": "after-code-braces",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 107.571,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 4.383000000000001,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000273,
+      "intervalsAbove25Ms": 0,
+      "intervals": 273,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        93.054,
+        107.571,
+        138.905
+      ]
+    },
+    {
+      "mode": "after-code-braces",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 305.56899999999996,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 104.13099999999999,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.733999999999924,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        304.59999999999997,
+        305.56899999999996,
+        306.5210000000001
+      ]
+    },
+    {
+      "mode": "after-code-braces",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 335.121,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 107.351,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.799999999999272,
+      "intervalsAbove25Ms": 1,
+      "intervals": 426,
+      "maxFrameIntervalMs": 166.69999999999982,
+      "taskMsAllTrials": [
+        324.73999999999995,
+        335.121,
+        528.326
+      ]
+    },
+    {
+      "mode": "before-quiet",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 114.914,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 4.742000000000001,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000273,
+      "intervalsAbove25Ms": 0,
+      "intervals": 273,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        114.914,
+        108.632,
+        148.55799999999996
+      ]
+    },
+    {
+      "mode": "before-quiet",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 1594.228,
+      "styleMsMedian": 1184.4360000000001,
+      "scriptMsMedian": 96.514,
+      "layoutMsMedian": 4.784999999999999,
+      "p95FrameIntervalMsMedian": 16.800000000000182,
+      "intervalsAbove25Ms": 6,
+      "intervals": 429,
+      "maxFrameIntervalMs": 33.30000000000018,
+      "taskMsAllTrials": [
+        1594.228,
+        1612.6180000000002,
+        1589.348
+      ]
+    },
+    {
+      "mode": "before-quiet",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 2157.4100000000003,
+      "styleMsMedian": 1495.711,
+      "scriptMsMedian": 108.692,
+      "layoutMsMedian": 12.723999999999998,
+      "p95FrameIntervalMsMedian": 33.30000000000109,
+      "intervalsAbove25Ms": 52,
+      "intervals": 382,
+      "maxFrameIntervalMs": 33.400000000001455,
+      "taskMsAllTrials": [
+        2184.594,
+        2148.435,
+        2157.4100000000003
+      ]
+    },
+    {
+      "mode": "after-quiet",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 132.64900000000003,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 5.199000000000001,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.799999999999727,
+      "intervalsAbove25Ms": 0,
+      "intervals": 273,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        132.64900000000003,
+        132.766,
+        131.35000000000002
+      ]
+    },
+    {
+      "mode": "after-quiet",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 506.204,
+      "styleMsMedian": 7.776000000000002,
+      "scriptMsMedian": 119.49499999999999,
+      "layoutMsMedian": 6.169,
+      "p95FrameIntervalMsMedian": 16.799999999999272,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        476.34299999999996,
+        507.32599999999996,
+        506.204
+      ]
+    },
+    {
+      "mode": "after-quiet",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 908.5389999999999,
+      "styleMsMedian": 16.014,
+      "scriptMsMedian": 133.63400000000004,
+      "layoutMsMedian": 15.138000000000002,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.80000000000109,
+      "taskMsAllTrials": [
+        908.5389999999999,
+        901.252,
+        915.0279999999999
+      ]
+    },
+    {
+      "mode": "before-classic",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 120.635,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 5.603000000000001,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000273,
+      "intervalsAbove25Ms": 0,
+      "intervals": 273,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        120.635,
+        128.826,
+        95.254
+      ]
+    },
+    {
+      "mode": "before-classic",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 1685.397,
+      "styleMsMedian": 1186.566,
+      "scriptMsMedian": 124.57600000000001,
+      "layoutMsMedian": 5.7540000000000004,
+      "p95FrameIntervalMsMedian": 16.800000000000182,
+      "intervalsAbove25Ms": 16,
+      "intervals": 419,
+      "maxFrameIntervalMs": 33.400000000000546,
+      "taskMsAllTrials": [
+        1707.727,
+        1653.027,
+        1685.397
+      ]
+    },
+    {
+      "mode": "before-classic",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 2244.4700000000007,
+      "styleMsMedian": 1493.191,
+      "scriptMsMedian": 160.42399999999998,
+      "layoutMsMedian": 14.282,
+      "p95FrameIntervalMsMedian": 33.30000000000018,
+      "intervalsAbove25Ms": 57,
+      "intervals": 377,
+      "maxFrameIntervalMs": 50,
+      "taskMsAllTrials": [
+        2244.4700000000007,
+        2201.219,
+        2272.2980000000002
+      ]
+    },
+    {
+      "mode": "after-classic",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 114.679,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 4.794000000000001,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.700000000000273,
+      "intervalsAbove25Ms": 0,
+      "intervals": 273,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        104.817,
+        127.25000000000003,
+        114.679
+      ]
+    },
+    {
+      "mode": "after-classic",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 582.3530000000001,
+      "styleMsMedian": 7.188,
+      "scriptMsMedian": 144.533,
+      "layoutMsMedian": 6.396000000000001,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        608.798,
+        582.3530000000001,
+        581.174
+      ]
+    },
+    {
+      "mode": "after-classic",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 1019.404,
+      "styleMsMedian": 16.929,
+      "scriptMsMedian": 203.82500000000002,
+      "layoutMsMedian": 17.165999999999997,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.80000000000109,
+      "taskMsAllTrials": [
+        1019.404,
+        1025.667,
+        1013.2909999999999
+      ]
+    },
+    {
+      "mode": "before-botanical",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 181.82800000000003,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 57.746,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.799999999999727,
+      "intervalsAbove25Ms": 0,
+      "intervals": 270,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        181.82800000000003,
+        188.36700000000002,
+        163.16899999999998
+      ]
+    },
+    {
+      "mode": "before-botanical",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 636.186,
+      "styleMsMedian": 16.311,
+      "scriptMsMedian": 195.04300000000003,
+      "layoutMsMedian": 7.804,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        634.6030000000001,
+        656.798,
+        636.186
+      ]
+    },
+    {
+      "mode": "before-botanical",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 1149.4499999999998,
+      "styleMsMedian": 28.172000000000004,
+      "scriptMsMedian": 302.84399999999994,
+      "layoutMsMedian": 22.701,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 434,
+      "maxFrameIntervalMs": 16.80000000000109,
+      "taskMsAllTrials": [
+        1149.4499999999998,
+        1135.79,
+        1196.592
+      ]
+    },
+    {
+      "mode": "after-botanical",
+      "phase": "idle",
+      "trials": 3,
+      "taskMsMedian": 186.82100000000003,
+      "styleMsMedian": 0,
+      "scriptMsMedian": 57.24,
+      "layoutMsMedian": 0,
+      "p95FrameIntervalMsMedian": 16.799999999999727,
+      "intervalsAbove25Ms": 0,
+      "intervals": 271,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        186.82100000000003,
+        189.973,
+        146.599
+      ]
+    },
+    {
+      "mode": "after-botanical",
+      "phase": "scroll-800",
+      "trials": 3,
+      "taskMsMedian": 662.7950000000001,
+      "styleMsMedian": 15.976999999999999,
+      "scriptMsMedian": 195.343,
+      "layoutMsMedian": 7.795000000000001,
+      "p95FrameIntervalMsMedian": 16.700000000000728,
+      "intervalsAbove25Ms": 0,
+      "intervals": 435,
+      "maxFrameIntervalMs": 16.800000000000182,
+      "taskMsAllTrials": [
+        662.7950000000001,
+        669.103,
+        644.4700000000001
+      ]
+    },
+    {
+      "mode": "after-botanical",
+      "phase": "scroll-3000",
+      "trials": 3,
+      "taskMsMedian": 1136.727,
+      "styleMsMedian": 26.932,
+      "scriptMsMedian": 300.02399999999994,
+      "layoutMsMedian": 22.418,
+      "p95FrameIntervalMsMedian": 16.799999999999272,
+      "intervalsAbove25Ms": 0,
+      "intervals": 434,
+      "maxFrameIntervalMs": 16.80000000000109,
+      "taskMsAllTrials": [
+        1134.533,
+        1156.5199999999998,
+        1136.727
+      ]
+    }
+  ],
+  "outliers": [
+    {
+      "mode": "before-code-function",
+      "repeat": 0,
+      "phase": "scroll-3000",
+      "maxIntervalMs": 3599.8,
+      "elapsedMs": 4345.199999988079,
+      "longTasksMs": [
+        3593
+      ]
+    },
+    {
+      "mode": "after-code-braces",
+      "repeat": 2,
+      "phase": "scroll-3000",
+      "maxIntervalMs": 166.69999999999982,
+      "elapsedMs": 2445.5,
+      "longTasksMs": [
+        160
+      ]
+    }
+  ],
+  "unchangedHeights": {
+    "code-function": {
+      "before": [
+        6525
+      ],
+      "after": [
+        6525
+      ]
+    },
+    "code-braces": {
+      "before": [
+        8788
+      ],
+      "after": [
+        8788
+      ]
+    },
+    "quiet": {
+      "before": [
+        8784
+      ],
+      "after": [
+        8784
+      ]
+    },
+    "classic": {
+      "before": [
+        8784
+      ],
+      "after": [
+        8784
+      ]
+    },
+    "botanical": {
+      "before": [
+        8889
+      ],
+      "after": [
+        8889
+      ]
+    }
+  },
+  "diagnosticTraces": [
+    {
+      "file": "final-trace-before-code-function.json",
+      "inclusiveRendererMainEventMs": {
+        "Layerize": 1220.5240000000001,
+        "FunctionCall": 171.64099999999954,
+        "HitTest": 150.85100000000006,
+        "FireAnimationFrame": 88.39100000000005,
+        "EventDispatch": 84.42300000000003,
+        "Layout": 42.451999999999984,
+        "IntersectionObserverController::computeIntersections": 40.67700000000004,
+        "Paint": 30.482999999999997,
+        "UpdateLayoutTree": 14.739000000000006,
+        "PrePaint": 12.06699999999999,
+        "ScrollLayer": 1.605999999999998
+      }
+    },
+    {
+      "file": "final-trace-after-code-function.json",
+      "inclusiveRendererMainEventMs": {
+        "HitTest": 174.30299999999986,
+        "FunctionCall": 138.36300000000017,
+        "EventDispatch": 101.29400000000003,
+        "FireAnimationFrame": 40.27699999999999,
+        "IntersectionObserverController::computeIntersections": 35.25100000000002,
+        "PrePaint": 14.017000000000017,
+        "UpdateLayoutTree": 10.108999999999991,
+        "Layerize": 9.064999999999939,
+        "V8.GC_MC_INCREMENTAL": 7.884999999999994,
+        "Paint": 4.715999999999991,
+        "MajorGC": 2.969,
+        "V8.GC_MARK_COMPACTOR": 2.947,
+        "MinorGC": 2.33,
+        "V8.GC_SCAVENGER": 2.299,
+        "V8.GC_SCAVENGER_SCAVENGE": 2.289,
+        "ScrollLayer": 1.8459999999999979,
+        "V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING": 1.780999999999996,
+        "V8.GC_SCAVENGER_SCAVENGE_PARALLEL_PHASE": 1.583,
+        "V8.GC_MC_EVACUATE": 1.5319999999999998,
+        "V8.GC_MC_EVACUATE_UPDATE_POINTERS": 0.916,
+        "V8.GC_MC_EVACUATE_COPY": 0.594,
+        "V8.GC_MC_EVACUATE_COPY_PARALLEL": 0.57,
+        "V8.GC_MC_EVACUATE_UPDATE_POINTERS_TO_NEW_ROOTS": 0.533,
+        "V8.GC_MC_CLEAR": 0.459,
+        "V8.GC_MC_CLEAR_JOIN_JOB": 0.447,
+        "V8.GC_SCAVENGER_SCAVENGE_WEAK_GLOBAL_HANDLES_PROCESS": 0.3,
+        "V8.GC_MC_MARK": 0.226,
+        "V8.GC_MC_EVACUATE_UPDATE_POINTERS_POINTER_TABLES": 0.225,
+        "V8.GC_SCAVENGER_SCAVENGE_ROOTS": 0.198,
+        "V8.GC_MC_INCREMENTAL_START": 0.158,
+        "V8.GC_MC_SWEEP": 0.154,
+        "V8.GC_SCAVENGER_SCAVENGE_WEAK_GLOBAL_HANDLES_IDENTIFY": 0.152,
+        "V8.GC_MC_EVACUATE_UPDATE_POINTERS_SLOTS_MAIN": 0.146,
+        "V8.GC_SCAVENGER_TRACED_HANDLES_RESET_PARALLEL": 0.131,
+        "V8.GC_HEAP_EMBEDDER_TRACING_EPILOGUE": 0.129,
+        "V8.GC_SCAVENGER_TRACED_HANDLES_COMPUTE_WEAKNESS_PARALLEL": 0.123,
+        "V8.GC_MC_MARK_WEAK_CLOSURE_EPHEMERON_MARKING": 0.12000000000000004,
+        "V8.GC_MC_MARK_FULL_CLOSURE_PARALLEL": 0.114,
+        "V8.GC_MC_CLEAR_EXTERNAL_STRING_TABLE": 0.095,
+        "V8.GC_MC_EVACUATE_UPDATE_POINTERS_PARALLEL": 0.089,
+        "V8.GC_MC_MARK_EMBEDDER_TRACING": 0.08500000000000002,
+        "V8.GC_SCAVENGER_SCAVENGE_FINALIZE": 0.075,
+        "V8.GC_MC_CLEAR_SWEEP_EXTERNAL_POINTER_TABLE": 0.072,
+        "V8.GC_MC_CLEAR_WEAK_COLLECTIONS": 0.06,
+        "Major concurrent marking rescheduled": 0.047000000000000035,
+        "V8.GC_SCAVENGER_FREE_REMEMBERED_SET": 0.047,
+        "V8.GC_HEAP_EXTERNAL_WEAK_GLOBAL_HANDLES": 0.036,
+        "V8.GC_HEAP_EXTERNAL_PROLOGUE": 0.033,
+        "V8.GC_MC_MARK_ROOTS": 0.033,
+        "V8.GC_SCAVENGER_SCAVENGE_COLLECT_OLD_TO_NEW_PAGES": 0.03,
+        "V8.GC_MC_MARK_FULL_CLOSURE_SERIAL": 0.03,
+        "V8.GC_MC_INCREMENTAL_EXTERNAL_PROLOGUE": 0.027,
+        "V8.GC_MC_MARK_EMBEDDER_PROLOGUE": 0.025,
+        "V8.GC_MC_FINISH": 0.016,
+        "V8.GC_MC_EVACUATE_PROLOGUE": 0.013,
+        "V8.GC_MC_MARK_RETAIN_MAPS": 0.011,
+        "V8.GC_HEAP_EXTERNAL_SECOND_PASS_CALLBACKS": 0.008,
+        "V8.GC_SCAVENGER_SCAVENGE_RESTORE_AND_QUARANTINE_PINNED": 0.007,
+        "V8.GC_MC_PROLOGUE": 0.007,
+        "V8.GC_MC_EVACUATE_EPILOGUE": 0.007,
+        "V8.GC_SCAVENGER_SWEEP_ARRAY_BUFFERS": 0.006,
+        "V8.GC_MC_EVACUATE_UPDATE_POINTERS_WEAK": 0.005,
+        "V8.GC_HEAP_EPILOGUE_SAFEPOINT": 0.004,
+        "V8.GC_HEAP_EPILOGUE": 0.004,
+        "V8.GC_HEAP_EXTERNAL_EPILOGUE": 0.004,
+        "V8.GC_HEAP_ENSURE_SWEEPING_COMPLETED": 0.004,
+        "V8.GC_MC_MARK_WEAK_CLOSURE_EPHEMERON_LINEAR": 0.004,
+        "V8.GC_MC_FINISH_SWEEP_ARRAY_BUFFERS": 0.004,
+        "V8.GC_MC_MARK_FINISH_INCREMENTAL": 0.003,
+        "V8.GC_SCAVENGER_COMPLETE_SWEEP_ARRAY_BUFFERS": 0.002,
+        "ClearStringTableJob started": 0.002,
+        "V8.GC_MC_SWEEP_START_JOBS": 0.002,
+        "V8.GC_TIME_TO_SAFEPOINT": 0.001,
+        "Parallel scavenge started": 0.001,
+        "ClearWeaknessProcessor start": 0.001,
+        "V8.GC_SCAVENGER_RESIZE_NEW_SPACE": 0.001,
+        "Major concurrent marking started": 0.001,
+        "V8.GC_MC_INCREMENTAL_EXTERNAL_EPILOGUE": 0.001,
+        "V8.GC_HEAP_PROLOGUE": 0.001,
+        "V8.GC_CONSERVATIVE_STACK_SCANNING": 0.001,
+        "ClearTrivialWeakRefJob started": 0.001,
+        "PageEvacuationJob started": 0.001,
+        "V8.GC_MC_EVACUATE_UPDATE_POINTERS_CLIENT_HEAPS": 0.001,
+        "PointersUpdatingJob started": 0.001,
+        "V8.GC_MC_EVACUATE_CLEAN_UP": 0.001,
+        "V8.GC_MC_SWEEP_NEW_LO": 0.001,
+        "V8.GC_MC_EVACUATE_REBALANCE": 0.001
+      }
+    }
+  ],
+  "functional": {
+    "unitTests": {
+      "passed": 61
+    },
+    "browser": {
+      "distinctVerified": 53,
+      "fullRun": {
+        "passed": 51,
+        "total": 53,
+        "failedTests": [
+          "function minimap bounds long histories and survives viewport scrolling",
+          "function minimap viewport tracks each scroll event without an extra frame"
+        ]
+      },
+      "correction": "Two minimap tests still inspected the old inline top value or required an uninitialized optional flag to be strictly false. Assertions now inspect actual indicator position, normalize the flag, and check animation cleanup. Runtime unchanged for these reruns.",
+      "focusedRerun": [
+        {
+          "name": "function minimap bounds long histories and survives viewport scrolling",
+          "pass": true,
+          "count": 119
+        },
+        {
+          "name": "function minimap reuses row geometry for status-only updates",
+          "pass": true,
+          "reads": 7
+        },
+        {
+          "name": "function minimap viewport tracks each scroll event without an extra frame",
+          "pass": true,
+          "fallback": true
+        }
+      ],
+      "additionalRegressions": [
+        {
+          "name": "viewport selection preserves nested order without walking the full history",
+          "pass": true,
+          "reads": 0,
+          "total": 1200,
+          "selected": 8,
+          "ordered": true,
+          "ancestors": true
+        },
+        {
+          "name": "botanical path reuse survives eviction from the viewport and respects shape and detail changes",
+          "pass": true,
+          "reusedEdges": 9,
+          "cache": {
+            "size": 127,
+            "chars": 521335,
+            "rebuilt": 0,
+            "afterSize": 0,
+            "afterChars": 0
+          }
+        }
+      ]
+    },
+    "wheel": {
+      "cases": [
+        {
+          "style": "botanical",
+          "legacyOptimization": false,
+          "presentation": "Verbose",
+          "isolated": true,
+          "inputs": 36,
+          "maxError": 0,
+          "writes": 0,
+          "pass": true
+        },
+        {
+          "style": "botanical",
+          "legacyOptimization": true,
+          "presentation": "Verbose",
+          "isolated": true,
+          "inputs": 36,
+          "maxError": 0,
+          "writes": 0,
+          "pass": true
+        },
+        {
+          "style": "classic",
+          "legacyOptimization": false,
+          "presentation": "Verbose",
+          "isolated": true,
+          "inputs": 36,
+          "maxError": 0,
+          "writes": 0,
+          "pass": true
+        },
+        {
+          "style": "quiet",
+          "legacyOptimization": false,
+          "presentation": "Verbose",
+          "isolated": true,
+          "inputs": 36,
+          "maxError": 0,
+          "writes": 0,
+          "pass": true
+        },
+        {
+          "style": "code",
+          "legacyOptimization": false,
+          "presentation": "Verbose",
+          "isolated": false,
+          "inputs": 36,
+          "maxError": 0,
+          "writes": 0,
+          "pass": true
+        },
+        {
+          "style": "botanical",
+          "legacyOptimization": false,
+          "presentation": "Detailed",
+          "isolated": true,
+          "inputs": 36,
+          "maxError": 0,
+          "writes": 0,
+          "pass": true
+        }
+      ],
+      "totalInputs": 216
+    },
+    "package": {
+      "files": 39,
+      "dryRunOnly": true
+    }
+  },
+  "limitations": [
+    "No native Windows/Electron or120Hz FPS acceptance.",
+    "Measured completed synthetic-session idle/scroll, not a sustained live-generation throughput benchmark.",
+    "Braces and already-isolated botanical scrolling show no clear incremental overall improvement; botanical path reuse is proven functionally, not as an FPS gain.",
+    "No version bump, publication, push, desktop installation or issue closure."
+  ]
+}

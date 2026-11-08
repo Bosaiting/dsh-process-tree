@@ -6,13 +6,15 @@ export const name = 'process-tree-compatibility-fixture'
 export const inject = ['agents', 'agentLoop']
 
 export async function apply(ctx) {
+  const steps = Number(process.env.DSH_TEST_FIXTURE_STEPS || 6)
+  if (!Number.isInteger(steps) || steps < 1 || steps > 200) throw new Error('DSH_TEST_FIXTURE_STEPS must be an integer from 1 to 200')
   const { agent } = await ctx.agents.create({ sessionId: `dpt-compat-${Date.now()}`, meta: { cwd: process.cwd() }, agentOptions: {} })
   const session = agent.session
   const append = (type, data, surface = false) => session.append(type, data, ...(surface ? [{ surfaceOp: 'append' }] : []))
   const message = (role, content, source) => ({ id: randomUUID(), role, content, source })
   append('user/message', message('user', [{ type: 'text', text: 'Process Tree Compatibility Fixture — synthetic local records; no model requests.' }], { kind: 'user' }), true)
   append('turn/start', { turn: 1 })
-  for (let step = 1; step <= 6; step++) {
+  for (let step = 1; step <= steps; step++) {
     const callId = `fixture-call-${step}`
     append('step/start', { turn: 1, step })
     append('assistant/message', {
@@ -29,9 +31,9 @@ export async function apply(ctx) {
     }, true)
     append('step/end', { turn: 1, step })
   }
-  append('step/start', { turn: 1, step: 7 })
-  append('assistant/message', { turn: 1, step: 7, stream: [], message: message('assistant', [{ type: 'text', text: 'Synthetic compatibility fixture complete.' }], { kind: 'model', provider: 'compatibility-fixture', model: 'no-network' }) }, true)
-  append('step/end', { turn: 1, step: 7 })
+  append('step/start', { turn: 1, step: steps + 1 })
+  append('assistant/message', { turn: 1, step: steps + 1, stream: [], message: message('assistant', [{ type: 'text', text: 'Synthetic compatibility fixture complete.' }], { kind: 'model', provider: 'compatibility-fixture', model: 'no-network' }) }, true)
+  append('step/end', { turn: 1, step: steps + 1 })
   append('turn/end', { turn: 1, reason: { kind: 'completed' } })
   console.info(`[process-tree-fixture] ready ${session.id}`)
 }

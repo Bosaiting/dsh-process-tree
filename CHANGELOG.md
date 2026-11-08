@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Extend automatic drawing isolation to classic and quiet styles. Select visible entries by their recorded order instead of scanning the full history, and reuse bounded outline/texture/shading strings when branches return to the viewport.
+- Move the code minimap indicator through a persistent paused transform animation, with synchronous position updates, cleanup and a direct-transform fallback.
+
+- Always isolate botanical chat graphics to reduce host style recalculation during scrolling. Remove the scrolling optimisation switch, ignore obsolete opt-out values, and preserve other appearance settings, preview behavior and stylesheet fallbacks.
+
+- Exclude decorative SVG viewport tiles from native scroll anchoring to stop runaway wheel scrolling in long process blocks (issue #2), while retaining normal transcript anchoring and existing settings. Add real-wheel browser and isolated-host regressions.
 - Correct the README versioned installation examples and identify earlier compatibility checks as historical snapshots.
 
 ## 0.11.1

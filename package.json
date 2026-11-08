@@ -64,6 +64,8 @@
     "test": "node --test test/*.test.mjs",
     "test:browser": "node test/browser-regressions.cjs",
     "test:host": "node test/host-compatibility.cjs",
+    "test:wheel-host": "node test/scroll-wheel-host.cjs",
+    "test:perf": "node test/performance-modes.cjs",
     "check:package": "node scripts/check-package.mjs"
   },
   "devDependencies": {
