@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fix expanded reasoning rows painting over the rows below them. Hosts that keep an expanded reasoning row's state on the inner disclosure (`[data-open="true"]`) rather than on the row itself satisfied the collapsed-height rule while open, pinning the row to one row and letting its body overlap the following rows. The rule now requires the row to be closed, in either representation; the header keeps its own fixed height.
+
 ## 0.11.2 — 2026-11-08
 
 - Extend automatic drawing isolation to classic and quiet styles. Select visible entries by their recorded order instead of scanning the full history, and reuse bounded outline/texture/shading strings when branches return to the viewport.

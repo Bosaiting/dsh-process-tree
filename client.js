@@ -528,7 +528,12 @@ window.__ModuleLoader__.load({
 .dpt-host [data-variant="think"] [data-disclosure-row] {
   height: max(calc(24px + var(--dsh-content-font-delta, 0px) + var(--dsh-row-leading, 0px)), var(--dpt-dot-min-row, 0px));
 }
-.dpt-host [data-variant="think"][data-variant="think"]:not([data-expanded]) {
+/* Collapsed reasoning rows keep the row rhythm. The row must not stay pinned while
+   its disclosure is open: newer hosts keep an expanded reasoning row's state on the
+   inner disclosure ([data-open="true"]) instead of on the row itself, so keying only
+   on :not([data-expanded]) left the row at one row's height and the body painted over
+   the rows below it. Only the header keeps a fixed height while open. */
+.dpt-host [data-variant="think"][data-variant="think"]:not([data-expanded]):not([data-open="true"]):not(:has([data-open="true"])) {
   height: max(calc(24px + var(--dsh-content-font-delta, 0px) + var(--dsh-row-leading, 0px)), var(--dpt-dot-min-row, 0px));
 }
 
